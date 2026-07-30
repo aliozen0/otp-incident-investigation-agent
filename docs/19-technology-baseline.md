@@ -128,10 +128,10 @@ DEMO_FIXTURE=OTP-DROP-001
 # local-live / demo profilinde (bkz. ADR-015)
 NVIDIA_API_KEY=
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
-NVIDIA_CHAT_MODEL=
+NVIDIA_CHAT_MODEL=meta/llama-3.1-8b-instruct
 NVIDIA_EMBEDDING_MODEL=nvidia/nv-embedqa-e5-v5
 ```
 
-`NVIDIA_CHAT_MODEL` M5 oturumunda NVIDIA build katalogundan seçilip pinlenecek; burada bilerek boş bırakıldı.
+`NVIDIA_CHAT_MODEL` M5 spike'ıyla doğrulandı: `meta/llama-3.1-8b-instruct`, tool/function calling destekli (NvidiaNimChatServiceLiveTest ile gerçek endpoint'e karşı bir tool-call round trip doğrulandı). NVIDIA build katalogundaki Llama 3.x Instruct ailesinden seçildi (ADR-015); `meta/llama-3.3-70b-instruct` ilk denemede endpoint kapasite sınırına (`503 ResourceExhausted`) takıldı, `meta/llama-3.1-8b-instruct` tool-call'ı güvenilir şekilde tamamladı.
 
 `NVIDIA_EMBEDDING_MODEL` M4'te compatibility spike ile doğrulandı: `nvidia/nv-embedqa-e5-v5`, dimension 1024, OpenAI-uyumlu `/v1/embeddings` şemasına ek `input_type` (`query`/`passage`) parametresi kabul ediyor. LangChain4j 1.18+'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u bu alanı ayrı bir HTTP interceptor yazmadan taşıyor (bkz. `NvidiaNimEmbeddingService`).
