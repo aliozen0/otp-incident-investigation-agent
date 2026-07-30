@@ -124,4 +124,12 @@ INVESTIGATION_MAX_SECONDS=30
 TOOL_TIMEOUT_MILLIS=2000
 TOOL_RETRY_COUNT=1
 DEMO_FIXTURE=OTP-DROP-001
+
+# local-live / demo profilinde (bkz. ADR-015)
+NVIDIA_API_KEY=
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+NVIDIA_CHAT_MODEL=
+NVIDIA_EMBEDDING_MODEL=
 ```
+
+`NVIDIA_CHAT_MODEL`/`NVIDIA_EMBEDDING_MODEL` M4/M5 oturumunda NVIDIA build katalogundan seçilip pinlenecek; burada bilerek boş bırakıldı.

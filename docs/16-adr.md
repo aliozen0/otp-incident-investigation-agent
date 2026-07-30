@@ -76,3 +76,11 @@
 
 - **Status:** Accepted
 - **Reason:** İç sistem erişimi yok, fixture deterministik.
+
+## ADR-015 — NVIDIA NIM canlı model/embedding sağlayıcısı
+
+- **Status:** Accepted
+- **Decision:** `local-live`/`demo` profillerinde LLM ve embedding sağlayıcısı olarak NVIDIA NIM (`https://integrate.api.nvidia.com/v1`, OpenAI-compatible API) kullanılır. LangChain4j entegrasyonu `langchain4j-open-ai` modülünün `OpenAiChatModel`/`OpenAiEmbeddingModel` builder'ı ile `baseUrl` NVIDIA endpoint'ine, `apiKey` `NVIDIA_API_KEY` env değişkenine set edilerek yapılır — ayrı bir NVIDIA-özel LangChain4j modülü eklenmez.
+- **Reason:** Kullanıcının mevcut NVIDIA API key'i var; NIM OpenAI-uyumlu şema sunduğu için LangChain4j'nin OpenAI adaptörü değişiklik gerektirmeden çalışır (ADR-002'deki provider soyutlamasına uygun).
+- **Consequence:** Chat ve embedding model ID'leri (`NVIDIA_CHAT_MODEL`, `NVIDIA_EMBEDDING_MODEL`) M4 (RAG/embedding) ve M5 (agent) oturumlarında NVIDIA build katalogundan seçilip pinlenecek; küçük bir compatibility spike (`docs/19-technology-baseline.md`) bu seçimden önce çalıştırılmalı. `test`/`local-stub` profillerinde bu sağlayıcıya ihtiyaç yoktur (deterministic stub kullanılır).
+- **Not:** `NVIDIA_API_KEY` asla repoya/loglara girmez (`docs/09-security-governance.md`).
