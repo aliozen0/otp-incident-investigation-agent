@@ -345,11 +345,12 @@ git commit -m "feat(agent): structured-output DTOs for IncidentAnalysisResult"
 - Create: `src/main/java/com/example/otpsentinel/agent/ToolBudgetGuard.java`
 - Create: `src/main/java/com/example/otpsentinel/agent/ToolBudgetExceededException.java`
 - Create: `src/main/java/com/example/otpsentinel/agent/DuplicateToolCallException.java`
+- Create: `src/main/java/com/example/otpsentinel/agent/ToolTimeoutException.java`
 - Test: `src/test/java/com/example/otpsentinel/agent/ToolBudgetGuardTest.java`
 
 **Interfaces:**
 - Consumes: `com.example.otpsentinel.tools.{ToolResult, ToolStatus}` (existing).
-- Produces: `ToolBudgetGuard.execute(String toolName, Object parameters, Supplier<ToolResult<T>> invocation)` — the method Task 4's `AgentTools` wraps every port call with. `ToolBudgetGuard.callCount()` and `ToolBudgetGuard.executionIds()` for assertions in Task 9's end-to-end test.
+- Produces: `ToolBudgetGuard.execute(String toolName, Object parameters, Supplier<ToolResult<T>> invocation)` — the method Task 5's `AgentTools` wraps every port call with. `ToolBudgetGuard.callCount()` and `ToolBudgetGuard.toolNames()` for assertions in Task 9's end-to-end test.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -458,7 +459,7 @@ class ToolBudgetGuardTest {
                       }
                       return success("exec-1");
                     }))
-        .isInstanceOf(java.util.concurrent.TimeoutException.class);
+        .isInstanceOf(ToolTimeoutException.class);
   }
 }
 ```
@@ -501,7 +502,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -565,63 +565,6 @@ public final class ToolBudgetGuard {
     for (int attempt = 0; attempt <= retryCount; attempt++) {
       try {
         return callWithTimeout(invocation);
-      } catch (TimeoutException e) {
-        throw new RuntimeExceptionWrapper(e);
-      } catch (RuntimeException e) {
-        lastFailure = e;
-      }
-    }
-    throw lastFailure;
-  }
-
-  private <T> ToolResult<T> callWithTimeout(Supplier<ToolResult<T>> invocation)
-      throws TimeoutException {
-    Callable<ToolResult<T>> task = invocation::get;
-    Future<ToolResult<T>> future = executor.submit(task);
-    try {
-      return future.get(toolTimeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (TimeoutException e) {
-      future.cancel(true);
-      throw e;
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException(e);
-    } catch (java.util.concurrent.ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof RuntimeException re) {
-        throw re;
-      }
-      throw new RuntimeException(cause);
-    }
-  }
-
-  public int callCount() {
-    return calls.size();
-  }
-
-  public List<String> toolNames() {
-    return calls.stream().map(c -> c.toolName).toList();
-  }
-
-  private record CallRecord(String toolName, String paramKey, boolean succeeded) {}
-
-  /** Unwraps to a plain {@link TimeoutException} at the call site (Callable can't declare it). */
-  private static final class RuntimeExceptionWrapper extends RuntimeException {
-    RuntimeExceptionWrapper(TimeoutException cause) {
-      super(cause);
-    }
-  }
-}
-```
-
-Note: `timesOutAfterConfiguredDuration` expects `TimeoutException` directly, but the above wraps it — fix before finalizing: change `callWithTimeout`'s `TimeoutException` catch in `invokeWithTimeoutAndRetry` to rethrow the checked exception by declaring `execute`/`invokeWithTimeoutAndRetry` to throw it as-is via an unchecked passthrough. Simplest correct fix: make `TimeoutException` itself unchecked-compatible by catching and rethrowing with `sneaky-free` idiom — since `TimeoutException` is a checked exception and `execute`'s signature has no `throws`, wrap using `java.util.concurrent.CompletionException`-style rethrow:
-
-```java
-  private <T> ToolResult<T> invokeWithTimeoutAndRetry(Supplier<ToolResult<T>> invocation) {
-    RuntimeException lastFailure = null;
-    for (int attempt = 0; attempt <= retryCount; attempt++) {
-      try {
-        return callWithTimeout(invocation);
       } catch (RuntimeException e) {
         lastFailure = e;
       }
@@ -644,9 +587,20 @@ Note: `timesOutAfterConfiguredDuration` expects `TimeoutException` directly, but
       throw cause instanceof RuntimeException re ? re : new RuntimeException(cause);
     }
   }
+
+  public int callCount() {
+    return calls.size();
+  }
+
+  public List<String> toolNames() {
+    return calls.stream().map(c -> c.toolName).toList();
+  }
+
+  private record CallRecord(String toolName, String paramKey, boolean succeeded) {}
+}
 ```
 
-Add one more file: `src/main/java/com/example/otpsentinel/agent/ToolTimeoutException.java`:
+Also create `src/main/java/com/example/otpsentinel/agent/ToolTimeoutException.java` (a checked `TimeoutException` cannot propagate through `execute`'s unchecked signature, so it is wrapped at the point it is caught):
 ```java
 package com.example.otpsentinel.agent;
 
@@ -658,7 +612,8 @@ public final class ToolTimeoutException extends RuntimeException {
   }
 }
 ```
-and update `timesOutAfterConfiguredDuration` in the test to assert `.isInstanceOf(ToolTimeoutException.class)` instead of `TimeoutException.class` (a raw checked `TimeoutException` cannot propagate through an unchecked call chain cleanly — this is the correct, idiomatic fix, not a workaround).
+
+In `ToolBudgetGuardTest`'s `timesOutAfterConfiguredDuration` (Step 1 above), assert `.isInstanceOf(ToolTimeoutException.class)`, not `TimeoutException.class` — write the test with that assertion from the start.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
