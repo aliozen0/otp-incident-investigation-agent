@@ -9,7 +9,8 @@ Her şablon zaten şunu varsayar (tekrar yazma):
 - `AGENTS.md` okunmuş,
 - ilgili `docs/NN-*.md` dosyası source of truth,
 - `Specification -> Failing Test -> Minimal Implementation -> Refactor` sırası,
-- tek scoped task, ilgisiz iyileştirme yok.
+- tek scoped task, ilgisiz iyileştirme yok,
+- **tüm `mvn`/`docker`/`docker compose` komutları WSL2 üzerinden çalıştırılır** (bkz. `docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı"), Windows'ta doğrudan değil.
 
 ## Şablonlar
 
