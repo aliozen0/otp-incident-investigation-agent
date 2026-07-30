@@ -19,20 +19,20 @@ import java.util.Map;
  * copied verbatim from docs/15-demo-fixtures.md; see that file for the source table.
  *
  * <p>docs/15 only fully specifies OTP-DROP-001. The other four scenarios are not given complete
- * per-tool figures, so this catalog resolves them as follows (documented, not invented silently
- * per prompts/handoff/M2-prompt.md constraints):
+ * per-tool figures, so this catalog resolves them as follows (documented, not invented silently per
+ * prompts/handoff/M2-prompt.md constraints):
  *
  * <ul>
  *   <li>OTP-NORMAL-001: docs/15 gives only "success 98.4%, NO_ANOMALY". A minimal, internally
  *       consistent healthy dataset is synthesized (round numbers chosen so the ratio is exact,
  *       never rounded) purely so the five tools have something deterministic to return; only the
  *       98.4% success rate is a normative assertion from docs/15.
- *   <li>OTP-PARTIAL-001: docs/15 says only "provider tool timeout". Reuses the OTP-DROP-001
- *       dataset for every tool except getProviderHealth(OPERATOR_B), which times out.
+ *   <li>OTP-PARTIAL-001: docs/15 says only "provider tool timeout". Reuses the OTP-DROP-001 dataset
+ *       for every tool except getProviderHealth(OPERATOR_B), which times out.
  *   <li>OTP-RAG-NONE-001 / OTP-INJECTION-001: docs/15 describes both as differing only in
- *       knowledge-base content ("live evidence var, knowledge yok" / "knowledge içinde kötü
- *       niyetli talimat") — the RAG/knowledge layer is out of scope for M2. Both reuse the
- *       OTP-DROP-001 tool dataset unchanged.
+ *       knowledge-base content ("live evidence var, knowledge yok" / "knowledge içinde kötü niyetli
+ *       talimat") — the RAG/knowledge layer is out of scope for M2. Both reuse the OTP-DROP-001
+ *       tool dataset unchanged.
  * </ul>
  */
 public final class FixtureCatalog {
@@ -51,9 +51,11 @@ public final class FixtureCatalog {
 
   private static FixtureScenario dropScenario() {
     TimeWindow currentWindow =
-        new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
     TimeWindow previousWindow =
-        new TimeWindow(Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z"));
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z"));
 
     OtpMetricsResult otpMetrics =
         new OtpMetricsResult(
@@ -79,9 +81,11 @@ public final class FixtureCatalog {
             new ErrorCount("INVALID_NUMBER", 139L, 3.99),
             new ErrorCount("UNKNOWN", 105L, 3.02));
 
-    ErrorDistributionResult errorDistribution = new ErrorDistributionResult(3_482L, byErrorCode, byProvider);
+    ErrorDistributionResult errorDistribution =
+        new ErrorDistributionResult(3_482L, byErrorCode, byProvider);
 
-    QueueHealthResult queueHealth = new QueueHealthResult(184L, 1_000L, 4L, 30L, 8, 8, 3L, "NORMAL", "HEALTHY");
+    QueueHealthResult queueHealth =
+        new QueueHealthResult(184L, 1_000L, 4L, 30L, 8, 8, 3L, "NORMAL", "HEALTHY");
 
     ProviderHealthResult operatorB =
         new ProviderHealthResult(
@@ -142,9 +146,11 @@ public final class FixtureCatalog {
 
   private static FixtureScenario normalScenario() {
     TimeWindow currentWindow =
-        new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
     TimeWindow previousWindow =
-        new TimeWindow(Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z"));
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z"));
 
     // 9,840 / 10,000 = 98.40% exactly, matching docs/15's "OTP-NORMAL-001: %98.4, NO_ANOMALY".
     OtpMetricsResult otpMetrics =
@@ -166,9 +172,11 @@ public final class FixtureCatalog {
     List<ErrorCount> byErrorCode =
         List.of(new ErrorCount("INVALID_NUMBER", 100L, 62.5), new ErrorCount("UNKNOWN", 60L, 37.5));
 
-    ErrorDistributionResult errorDistribution = new ErrorDistributionResult(160L, byErrorCode, byProvider);
+    ErrorDistributionResult errorDistribution =
+        new ErrorDistributionResult(160L, byErrorCode, byProvider);
 
-    QueueHealthResult queueHealth = new QueueHealthResult(184L, 1_000L, 4L, 30L, 8, 8, 3L, "NORMAL", "HEALTHY");
+    QueueHealthResult queueHealth =
+        new QueueHealthResult(184L, 1_000L, 4L, 30L, 8, 8, 3L, "NORMAL", "HEALTHY");
 
     ProviderHealthResult operatorB =
         new ProviderHealthResult(

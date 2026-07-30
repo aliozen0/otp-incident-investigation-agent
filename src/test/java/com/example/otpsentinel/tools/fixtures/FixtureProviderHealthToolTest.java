@@ -16,7 +16,8 @@ class FixtureProviderHealthToolTest {
 
   @Test
   void returnsOperatorBHealthVerbatimFromDemoFixturesForOtpDrop001() {
-    FixtureProviderHealthTool tool = new FixtureProviderHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
+    FixtureProviderHealthTool tool =
+        new FixtureProviderHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
 
     ToolResult<ProviderHealthResult> result =
         tool.getProviderHealth(new ProviderHealthRequest("OPERATOR_B", START, END));
@@ -48,7 +49,8 @@ class FixtureProviderHealthToolTest {
 
   @Test
   void unknownProviderYieldsAnErrorResultInsteadOfFabricatedData() {
-    FixtureProviderHealthTool tool = new FixtureProviderHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
+    FixtureProviderHealthTool tool =
+        new FixtureProviderHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
 
     ToolResult<ProviderHealthResult> result =
         tool.getProviderHealth(new ProviderHealthRequest("OPERATOR_A", START, END));

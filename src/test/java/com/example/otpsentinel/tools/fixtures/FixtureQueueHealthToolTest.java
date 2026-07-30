@@ -10,7 +10,8 @@ class FixtureQueueHealthToolTest {
 
   @Test
   void returnsOtpDrop001QueueHealthVerbatimFromDemoFixtures() {
-    FixtureQueueHealthTool tool = new FixtureQueueHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
+    FixtureQueueHealthTool tool =
+        new FixtureQueueHealthTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
 
     ToolResult<QueueHealthResult> result = tool.getQueueHealth();
 

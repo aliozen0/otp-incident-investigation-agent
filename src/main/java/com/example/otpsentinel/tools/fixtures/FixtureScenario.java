@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * One deterministic dataset shared by all five fixture tool adapters for a given {@link
- * FixtureId}. {@code timedOutProvider}, when set, makes {@code getProviderHealth} for that
- * provider return {@code ToolStatus.TIMEOUT} instead of data (NFR-008 timeout simulation).
+ * One deterministic dataset shared by all five fixture tool adapters for a given {@link FixtureId}.
+ * {@code timedOutProvider}, when set, makes {@code getProviderHealth} for that provider return
+ * {@code ToolStatus.TIMEOUT} instead of data (NFR-008 timeout simulation).
  */
 public record FixtureScenario(
     FixtureId id,
@@ -34,6 +34,12 @@ public record FixtureScenario(
 
   public FixtureScenario withId(FixtureId newId) {
     return new FixtureScenario(
-        newId, otpMetrics, errorDistribution, queueHealth, providerHealthByProvider, timedOutProvider, recentChanges);
+        newId,
+        otpMetrics,
+        errorDistribution,
+        queueHealth,
+        providerHealthByProvider,
+        timedOutProvider,
+        recentChanges);
   }
 }

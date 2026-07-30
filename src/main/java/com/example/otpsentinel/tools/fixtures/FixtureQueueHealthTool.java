@@ -24,6 +24,7 @@ public final class FixtureQueueHealthTool implements QueueHealthTool {
 
   @Override
   public ToolResult<QueueHealthResult> getQueueHealth() {
-    return ToolResult.success(UUID.randomUUID().toString(), "getQueueHealth", clock.instant(), scenario.queueHealth());
+    return ToolResult.success(
+        UUID.randomUUID().toString(), "getQueueHealth", clock.instant(), scenario.queueHealth());
   }
 }

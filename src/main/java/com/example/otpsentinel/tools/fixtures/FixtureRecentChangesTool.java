@@ -29,7 +29,8 @@ public final class FixtureRecentChangesTool implements RecentChangesTool {
     RecentChangesResult full = scenario.recentChanges();
     RecentChangesResult data =
         request.component() == null ? full : filterByComponent(full, request.component());
-    return ToolResult.success(UUID.randomUUID().toString(), "getRecentChanges", clock.instant(), data);
+    return ToolResult.success(
+        UUID.randomUUID().toString(), "getRecentChanges", clock.instant(), data);
   }
 
   private static RecentChangesResult filterByComponent(RecentChangesResult full, String component) {

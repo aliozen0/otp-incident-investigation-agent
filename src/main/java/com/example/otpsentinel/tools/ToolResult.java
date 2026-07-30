@@ -5,7 +5,12 @@ import java.util.Objects;
 
 /** docs/07-agent-tool-spec.md common result envelope for every operational tool call. */
 public record ToolResult<T>(
-    String executionId, String toolName, ToolStatus status, Instant observedAt, T data, ToolError error) {
+    String executionId,
+    String toolName,
+    ToolStatus status,
+    Instant observedAt,
+    T data,
+    ToolError error) {
 
   public ToolResult {
     Objects.requireNonNull(executionId, "executionId must not be null");
@@ -20,15 +25,18 @@ public record ToolResult<T>(
     }
   }
 
-  public static <T> ToolResult<T> success(String executionId, String toolName, Instant observedAt, T data) {
+  public static <T> ToolResult<T> success(
+      String executionId, String toolName, Instant observedAt, T data) {
     return new ToolResult<>(executionId, toolName, ToolStatus.SUCCESS, observedAt, data, null);
   }
 
-  public static <T> ToolResult<T> timeout(String executionId, String toolName, Instant observedAt, ToolError error) {
+  public static <T> ToolResult<T> timeout(
+      String executionId, String toolName, Instant observedAt, ToolError error) {
     return new ToolResult<>(executionId, toolName, ToolStatus.TIMEOUT, observedAt, null, error);
   }
 
-  public static <T> ToolResult<T> error(String executionId, String toolName, Instant observedAt, ToolError error) {
+  public static <T> ToolResult<T> error(
+      String executionId, String toolName, Instant observedAt, ToolError error) {
     return new ToolResult<>(executionId, toolName, ToolStatus.ERROR, observedAt, null, error);
   }
 }

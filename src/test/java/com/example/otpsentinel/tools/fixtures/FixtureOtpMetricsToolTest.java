@@ -24,7 +24,9 @@ class FixtureOtpMetricsToolTest {
     ToolResult<OtpMetricsResult> result =
         tool.getOtpMetrics(
             new OtpMetricsRequest(
-                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"), true));
+                Instant.parse("2026-07-30T11:15:00Z"),
+                Instant.parse("2026-07-30T11:30:00Z"),
+                true));
 
     assertThat(result.status()).isEqualTo(ToolStatus.SUCCESS);
     assertThat(result.toolName()).isEqualTo("getOtpMetrics");
@@ -51,7 +53,9 @@ class FixtureOtpMetricsToolTest {
     ToolResult<OtpMetricsResult> result =
         tool.getOtpMetrics(
             new OtpMetricsRequest(
-                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"), true));
+                Instant.parse("2026-07-30T11:15:00Z"),
+                Instant.parse("2026-07-30T11:30:00Z"),
+                true));
 
     assertThat(result.data().successRate()).isEqualTo(98.40);
   }

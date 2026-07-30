@@ -26,14 +26,18 @@ public final class FixtureErrorDistributionTool implements ErrorDistributionTool
   }
 
   @Override
-  public ToolResult<ErrorDistributionResult> getErrorDistribution(ErrorDistributionRequest request) {
+  public ToolResult<ErrorDistributionResult> getErrorDistribution(
+      ErrorDistributionRequest request) {
     Objects.requireNonNull(request, "request must not be null");
     ErrorDistributionResult full = scenario.errorDistribution();
-    ErrorDistributionResult data = request.provider() == null ? full : filterByProvider(full, request.provider());
-    return ToolResult.success(UUID.randomUUID().toString(), "getErrorDistribution", clock.instant(), data);
+    ErrorDistributionResult data =
+        request.provider() == null ? full : filterByProvider(full, request.provider());
+    return ToolResult.success(
+        UUID.randomUUID().toString(), "getErrorDistribution", clock.instant(), data);
   }
 
-  private static ErrorDistributionResult filterByProvider(ErrorDistributionResult full, String provider) {
+  private static ErrorDistributionResult filterByProvider(
+      ErrorDistributionResult full, String provider) {
     List<ProviderErrorBreakdown> filtered =
         full.byProvider().stream().filter(p -> p.provider().equals(provider)).toList();
     long failedTotal = filtered.stream().mapToLong(ProviderErrorBreakdown::failed).sum();

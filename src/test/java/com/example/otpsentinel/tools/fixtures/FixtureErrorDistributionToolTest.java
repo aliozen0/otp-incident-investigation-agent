@@ -31,7 +31,9 @@ class FixtureErrorDistributionToolTest {
             org.assertj.core.groups.Tuple.tuple("CONNECTION_RESET", 383L),
             org.assertj.core.groups.Tuple.tuple("INVALID_NUMBER", 139L),
             org.assertj.core.groups.Tuple.tuple("UNKNOWN", 105L));
-    assertThat(data.byProvider()).extracting("provider").containsExactly("OPERATOR_A", "OPERATOR_B", "OPERATOR_C");
+    assertThat(data.byProvider())
+        .extracting("provider")
+        .containsExactly("OPERATOR_A", "OPERATOR_B", "OPERATOR_C");
   }
 
   @Test

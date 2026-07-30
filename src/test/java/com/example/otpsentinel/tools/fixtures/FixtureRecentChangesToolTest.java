@@ -15,7 +15,8 @@ class FixtureRecentChangesToolTest {
 
   @Test
   void returnsAllFourOtpDrop001ChangesVerbatimFromDemoFixtures() {
-    FixtureRecentChangesTool tool = new FixtureRecentChangesTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
+    FixtureRecentChangesTool tool =
+        new FixtureRecentChangesTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
 
     ToolResult<RecentChangesResult> result =
         tool.getRecentChanges(new RecentChangesRequest(FROM, TO, null));
@@ -29,7 +30,8 @@ class FixtureRecentChangesToolTest {
 
   @Test
   void filtersByComponentWhenRequested() {
-    FixtureRecentChangesTool tool = new FixtureRecentChangesTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
+    FixtureRecentChangesTool tool =
+        new FixtureRecentChangesTool(FixtureCatalog.forFixture(FixtureId.OTP_DROP_001));
 
     ToolResult<RecentChangesResult> result =
         tool.getRecentChanges(new RecentChangesRequest(FROM, TO, "OPERATOR_B_ADAPTER"));

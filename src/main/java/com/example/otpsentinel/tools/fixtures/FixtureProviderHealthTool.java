@@ -11,9 +11,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Fixture adapter for T-004. Deterministic per {@link FixtureScenario} (AI-006). Simulates
- * NFR-008 timeout behavior when the requested provider matches {@link
- * FixtureScenario#timedOutProvider()} (OTP-PARTIAL-001).
+ * Fixture adapter for T-004. Deterministic per {@link FixtureScenario} (AI-006). Simulates NFR-008
+ * timeout behavior when the requested provider matches {@link FixtureScenario#timedOutProvider()}
+ * (OTP-PARTIAL-001).
  */
 public final class FixtureProviderHealthTool implements ProviderHealthTool {
 
@@ -39,7 +39,9 @@ public final class FixtureProviderHealthTool implements ProviderHealthTool {
           executionId,
           "getProviderHealth",
           observedAt,
-          new ToolError("TIMEOUT", "Provider health check for " + request.provider() + " did not complete in time"));
+          new ToolError(
+              "TIMEOUT",
+              "Provider health check for " + request.provider() + " did not complete in time"));
     }
     ProviderHealthResult data = scenario.providerHealthByProvider().get(request.provider());
     if (data == null) {
@@ -47,7 +49,8 @@ public final class FixtureProviderHealthTool implements ProviderHealthTool {
           executionId,
           "getProviderHealth",
           observedAt,
-          new ToolError("PROVIDER_NOT_FOUND", "No fixture data for provider " + request.provider()));
+          new ToolError(
+              "PROVIDER_NOT_FOUND", "No fixture data for provider " + request.provider()));
     }
     return ToolResult.success(executionId, "getProviderHealth", observedAt, data);
   }
