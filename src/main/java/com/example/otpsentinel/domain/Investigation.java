@@ -55,6 +55,41 @@ public final class Investigation {
         InvestigationId.generate(), question, resolvedTimeWindow, promptVersion, schemaVersion);
   }
 
+  /**
+   * Rehydrates an aggregate from persisted state. For repository adapters only: bypasses
+   * lifecycle/invariant checks since the state was already validated when it was first persisted.
+   */
+  public static Investigation reconstitute(
+      InvestigationId id,
+      String question,
+      TimeWindow resolvedTimeWindow,
+      String promptVersion,
+      String schemaVersion,
+      InvestigationPhase phase,
+      InvestigationStatus resultStatus,
+      Severity severity,
+      List<Evidence> evidence,
+      List<Hypothesis> hypotheses,
+      List<RecommendedAction> recommendedActions,
+      List<String> knowledgeReferences,
+      Double confidence,
+      ValidationReport validationReport,
+      List<String> toolExecutions) {
+    Investigation investigation =
+        new Investigation(id, question, resolvedTimeWindow, promptVersion, schemaVersion);
+    investigation.phase = phase;
+    investigation.resultStatus = resultStatus;
+    investigation.severity = severity;
+    investigation.evidence.addAll(evidence);
+    investigation.hypotheses = List.copyOf(hypotheses);
+    investigation.recommendedActions = List.copyOf(recommendedActions);
+    investigation.knowledgeReferences = List.copyOf(knowledgeReferences);
+    investigation.confidence = confidence;
+    investigation.validationReport = validationReport;
+    investigation.toolExecutions.addAll(toolExecutions);
+    return investigation;
+  }
+
   public void startCollectingEvidence() {
     requirePhase(InvestigationPhase.RECEIVED);
     phase = InvestigationPhase.COLLECTING_EVIDENCE;
