@@ -40,6 +40,25 @@ public final class IncidentDraft {
     return new IncidentDraft(IncidentDraftId.generate(), investigationId, payload, idempotencyKey);
   }
 
+  /**
+   * Rehydrates an aggregate from persisted state. For repository adapters only: bypasses status
+   * checks since the state was already validated when it was first persisted.
+   */
+  public static IncidentDraft reconstitute(
+      IncidentDraftId id,
+      InvestigationId investigationId,
+      String payload,
+      String idempotencyKey,
+      IncidentDraftStatus status,
+      Approval approval,
+      String externalIncidentId) {
+    IncidentDraft draft = new IncidentDraft(id, investigationId, payload, idempotencyKey);
+    draft.status = status;
+    draft.approval = approval;
+    draft.externalIncidentId = externalIncidentId;
+    return draft;
+  }
+
   public void approve(String actor) {
     requireStatus(IncidentDraftStatus.PREVIEWED);
     this.approval = new Approval(actor, Instant.now(), ApprovalDecision.APPROVE, null);
