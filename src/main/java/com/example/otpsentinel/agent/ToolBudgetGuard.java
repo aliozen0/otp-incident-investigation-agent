@@ -30,6 +30,7 @@ public final class ToolBudgetGuard {
   private final int retryCount;
   private final ExecutorService executor = Executors.newCachedThreadPool();
   private final List<CallRecord> calls = new ArrayList<>();
+  private boolean policyLimitReached;
 
   public ToolBudgetGuard(int maxCalls, Duration toolTimeout, int retryCount) {
     if (maxCalls <= 0) {
@@ -50,12 +51,15 @@ public final class ToolBudgetGuard {
 
     boolean repeatsSuccess =
         calls.stream()
-            .anyMatch(c -> c.toolName.equals(toolName) && c.paramKey.equals(paramKey) && c.succeeded);
+            .anyMatch(
+                c -> c.toolName.equals(toolName) && c.paramKey.equals(paramKey) && c.succeeded);
     if (repeatsSuccess) {
+      policyLimitReached = true;
       throw new DuplicateToolCallException(
           "duplicate successful call rejected: " + toolName + " " + paramKey);
     }
     if (calls.size() >= maxCalls) {
+      policyLimitReached = true;
       throw new ToolBudgetExceededException("tool budget of " + maxCalls + " calls exceeded");
     }
 
@@ -103,6 +107,15 @@ public final class ToolBudgetGuard {
 
   public List<String> toolNames() {
     return calls.stream().map(c -> c.toolName).toList();
+  }
+
+  /**
+   * True when an invocation was rejected by budget or successful-call deduplication. LangChain4j
+   * may turn tool exceptions into model-visible tool errors instead of propagating them, so the
+   * application layer reads this deterministic state before accepting a final analysis.
+   */
+  public boolean policyLimitReached() {
+    return policyLimitReached;
   }
 
   private record CallRecord(String toolName, String paramKey, boolean succeeded) {}

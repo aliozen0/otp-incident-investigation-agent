@@ -30,15 +30,16 @@ class ToolBudgetGuardTest {
     guard.execute("getOtpMetrics", "params-a", () -> success("exec-1"));
     assertThatThrownBy(() -> guard.execute("getQueueHealth", "params-b", () -> success("exec-2")))
         .isInstanceOf(ToolBudgetExceededException.class);
+    assertThat(guard.policyLimitReached()).isTrue();
   }
 
   @Test
   void rejectsRepeatingASuccessfulSameToolSameParamsCall() {
     ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofSeconds(2), 1);
     guard.execute("getOtpMetrics", "params-a", () -> success("exec-1"));
-    assertThatThrownBy(
-            () -> guard.execute("getOtpMetrics", "params-a", () -> success("exec-2")))
+    assertThatThrownBy(() -> guard.execute("getOtpMetrics", "params-a", () -> success("exec-2")))
         .isInstanceOf(DuplicateToolCallException.class);
+    assertThat(guard.policyLimitReached()).isTrue();
   }
 
   @Test
@@ -101,7 +102,8 @@ class ToolBudgetGuardTest {
     assertThat(guard.callCount()).isEqualTo(1);
 
     // Not blocked by dedup (the failed call didn't succeed), and counts toward the budget.
-    ToolResult<String> result = guard.execute("getQueueHealth", "params-a", () -> success("exec-1"));
+    ToolResult<String> result =
+        guard.execute("getQueueHealth", "params-a", () -> success("exec-1"));
     assertThat(result.executionId()).isEqualTo("exec-1");
     assertThat(guard.callCount()).isEqualTo(2);
 
