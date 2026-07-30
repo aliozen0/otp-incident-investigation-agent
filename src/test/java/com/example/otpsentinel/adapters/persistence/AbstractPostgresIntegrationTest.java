@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
  * tests stay independent within the single Flyway-migrated schema.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-abstract class AbstractPostgresIntegrationTest {
+public abstract class AbstractPostgresIntegrationTest {
 
   private static final DockerImageName PGVECTOR_IMAGE =
       DockerImageName.parse("pgvector/pgvector:pg16").asCompatibleSubstituteFor("postgres");
@@ -44,7 +44,8 @@ abstract class AbstractPostgresIntegrationTest {
 
   @BeforeEach
   void cleanTables() {
-    jdbcTemplate.update("TRUNCATE TABLE audit_event, incident_draft, investigation");
+    jdbcTemplate.update(
+        "TRUNCATE TABLE audit_event, incident_draft, investigation, knowledge_chunk, knowledge_document");
   }
 
   /** Simulates an application restart: a fresh adapter instance over the same, still-running DB. */
