@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Tagged {@code local-live}, excluded from the default Surefire run (pom.xml excludedGroups) —
  * mirrors {@code NvidiaNimEmbeddingServiceLiveTest}. Run explicitly with {@code
- * -Dgroups=local-live} once {@code NVIDIA_API_KEY} is exported.
+ * -Dsurefire.excludedGroups= -Dtest=NvidiaNimChatServiceLiveTest} once {@code NVIDIA_API_KEY} is
+ * exported.
  */
 @Tag("local-live")
 class NvidiaNimChatServiceLiveTest {

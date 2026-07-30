@@ -71,9 +71,7 @@ class StubChatModelTest {
                     new StubScriptStep.PlannedToolCall(
                         "getOtpMetrics",
                         Map.of(
-                            "note", "has \"quotes\" and \\backslash",
-                            "limit", 5,
-                            "urgent", true))),
+                            "note", "has \"quotes\" and \\backslash", "limit", 5, "urgent", true))),
                 StubScriptStep.finalAnswer("{}")));
     StubChatModel model = new StubChatModel(script);
     ChatRequest request =

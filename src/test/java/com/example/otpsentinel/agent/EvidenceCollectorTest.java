@@ -17,7 +17,8 @@ class EvidenceCollectorTest {
     Investigation investigation =
         Investigation.receive(
             "why did OTP success rate drop",
-            new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
+            new TimeWindow(
+                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
             "v1",
             "v1");
     investigation.startCollectingEvidence();
@@ -31,17 +32,26 @@ class EvidenceCollectorTest {
 
     OtpMetricsResult data =
         new OtpMetricsResult(
-            new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
-            12480, 8998, 3482, 72.10, 8.7,
+            new TimeWindow(
+                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
+            12480,
+            8998,
+            3482,
+            72.10,
+            8.7,
             new PeriodComparison(
-                new TimeWindow(Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z")),
-                11940, 98.10, 2.2));
+                new TimeWindow(
+                    Instant.parse("2026-07-30T11:00:00Z"), Instant.parse("2026-07-30T11:15:00Z")),
+                11940,
+                98.10,
+                2.2));
     ToolResult<OtpMetricsResult> result =
         ToolResult.success("exec-1", "getOtpMetrics", Instant.now(), data);
 
     AgentToolResponse<OtpMetricsResult> response = collector.collect(result);
 
-    assertThat(response.evidenceIds()).containsExactly("ev-otp-success-rate-current", "ev-otp-success-rate-previous");
+    assertThat(response.evidenceIds())
+        .containsExactly("ev-otp-success-rate-current", "ev-otp-success-rate-previous");
     assertThat(investigation.evidence()).hasSize(2);
     assertThat(investigation.evidence().get(0).metricValue()).isEqualTo(72.10);
     assertThat(investigation.toolExecutions()).containsExactly("exec-1");
@@ -90,9 +100,24 @@ class EvidenceCollectorTest {
     RecentChangesResult data =
         new RecentChangesResult(
             List.of(
-                new ChangeEvent("chg-101", Instant.now(), "CONFIG", "OTP_GATEWAY", "retry 3->2", null, true),
-                new ChangeEvent("chg-102", Instant.now(), "DEPLOY", "OTP_GATEWAY", "v2.4 deployed", "v2.4", true),
-                new ChangeEvent("obs-103", Instant.now(), "OBSERVATION", "OPERATOR_B_ADAPTER", "latency up", null, null)));
+                new ChangeEvent(
+                    "chg-101", Instant.now(), "CONFIG", "OTP_GATEWAY", "retry 3->2", null, true),
+                new ChangeEvent(
+                    "chg-102",
+                    Instant.now(),
+                    "DEPLOY",
+                    "OTP_GATEWAY",
+                    "v2.4 deployed",
+                    "v2.4",
+                    true),
+                new ChangeEvent(
+                    "obs-103",
+                    Instant.now(),
+                    "OBSERVATION",
+                    "OPERATOR_B_ADAPTER",
+                    "latency up",
+                    null,
+                    null)));
     ToolResult<RecentChangesResult> result =
         ToolResult.success("exec-5", "getRecentChanges", Instant.now(), data);
 
@@ -107,12 +132,15 @@ class EvidenceCollectorTest {
     EvidenceCollector collector = new EvidenceCollector(investigation);
 
     List<KnowledgeSearchResult> results =
-        List.of(new KnowledgeSearchResult("KB-1", "1", "Connection pool runbook", "KB-1#v1#c0", 0.82, "content"));
+        List.of(
+            new KnowledgeSearchResult(
+                "KB-1", "1", "Connection pool runbook", "KB-1#v1#c0", 0.82, "content"));
 
     List<KnowledgeReference> refs = collector.collectKnowledge(results);
 
     assertThat(refs).containsExactly(new KnowledgeReference("KB-1", "KB-1#v1#c0"));
     assertThat(investigation.evidence()).isEmpty();
-    assertThat(collector.knownKnowledgeReferences()).containsExactly(new KnowledgeReference("KB-1", "KB-1#v1#c0"));
+    assertThat(collector.knownKnowledgeReferences())
+        .containsExactly(new KnowledgeReference("KB-1", "KB-1#v1#c0"));
   }
 }

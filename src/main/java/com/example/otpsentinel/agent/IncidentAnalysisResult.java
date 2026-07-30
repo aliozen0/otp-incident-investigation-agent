@@ -10,8 +10,8 @@ import java.util.Objects;
 /**
  * Model-facing structured output (docs/07 "Structured result"). Deliberately drops {@code
  * timeWindow} and {@code approvalRequired} from the literal docs/07 record — both are
- * deterministically derivable by the application without asking the model to restate them (see
- * plan "Design decisions", #2).
+ * deterministically derivable by the application without asking the model to restate them (see plan
+ * "Design decisions", #2).
  */
 public record IncidentAnalysisResult(
     InvestigationStatus status,

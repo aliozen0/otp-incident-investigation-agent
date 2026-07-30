@@ -3,7 +3,10 @@ package com.example.otpsentinel.agent.stub;
 import java.util.List;
 import java.util.Objects;
 
-/** One turn of a scripted conversation: either "call these tools next" or "final answer is this JSON". */
+/**
+ * One turn of a scripted conversation: either "call these tools next" or "final answer is this
+ * JSON".
+ */
 public record StubScriptStep(List<PlannedToolCall> toolCalls, String finalAnswerJson) {
 
   public StubScriptStep {

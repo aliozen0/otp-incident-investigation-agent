@@ -138,7 +138,12 @@ public final class EvidenceCollector {
             "ev-connection-capacity",
             "TOOL_RESULT",
             "getProviderHealth",
-            p.provider() + " is using " + p.activeConnections() + "/" + p.maxConnections() + " connections",
+            p.provider()
+                + " is using "
+                + p.activeConnections()
+                + "/"
+                + p.maxConnections()
+                + " connections",
             observedAt,
             "provider_connection_capacity_ratio",
             p.activeConnections() / (double) p.maxConnections(),
@@ -156,7 +161,14 @@ public final class EvidenceCollector {
       ids.add(id);
       investigation.addEvidence(
           new Evidence(
-              id, "TOOL_RESULT", "getRecentChanges", event.description(), event.occurredAt(), null, null, null));
+              id,
+              "TOOL_RESULT",
+              "getRecentChanges",
+              event.description(),
+              event.occurredAt(),
+              null,
+              null,
+              null));
     }
     return ids;
   }

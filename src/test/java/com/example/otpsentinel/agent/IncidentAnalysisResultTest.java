@@ -29,8 +29,7 @@ class IncidentAnalysisResultTest {
 
   @Test
   void rejectsMoreThanThreeHypotheses() {
-    Hypothesis h =
-        new Hypothesis(1, "cause", 0.5, List.of("ev-1"), List.of(), List.of());
+    Hypothesis h = new Hypothesis(1, "cause", 0.5, List.of("ev-1"), List.of(), List.of());
     assertThatThrownBy(
             () ->
                 new IncidentAnalysisResult(
