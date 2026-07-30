@@ -1,0 +1,29 @@
+{
+  "project": "OTP Incident Investigation Agent",
+  "created_at": "2026-07-30",
+  "file_count": 22,
+  "files": [
+    "README.md",
+    "docs/00-project-charter.md",
+    "docs/01-product-vision.md",
+    "docs/02-prd.md",
+    "docs/03-system-requirements.md",
+    "docs/04-user-stories.md",
+    "docs/05-domain-and-architecture.md",
+    "docs/06-api-contracts.md",
+    "docs/07-agent-tool-spec.md",
+    "docs/08-rag-spec.md",
+    "docs/09-security-governance.md",
+    "docs/10-observability-slo.md",
+    "docs/11-acceptance-criteria.md",
+    "docs/12-atdd-gherkin.md",
+    "docs/13-test-strategy.md",
+    "docs/14-implementation-plan.md",
+    "docs/15-demo-fixtures.md",
+    "docs/16-adr.md",
+    "docs/17-traceability-risk-dod.md",
+    "docs/18-demo-interview-guide.md",
+    "docs/19-technology-baseline.md",
+    "docs/20-git-workflow.md"
+  ]
+}

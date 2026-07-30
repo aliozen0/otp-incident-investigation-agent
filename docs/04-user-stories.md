@@ -1,0 +1,109 @@
+# 04 — User Stories and Use Cases
+
+## Epic E-01 — OTP olayını araştırma
+
+### US-001
+
+Bir operasyon çalışanı olarak OTP düşüşünü doğal dilde sorabilmek istiyorum; böylece farklı ekranlarda manuel araştırma başlatmam.
+
+### US-002
+
+Mevcut dönemin önceki eşit dönemle karşılaştırılmasını istiyorum; böylece değişimin büyüklüğünü görürüm.
+
+### US-003
+
+Provider bazlı başarısızlık dağılımını görmek istiyorum; böylece sorunun genel mi yerel mi olduğunu anlarım.
+
+### US-004
+
+Kuyruk ve consumer sağlığını görmek istiyorum; böylece iç sistem problemini değerlendirebilirim.
+
+### US-005
+
+Deploy/config değişikliklerinin olay başlangıcına yakınlığını görmek istiyorum; böylece inceleme önceliğini belirlerim.
+
+### US-006
+
+Benzer geçmiş incident ve runbook'ları görmek istiyorum; böylece kurumsal bilgi tekrar kullanılır.
+
+## Epic E-02 — Güvenilir analiz
+
+### US-007
+
+Her bulgunun kaynağını görmek istiyorum; böylece AI cevabına körü körüne güvenmem.
+
+### US-008
+
+Doğrulanmamış kök nedenin kesin gerçek olarak sunulmamasını istiyorum.
+
+### US-009
+
+Veri eksikse sistemin bunu açıkça söylemesini istiyorum.
+
+### US-010
+
+Sonucun sabit JSON şemasında olmasını istiyorum; böylece istemciler güvenilir işler.
+
+## Epic E-03 — Incident taslağı
+
+### US-011
+
+Analizden incident taslağı önizlemek istiyorum.
+
+### US-012
+
+Kalıcı taslak oluşmadan açık onay vermek istiyorum.
+
+### US-013
+
+Ağ tekrarı nedeniyle iki incident oluşmamasını istiyorum.
+
+## UC-01 — Ana incident araştırması
+
+### Ön koşullar
+
+- Uygulama çalışır.
+- `OTP-DROP-001` yüklüdür.
+- Knowledge base ingest edilmiştir.
+- Kullanıcı investigation yetkisine sahiptir.
+
+### Ana akış
+
+1. Kullanıcı soruyu gönderir.
+2. Sistem `14:15–14:30` aralığını çözer.
+3. Genel metrikleri ve önceki dönemi getirir.
+4. Anormallik doğrulanır.
+5. Error distribution getirilir.
+6. Provider health getirilir.
+7. Queue health kontrol edilir.
+8. Recent changes getirilir.
+9. RAG benzer incident'ı getirir.
+10. Structured result üretilir.
+11. Evidence ve policy validation yapılır.
+12. Sonuç döndürülür.
+
+### Başarılı sonuç
+
+- `ANOMALY_CONFIRMED`
+- `HIGH`
+- Operatör B etkisi
+- Connection pool birinci hipotez
+- Queue issue birinci hipotez değil
+- Onaysız write yok
+
+### Alternatifler
+
+- Anormallik yok: `NO_ANOMALY`
+- Provider tool timeout: `PARTIAL_ANALYSIS`
+- RAG sonucu yok: live evidence ile warning
+- Structured output iki kez bozuk: `FAILED`
+
+## UC-02 — Incident onayı
+
+1. Kullanıcı preview ister.
+2. Sistem payload gösterir; incident yaratmaz.
+3. Yetkili kullanıcı `APPROVE` + idempotency key gönderir.
+4. Sistem yetki ve snapshot'ı doğrular.
+5. Taslak oluşturulur ve audit edilir.
+6. Aynı key tekrarında eski ID döner.
+7. `REJECT` durumunda incident oluşmaz.
