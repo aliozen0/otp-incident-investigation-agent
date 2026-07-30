@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: otp-sentinel
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/otpsentinel}
+    username: ${SPRING_DATASOURCE_USERNAME:otpsentinel}
+    password: ${SPRING_DATASOURCE_PASSWORD:otpsentinel}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+server:
+  port: ${SERVER_PORT:8080}
+
+otp-sentinel:
+  ai:
+    mode: ${AI_MODE:stub}
+    max-tool-calls: ${AI_MAX_TOOL_CALLS:8}
+    max-repair-attempts: ${AI_MAX_REPAIR_ATTEMPTS:1}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
+  rag:
+    top-k: ${RAG_TOP_K:5}
+    min-score: ${RAG_MIN_SCORE:0.70}
+  investigation:
+    max-seconds: ${INVESTIGATION_MAX_SECONDS:30}
+  tool:
+    timeout-millis: ${TOOL_TIMEOUT_MILLIS:2000}
+    retry-count: ${TOOL_RETRY_COUNT:1}
+  demo:
+    fixture: ${DEMO_FIXTURE:OTP-DROP-001}

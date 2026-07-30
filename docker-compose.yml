@@ -1,0 +1,41 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-otpsentinel}
+      POSTGRES_USER: ${POSTGRES_USER:-otpsentinel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-otpsentinel}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-otpsentinel} -d ${POSTGRES_DB:-otpsentinel}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-otpsentinel}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-otpsentinel}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-otpsentinel}
+      AI_MODE: ${AI_MODE:-stub}
+      AI_MAX_TOOL_CALLS: ${AI_MAX_TOOL_CALLS:-8}
+      AI_MAX_REPAIR_ATTEMPTS: ${AI_MAX_REPAIR_ATTEMPTS:-1}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-20}
+      RAG_TOP_K: ${RAG_TOP_K:-5}
+      RAG_MIN_SCORE: ${RAG_MIN_SCORE:-0.70}
+      INVESTIGATION_MAX_SECONDS: ${INVESTIGATION_MAX_SECONDS:-30}
+      TOOL_TIMEOUT_MILLIS: ${TOOL_TIMEOUT_MILLIS:-2000}
+      TOOL_RETRY_COUNT: ${TOOL_RETRY_COUNT:-1}
+      DEMO_FIXTURE: ${DEMO_FIXTURE:-OTP-DROP-001}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
