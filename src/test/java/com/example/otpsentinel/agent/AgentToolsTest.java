@@ -1,6 +1,7 @@
 package com.example.otpsentinel.agent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.TimeWindow;
@@ -21,7 +22,8 @@ class AgentToolsTest {
     Investigation investigation =
         Investigation.receive(
             "why did OTP success rate drop",
-            new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
+            new TimeWindow(
+                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
             "v1",
             "v1");
     investigation.startCollectingEvidence();
@@ -41,11 +43,14 @@ class AgentToolsTest {
             collector);
 
     AgentToolResponse<?> response =
-        tools.getOtpMetrics(
-            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"), true);
+        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", true);
 
     assertThat(response.status()).isEqualTo(ToolStatus.SUCCESS);
     assertThat(response.evidenceIds()).contains("ev-otp-success-rate-current");
+    assertThat(guard.callCount()).isEqualTo(1);
+    assertThatThrownBy(() -> tools.getOtpMetrics("not-an-instant", "2026-07-30T11:30:00Z", true))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("startAt must be an ISO-8601 UTC instant");
     assertThat(guard.callCount()).isEqualTo(1);
   }
 
@@ -54,7 +59,8 @@ class AgentToolsTest {
     Investigation investigation =
         Investigation.receive(
             "why did OTP success rate drop",
-            new TimeWindow(Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
+            new TimeWindow(
+                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
             "v1",
             "v1");
     investigation.startCollectingEvidence();
@@ -63,7 +69,9 @@ class AgentToolsTest {
     FixtureScenario scenario = FixtureCatalog.forFixture(FixtureId.OTP_DROP_001);
     KnowledgeSearchPort port =
         (query, provider, topK) ->
-            List.of(new KnowledgeSearchResult("KB-1", "1", "Connection pool runbook", "KB-1#v1#c0", 0.82, "content"));
+            List.of(
+                new KnowledgeSearchResult(
+                    "KB-1", "1", "Connection pool runbook", "KB-1#v1#c0", 0.82, "content"));
 
     AgentTools tools =
         new AgentTools(
@@ -76,7 +84,8 @@ class AgentToolsTest {
             guard,
             collector);
 
-    List<KnowledgeReference> refs = tools.searchIncidentKnowledge("connection pool timeout", "OPERATOR_B", 5);
+    List<KnowledgeReference> refs =
+        tools.searchIncidentKnowledge("connection pool timeout", "OPERATOR_B", 5);
 
     assertThat(refs).containsExactly(new KnowledgeReference("KB-1", "KB-1#v1#c0"));
     assertThat(investigation.evidence()).isEmpty();

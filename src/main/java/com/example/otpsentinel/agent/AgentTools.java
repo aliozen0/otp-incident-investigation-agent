@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Binds the M2 fixture tool ports and M4's {@link KnowledgeSearchPort} as LangChain4j {@code
- * @Tool} methods. Every call is routed through {@link ToolBudgetGuard} (budget/dedup/timeout,
- * enforced outside the framework) and {@link EvidenceCollector} (application-minted evidence ids,
- * ADR-008). {@code createIncidentDraft} (T-007) is intentionally absent — docs/07: "Normal agent
- * tool setine açık değildir."
+ * Binds the M2 fixture tool ports and M4's {@link KnowledgeSearchPort} as LangChain4j {@code @Tool}
+ * methods. Every call is routed through {@link ToolBudgetGuard} (budget/dedup/timeout, enforced
+ * outside the framework) and {@link EvidenceCollector} (application-minted evidence ids, ADR-008).
+ * {@code createIncidentDraft} (T-007) is intentionally absent — docs/07: "Normal agent tool setine
+ * açık değildir."
  */
 public final class AgentTools {
 
@@ -44,22 +44,32 @@ public final class AgentTools {
     this.collector = Objects.requireNonNull(collector);
   }
 
-  @Tool("Get OTP delivery metrics (total/delivered/failed/success rate) for a time window, optionally including the previous period for comparison")
+  @Tool(
+      "Get OTP delivery metrics (total/delivered/failed/success rate) for a time window, optionally including the previous period for comparison")
   public AgentToolResponse<OtpMetricsResult> getOtpMetrics(
-      Instant startAt, Instant endAt, boolean includePreviousPeriod) {
-    OtpMetricsRequest request = new OtpMetricsRequest(startAt, endAt, includePreviousPeriod);
+      String startAt, String endAt, boolean includePreviousPeriod) {
+    OtpMetricsRequest request =
+        new OtpMetricsRequest(
+            parseInstant(startAt, "startAt"), parseInstant(endAt, "endAt"), includePreviousPeriod);
     ToolResult<OtpMetricsResult> result =
         guard.execute("getOtpMetrics", request, () -> otpMetricsTool.getOtpMetrics(request));
     return collector.collect(result);
   }
 
-  @Tool("Get OTP failure breakdown by error code and provider for a time window, optionally filtered to one provider")
+  @Tool(
+      "Get OTP failure breakdown by error code and provider for a time window, optionally filtered to one provider")
   public AgentToolResponse<ErrorDistributionResult> getErrorDistribution(
-      Instant startAt, Instant endAt, String provider) {
-    ErrorDistributionRequest request = new ErrorDistributionRequest(startAt, endAt, provider);
+      String startAt, String endAt, String provider) {
+    ErrorDistributionRequest request =
+        new ErrorDistributionRequest(
+            parseInstant(startAt, "startAt"),
+            parseInstant(endAt, "endAt"),
+            optionalFilter(provider));
     ToolResult<ErrorDistributionResult> result =
         guard.execute(
-            "getErrorDistribution", request, () -> errorDistributionTool.getErrorDistribution(request));
+            "getErrorDistribution",
+            request,
+            () -> errorDistributionTool.getErrorDistribution(request));
     return collector.collect(result);
   }
 
@@ -70,25 +80,33 @@ public final class AgentTools {
     return collector.collect(result);
   }
 
-  @Tool("Get a single provider's health (response time, timeout rate, circuit breaker state, connection pool usage) for a time window")
+  @Tool(
+      "Get a single provider's health (response time, timeout rate, circuit breaker state, connection pool usage) for a time window")
   public AgentToolResponse<ProviderHealthResult> getProviderHealth(
-      String provider, Instant startAt, Instant endAt) {
-    ProviderHealthRequest request = new ProviderHealthRequest(provider, startAt, endAt);
+      String provider, String startAt, String endAt) {
+    ProviderHealthRequest request =
+        new ProviderHealthRequest(
+            provider, parseInstant(startAt, "startAt"), parseInstant(endAt, "endAt"));
     ToolResult<ProviderHealthResult> result =
-        guard.execute("getProviderHealth", request, () -> providerHealthTool.getProviderHealth(request));
+        guard.execute(
+            "getProviderHealth", request, () -> providerHealthTool.getProviderHealth(request));
     return collector.collect(result);
   }
 
   @Tool("Get recent config/deploy/observation changes for a component within a time window")
   public AgentToolResponse<RecentChangesResult> getRecentChanges(
-      Instant from, Instant to, String component) {
-    RecentChangesRequest request = new RecentChangesRequest(from, to, component);
+      String from, String to, String component) {
+    RecentChangesRequest request =
+        new RecentChangesRequest(
+            parseInstant(from, "from"), parseInstant(to, "to"), optionalFilter(component));
     ToolResult<RecentChangesResult> result =
-        guard.execute("getRecentChanges", request, () -> recentChangesTool.getRecentChanges(request));
+        guard.execute(
+            "getRecentChanges", request, () -> recentChangesTool.getRecentChanges(request));
     return collector.collect(result);
   }
 
-  @Tool("Search incident knowledge base (runbooks, prior incidents) for relevant guidance, optionally filtered to a provider")
+  @Tool(
+      "Search incident knowledge base (runbooks, prior incidents) for relevant guidance, optionally filtered to a provider")
   public List<KnowledgeReference> searchIncidentKnowledge(
       String query, String providerFilter, int topK) {
     var searchResults =
@@ -102,5 +120,17 @@ public final class AgentTools {
                     Instant.now(),
                     knowledgeSearchPort.searchIncidentKnowledge(query, providerFilter, topK)));
     return collector.collectKnowledge(searchResults.data());
+  }
+
+  private static Instant parseInstant(String value, String parameterName) {
+    try {
+      return Instant.parse(value);
+    } catch (RuntimeException e) {
+      throw new IllegalArgumentException(parameterName + " must be an ISO-8601 UTC instant", e);
+    }
+  }
+
+  private static String optionalFilter(String value) {
+    return value == null || value.isBlank() ? null : value;
   }
 }
