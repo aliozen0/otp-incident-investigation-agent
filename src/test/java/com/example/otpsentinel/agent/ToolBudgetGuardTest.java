@@ -87,6 +87,30 @@ class ToolBudgetGuardTest {
   }
 
   @Test
+  void countsAndAllowsRetryOfACallThatExhaustsRetriesAndThrows() {
+    ToolBudgetGuard guard = new ToolBudgetGuard(2, Duration.ofSeconds(2), 1);
+    assertThatThrownBy(
+            () ->
+                guard.execute(
+                    "getQueueHealth",
+                    "params-a",
+                    () -> {
+                      throw new RuntimeException("always fails");
+                    }))
+        .isInstanceOf(RuntimeException.class);
+    assertThat(guard.callCount()).isEqualTo(1);
+
+    // Not blocked by dedup (the failed call didn't succeed), and counts toward the budget.
+    ToolResult<String> result = guard.execute("getQueueHealth", "params-a", () -> success("exec-1"));
+    assertThat(result.executionId()).isEqualTo("exec-1");
+    assertThat(guard.callCount()).isEqualTo(2);
+
+    // Budget is now exhausted (maxCalls=2); use different params so dedup isn't what trips it.
+    assertThatThrownBy(() -> guard.execute("getQueueHealth", "params-b", () -> success("exec-2")))
+        .isInstanceOf(ToolBudgetExceededException.class);
+  }
+
+  @Test
   void timesOutAfterConfiguredDuration() {
     ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofMillis(100), 0);
     assertThatThrownBy(

@@ -59,9 +59,14 @@ public final class ToolBudgetGuard {
       throw new ToolBudgetExceededException("tool budget of " + maxCalls + " calls exceeded");
     }
 
-    ToolResult<T> result = invokeWithTimeoutAndRetry(invocation);
-    calls.add(new CallRecord(toolName, paramKey, result.status() == ToolStatus.SUCCESS));
-    return result;
+    try {
+      ToolResult<T> result = invokeWithTimeoutAndRetry(invocation);
+      calls.add(new CallRecord(toolName, paramKey, result.status() == ToolStatus.SUCCESS));
+      return result;
+    } catch (RuntimeException e) {
+      calls.add(new CallRecord(toolName, paramKey, false));
+      throw e;
+    }
   }
 
   private <T> ToolResult<T> invokeWithTimeoutAndRetry(Supplier<ToolResult<T>> invocation) {
