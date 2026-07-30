@@ -134,7 +134,7 @@ class OtpDropOneOhOneEndToEndTest {
                        "description":"Inspect OPERATOR_B connection pool sizing","risk":"MEDIUM",
                        "requiresApproval":false,"executionMode":"MANUAL_CHECK"}],
                      "knowledgeReferences":[{"documentId":"INC-2026-041","chunkId":"INC-2026-041#v1#c0"}],
-                     "confidence":0.75}
+                     "confidence":0.85}
                     """)));
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
@@ -164,6 +164,7 @@ class OtpDropOneOhOneEndToEndTest {
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
     assertThat(outcome.severity()).isEqualTo(Severity.HIGH);
+    assertThat(outcome.confidence()).isBetween(0.80, 0.92);
     assertThat(metric(outcome, "ev-otp-success-rate-current")).isEqualTo(72.10);
     assertThat(metric(outcome, "ev-otp-success-rate-previous")).isEqualTo(98.10);
     assertThat(outcome.knowledgeReferences()).containsExactly("INC-2026-041");
