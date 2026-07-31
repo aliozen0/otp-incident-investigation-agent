@@ -22,6 +22,7 @@ public final class EvidenceCollector {
 
   private final Investigation investigation;
   private final AuditEventRepository auditEventRepository;
+  private final String correlationId;
   private final ContentSanitizer contentSanitizer = new ContentSanitizer();
   private final List<KnowledgeReference> knownKnowledgeReferences = new ArrayList<>();
 
@@ -36,17 +37,58 @@ public final class EvidenceCollector {
    * records a security signal; it never changes tool policy or the investigation outcome.
    */
   public EvidenceCollector(Investigation investigation, AuditEventRepository auditEventRepository) {
+    this(investigation, auditEventRepository, null);
+  }
+
+  public EvidenceCollector(
+      Investigation investigation,
+      AuditEventRepository auditEventRepository,
+      String correlationId) {
     this.investigation = Objects.requireNonNull(investigation, "investigation must not be null");
     this.auditEventRepository = auditEventRepository;
+    this.correlationId = correlationId;
   }
 
   public <T> AgentToolResponse<T> collect(ToolResult<T> result) {
     investigation.recordToolExecution(result.executionId());
+    auditToolCalled(result.toolName());
     if (result.status() != ToolStatus.SUCCESS) {
+      auditToolOutcome(AuditEventType.TOOL_FAILED, result.toolName(), result.error().message());
       return new AgentToolResponse<>(result.status(), null, List.of(), result.error().message());
     }
     List<String> ids = mintEvidence(result);
+    auditToolOutcome(AuditEventType.TOOL_COMPLETED, result.toolName(), "ids=" + ids);
     return new AgentToolResponse<>(result.status(), result.data(), ids, null);
+  }
+
+  private void auditToolCalled(String toolName) {
+    if (auditEventRepository == null || correlationId == null) {
+      return;
+    }
+    auditEventRepository.append(
+        AuditEvent.of(
+            "system",
+            AuditEventType.TOOL_CALLED,
+            investigation.id(),
+            null,
+            correlationId,
+            "tool=" + toolName,
+            investigation.promptVersion()));
+  }
+
+  private void auditToolOutcome(AuditEventType type, String toolName, String result) {
+    if (auditEventRepository == null || correlationId == null) {
+      return;
+    }
+    auditEventRepository.append(
+        AuditEvent.of(
+            "system",
+            type,
+            investigation.id(),
+            null,
+            correlationId,
+            "tool=" + toolName + " " + result,
+            investigation.promptVersion()));
   }
 
   public List<KnowledgeReference> collectKnowledge(List<KnowledgeSearchResult> results) {
