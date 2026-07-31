@@ -61,18 +61,18 @@
 
 ## MVP release checklist
 
-- [ ] `mvn verify`
-- [ ] Unit/integration/ATDD pass
-- [ ] Testcontainers pgvector pass
+- [x] `mvn verify`
+- [x] Unit/integration/ATDD pass
+- [x] Testcontainers pgvector pass
 - [ ] `docker compose up --build`
 - [ ] Health UP
-- [ ] Ana fixture doğru
-- [ ] INC-2026-041 citation
-- [ ] Onaysız incident yok
+- [x] Ana fixture doğru
+- [x] INC-2026-041 citation
+- [x] Onaysız incident yok
 - [ ] Idempotency pass
 - [ ] Prompt injection pass
-- [ ] Tool budget pass
-- [ ] Stub API key olmadan çalışır
+- [x] Tool budget pass
+- [x] Stub API key olmadan çalışır
 - [ ] README quickstart
 - [ ] 5–7 dakika demo
 - [ ] Secret scan temiz
