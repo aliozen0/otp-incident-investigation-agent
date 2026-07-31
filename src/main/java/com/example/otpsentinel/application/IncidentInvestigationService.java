@@ -2,7 +2,6 @@ package com.example.otpsentinel.application;
 
 import com.example.otpsentinel.agent.DuplicateToolCallException;
 import com.example.otpsentinel.agent.EvidenceCollector;
-import com.example.otpsentinel.agent.EvidenceReference;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
 import com.example.otpsentinel.agent.IncidentAnalysisResult;
 import com.example.otpsentinel.agent.KnowledgeReference;
@@ -11,6 +10,7 @@ import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.ValidationReport;
+import com.example.otpsentinel.domain.ValidationStatus;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 public final class IncidentInvestigationService {
 
   private final int maxRepairAttempts;
+  private final ClaimValidator claimValidator = new ClaimValidator();
 
   public IncidentInvestigationService(int maxRepairAttempts) {
     if (maxRepairAttempts < 0 || maxRepairAttempts > 1) {
@@ -62,8 +63,9 @@ public final class IncidentInvestigationService {
 
     IncidentAnalysisResult analysis = attempt.analysis();
     investigation.startGeneratingAnalysis();
-    if (citesUnknownEvidence(analysis, collector.knownEvidenceIds())) {
-      investigation.fail("analysis cited an evidence id that was never collected");
+    ValidationReport claimReport = claimValidator.validate(analysis, investigation.evidence());
+    if (claimReport.status() == ValidationStatus.FAILED) {
+      investigation.fail(claimReport.warnings().getFirst());
       return investigation;
     }
 
@@ -77,7 +79,7 @@ public final class IncidentInvestigationService {
           acceptedKnowledgeReferences,
           analysis.confidence());
       investigation.startValidating();
-      finish(investigation, analysis);
+      finish(investigation, analysis, claimReport.warnings());
     } catch (IllegalArgumentException | IllegalStateException e) {
       investigation.fail("analysis rejected by deterministic validation");
     }
@@ -113,21 +115,6 @@ public final class IncidentInvestigationService {
     return false;
   }
 
-  private static boolean citesUnknownEvidence(
-      IncidentAnalysisResult analysis, List<String> knownEvidenceIds) {
-    Set<String> known = new HashSet<>(knownEvidenceIds);
-    Stream<String> resultCitations =
-        analysis.evidence().stream().map(EvidenceReference::evidenceId);
-    Stream<String> hypothesisCitations =
-        analysis.hypotheses().stream()
-            .flatMap(
-                hypothesis ->
-                    Stream.concat(
-                        hypothesis.supportingEvidenceIds().stream(),
-                        hypothesis.contradictingEvidenceIds().stream()));
-    return Stream.concat(resultCitations, hypothesisCitations).anyMatch(id -> !known.contains(id));
-  }
-
   private static List<String> filterKnownKnowledgeReferences(
       List<KnowledgeReference> requested, EvidenceCollector collector) {
     Set<KnowledgeReference> known = new HashSet<>(collector.knownKnowledgeReferences());
@@ -138,16 +125,21 @@ public final class IncidentInvestigationService {
         .toList();
   }
 
-  private static void finish(Investigation investigation, IncidentAnalysisResult analysis) {
+  private static void finish(
+      Investigation investigation, IncidentAnalysisResult analysis, List<String> claimWarnings) {
     if (analysis.status() == InvestigationStatus.FAILED) {
       investigation.fail("model reported failed analysis");
     } else if (analysis.status() == InvestigationStatus.PARTIAL_ANALYSIS) {
       investigation.partial(
           InvestigationStatus.PARTIAL_ANALYSIS,
-          ValidationReport.passed(List.of("analysis is partial")));
+          ValidationReport.passed(prepend("analysis is partial", claimWarnings)));
     } else {
-      investigation.complete(analysis.status(), ValidationReport.passed(List.of()));
+      investigation.complete(analysis.status(), ValidationReport.passed(claimWarnings));
     }
+  }
+
+  private static List<String> prepend(String first, List<String> rest) {
+    return Stream.concat(Stream.of(first), rest.stream()).toList();
   }
 
   private static void requireMatchingRequest(

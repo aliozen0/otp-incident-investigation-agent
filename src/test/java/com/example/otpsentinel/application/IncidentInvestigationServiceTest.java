@@ -143,6 +143,33 @@ class IncidentInvestigationServiceTest {
   }
 
   @Test
+  void forbiddenAutomaticActionIsRejectedAsFailure() {
+    String autoRollback =
+        """
+        {"status":"ANOMALY_CONFIRMED","severity":"MEDIUM","summary":"queue is degraded",
+         "evidence":[{"evidenceId":"ev-queue-health"}],"hypotheses":[
+          {"rank":1,"possibleCause":"queue backlog","probability":0.6,
+           "supportingEvidenceIds":["ev-queue-health"],"contradictingEvidenceIds":[],
+           "verificationSteps":[]}],
+         "recommendedActions":[{"actionType":"ROLLBACK","description":"roll back now",
+           "risk":"MEDIUM","requiresApproval":false,"executionMode":"MANUAL_CHECK"}],
+         "knowledgeReferences":[],"confidence":0.6}
+        """;
+    TestContext context =
+        context(
+            8,
+            (query, provider, topK) -> List.of(),
+            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+            StubScriptStep.finalAnswer(autoRollback));
+
+    Investigation outcome = investigate(context);
+
+    assertThat(outcome.phase()).isEqualTo(InvestigationPhase.FAILED);
+    assertThat(outcome.validationReport().warnings().getFirst())
+        .contains("FORBIDDEN_AUTOMATIC_ACTION");
+  }
+
+  @Test
   void requestRejectsBlankQuestion() {
     assertThatThrownBy(() -> new InvestigationRequest(" ", window(), "v1", "v1"))
         .isInstanceOf(IllegalArgumentException.class);
