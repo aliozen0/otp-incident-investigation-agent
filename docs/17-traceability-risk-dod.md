@@ -70,7 +70,7 @@
 - [x] INC-2026-041 citation
 - [x] Onaysız incident yok
 - [ ] Idempotency pass
-- [ ] Prompt injection pass
+- [x] Prompt injection pass
 - [x] Tool budget pass
 - [x] Stub API key olmadan çalışır
 - [ ] README quickstart

@@ -1,7 +1,11 @@
 package com.example.otpsentinel.agent;
 
+import com.example.otpsentinel.domain.AuditEvent;
+import com.example.otpsentinel.domain.AuditEventRepository;
+import com.example.otpsentinel.domain.AuditEventType;
 import com.example.otpsentinel.domain.Evidence;
 import com.example.otpsentinel.domain.Investigation;
+import com.example.otpsentinel.rag.ContentSanitizer;
 import com.example.otpsentinel.rag.KnowledgeSearchResult;
 import com.example.otpsentinel.tools.*;
 import java.time.Instant;
@@ -17,10 +21,23 @@ import java.util.Objects;
 public final class EvidenceCollector {
 
   private final Investigation investigation;
+  private final AuditEventRepository auditEventRepository;
+  private final ContentSanitizer contentSanitizer = new ContentSanitizer();
   private final List<KnowledgeReference> knownKnowledgeReferences = new ArrayList<>();
 
   public EvidenceCollector(Investigation investigation) {
+    this(investigation, null);
+  }
+
+  /**
+   * M6: when {@code auditEventRepository} is given, retrieved knowledge content carrying
+   * ContentSanitizer's instruction-pattern signal is audited as {@link
+   * AuditEventType#PROMPT_INJECTION_SIGNAL} (docs/12 "Ignore embedded instruction"). This only
+   * records a security signal; it never changes tool policy or the investigation outcome.
+   */
+  public EvidenceCollector(Investigation investigation, AuditEventRepository auditEventRepository) {
     this.investigation = Objects.requireNonNull(investigation, "investigation must not be null");
+    this.auditEventRepository = auditEventRepository;
   }
 
   public <T> AgentToolResponse<T> collect(ToolResult<T> result) {
@@ -33,10 +50,28 @@ public final class EvidenceCollector {
   }
 
   public List<KnowledgeReference> collectKnowledge(List<KnowledgeSearchResult> results) {
+    if (auditEventRepository != null) {
+      results.forEach(this::auditIfInstructionPattern);
+    }
     List<KnowledgeReference> refs =
         results.stream().map(r -> new KnowledgeReference(r.documentId(), r.chunkId())).toList();
     knownKnowledgeReferences.addAll(refs);
     return refs;
+  }
+
+  private void auditIfInstructionPattern(KnowledgeSearchResult result) {
+    if (!contentSanitizer.hasInstructionPattern(result.content())) {
+      return;
+    }
+    auditEventRepository.append(
+        AuditEvent.of(
+            "system",
+            AuditEventType.PROMPT_INJECTION_SIGNAL,
+            investigation.id(),
+            null,
+            result.documentId() + "#" + result.chunkId(),
+            "retrieved knowledge chunk matched instruction-pattern heuristic",
+            investigation.promptVersion()));
   }
 
   public List<KnowledgeReference> knownKnowledgeReferences() {
