@@ -253,6 +253,36 @@ class EvidenceCollectorTest {
         .containsExactly(AuditEventType.TOOL_CALLED, AuditEventType.TOOL_FAILED);
   }
 
+  @Test
+  void auditsRagCompletedOnKnowledgeCollection() {
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+    Investigation investigation = Investigation.receive("q", window, "v1", "v1");
+    investigation.startCollectingEvidence();
+    List<AuditEvent> captured = new ArrayList<>();
+    AuditEventRepository auditRepo =
+        new AuditEventRepository() {
+          public void append(AuditEvent event) {
+            captured.add(event);
+          }
+
+          public List<AuditEvent> findByInvestigationId(InvestigationId id) {
+            return List.of();
+          }
+        };
+    EvidenceCollector collector = new EvidenceCollector(investigation, auditRepo, "corr-3");
+
+    collector.collectKnowledge(
+        List.of(
+            new KnowledgeSearchResult(
+                "INC-2026-041", "1", "title", "chunk-0", 0.9, "benign content")));
+
+    assertThat(captured)
+        .extracting(AuditEvent::action)
+        .containsExactly(AuditEventType.RAG_COMPLETED);
+  }
+
   private static final class InMemoryAuditEventRepository implements AuditEventRepository {
     private final List<AuditEvent> events = new ArrayList<>();
 

@@ -7,6 +7,9 @@ import com.example.otpsentinel.agent.IncidentAnalysisResult;
 import com.example.otpsentinel.agent.KnowledgeReference;
 import com.example.otpsentinel.agent.ToolBudgetExceededException;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
+import com.example.otpsentinel.domain.AuditEvent;
+import com.example.otpsentinel.domain.AuditEventRepository;
+import com.example.otpsentinel.domain.AuditEventType;
 import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.ValidationReport;
@@ -40,6 +43,17 @@ public final class IncidentInvestigationService {
       IncidentAnalysisAiService aiService,
       ToolBudgetGuard guard,
       EvidenceCollector collector) {
+    return investigate(request, investigation, aiService, guard, collector, null, null);
+  }
+
+  public Investigation investigate(
+      InvestigationRequest request,
+      Investigation investigation,
+      IncidentAnalysisAiService aiService,
+      ToolBudgetGuard guard,
+      EvidenceCollector collector,
+      AuditEventRepository auditEventRepository,
+      String correlationId) {
     Objects.requireNonNull(request, "request must not be null");
     Objects.requireNonNull(investigation, "investigation must not be null");
     Objects.requireNonNull(aiService, "aiService must not be null");
@@ -60,11 +74,18 @@ public final class IncidentInvestigationService {
           "structured output invalid after " + maxRepairAttempts + " repair attempt(s)");
       return investigation;
     }
+    audit(auditEventRepository, AuditEventType.LLM_COMPLETED, investigation, correlationId, "ok");
 
     IncidentAnalysisResult analysis = attempt.analysis();
     investigation.startGeneratingAnalysis();
     ValidationReport claimReport = claimValidator.validate(analysis, investigation.evidence());
     if (claimReport.status() == ValidationStatus.FAILED) {
+      audit(
+          auditEventRepository,
+          AuditEventType.VALIDATION_FAILED,
+          investigation,
+          correlationId,
+          claimReport.warnings().getFirst());
       investigation.fail(claimReport.warnings().getFirst());
       return investigation;
     }
@@ -80,10 +101,42 @@ public final class IncidentInvestigationService {
           analysis.confidence());
       investigation.startValidating();
       finish(investigation, analysis, claimReport.warnings());
+      audit(
+          auditEventRepository,
+          AuditEventType.VALIDATION_PASSED,
+          investigation,
+          correlationId,
+          "ok");
     } catch (IllegalArgumentException | IllegalStateException e) {
+      audit(
+          auditEventRepository,
+          AuditEventType.VALIDATION_FAILED,
+          investigation,
+          correlationId,
+          "analysis rejected by deterministic validation");
       investigation.fail("analysis rejected by deterministic validation");
     }
     return investigation;
+  }
+
+  private static void audit(
+      AuditEventRepository repo,
+      AuditEventType type,
+      Investigation investigation,
+      String correlationId,
+      String result) {
+    if (repo == null || correlationId == null) {
+      return;
+    }
+    repo.append(
+        AuditEvent.of(
+            "system",
+            type,
+            investigation.id(),
+            null,
+            correlationId,
+            result,
+            investigation.promptVersion()));
   }
 
   private AnalysisAttempt callWithRepair(

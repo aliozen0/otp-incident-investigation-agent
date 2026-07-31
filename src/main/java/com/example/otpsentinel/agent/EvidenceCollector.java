@@ -98,6 +98,17 @@ public final class EvidenceCollector {
     List<KnowledgeReference> refs =
         results.stream().map(r -> new KnowledgeReference(r.documentId(), r.chunkId())).toList();
     knownKnowledgeReferences.addAll(refs);
+    if (auditEventRepository != null && correlationId != null) {
+      auditEventRepository.append(
+          AuditEvent.of(
+              "system",
+              AuditEventType.RAG_COMPLETED,
+              investigation.id(),
+              null,
+              correlationId,
+              "results=" + refs.size(),
+              investigation.promptVersion()));
+    }
     return refs;
   }
 
