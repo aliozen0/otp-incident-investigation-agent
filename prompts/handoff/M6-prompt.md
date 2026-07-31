@@ -2,6 +2,8 @@
 
 Önce: `git checkout main && git pull && git checkout -b milestone/M6-validation-governance` (bkz. `docs/20-git-workflow.md`).
 
+**Süreç:** M5'te olduğu gibi çalış — `superpowers:writing-plans` ile bu milestone'u küçük, sıralı task'lara böl (M5'in planı: `docs/superpowers/plans/2026-07-30-m5-agent-orchestration.md`, örnek format için bak), sonra `superpowers:subagent-driven-development` ile her task'ı taze bir implementer subagent'a yaptır + ayrı bir reviewer subagent'a gözden geçirt, gerekirse fix-loop uygula. Her task kendi commit'ini alsın. Context limiti dolarsa M5'teki gibi (`prompts/handoff/M5-session-status.md` örneği) bir `M6-session-status.md` yazıp durabilirsin, devam oturumu oradan sürer.
+
 Kaynak: `docs/14-implementation-plan.md` → **M6 — Validation/governance**.
 
 İlgili spec dosyaları: `docs/07-agent-tool-spec.md` ("Validation pipeline" — 9 adım listesi), `docs/09-security-governance.md` ("Deterministik output kontrolleri", PII/prompt injection), `docs/11-acceptance-criteria.md` (AC-012, AC-013, AC-021, AC-022, AC-023, AC-028), `docs/12-atdd-gherkin.md` ("Evidence validation" ve "Prompt injection" feature'ları).
