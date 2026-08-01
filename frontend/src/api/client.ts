@@ -29,7 +29,21 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
   })
 
   if (!response.ok) {
-    const problemDetails = (await response.json()) as ProblemDetails
+    let problemDetails: ProblemDetails
+    try {
+      problemDetails = (await response.json()) as ProblemDetails
+    } catch {
+      // Fallback when error response body isn't valid JSON (e.g., 502 gateway, 504 load balancer)
+      problemDetails = {
+        type: 'about:blank',
+        title: response.statusText || 'Request failed',
+        status: response.status,
+        detail: 'The server returned an unreadable error response.',
+        instance: '',
+        correlationId: '',
+        errorCode: 'UNKNOWN_ERROR',
+      }
+    }
     throw new ApiError(problemDetails)
   }
 

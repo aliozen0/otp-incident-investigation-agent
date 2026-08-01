@@ -50,4 +50,25 @@ describe('createInvestigation', () => {
       expect((err as ApiError).problemDetails.errorCode).toBe('INVESTIGATION_TIMEOUT')
     }
   })
+
+  it('throws ApiError with fallback problem-details when non-2xx body is not JSON', async () => {
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 502,
+      statusText: 'Bad Gateway',
+      json: async () => {
+        throw new SyntaxError('Unexpected end of JSON input')
+      },
+    })
+
+    await expect(createInvestigation({ question: 'x' })).rejects.toBeInstanceOf(ApiError)
+    try {
+      await createInvestigation({ question: 'x' })
+      throw new Error('expected rejection')
+    } catch (err) {
+      expect((err as ApiError).problemDetails.errorCode).toBe('UNKNOWN_ERROR')
+      expect((err as ApiError).problemDetails.status).toBe(502)
+      expect((err as ApiError).problemDetails.title).toBe('Bad Gateway')
+    }
+  })
 })
