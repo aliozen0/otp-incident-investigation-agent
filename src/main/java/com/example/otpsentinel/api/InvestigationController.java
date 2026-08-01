@@ -3,6 +3,7 @@ package com.example.otpsentinel.api;
 import com.example.otpsentinel.api.dto.InvestigationRequestDto;
 import com.example.otpsentinel.api.dto.InvestigationResponseDto;
 import com.example.otpsentinel.api.dto.TimeWindowDto;
+import com.example.otpsentinel.config.InvestigationNotFoundException;
 import com.example.otpsentinel.config.InvestigationOrchestrator;
 import com.example.otpsentinel.domain.Evidence;
 import com.example.otpsentinel.domain.Hypothesis;
@@ -11,7 +12,6 @@ import com.example.otpsentinel.domain.InvestigationId;
 import com.example.otpsentinel.domain.RecommendedAction;
 import com.example.otpsentinel.domain.TimeWindow;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.NoSuchElementException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +46,8 @@ public class InvestigationController {
     Investigation investigation =
         orchestrator
             .findInvestigation(InvestigationId.of(id))
-            .orElseThrow(() -> new NoSuchElementException("investigation not found: " + id));
+            .orElseThrow(
+                () -> new InvestigationNotFoundException("investigation not found: " + id));
     return ResponseEntity.ok(toDto(investigation));
   }
 

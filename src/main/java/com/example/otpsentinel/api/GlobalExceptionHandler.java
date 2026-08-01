@@ -1,8 +1,9 @@
 package com.example.otpsentinel.api;
 
 import com.example.otpsentinel.api.dto.ProblemDetailsDto;
+import com.example.otpsentinel.config.InvestigationNotActionableException;
+import com.example.otpsentinel.config.InvestigationNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.NoSuchElementException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,22 +17,28 @@ public class GlobalExceptionHandler {
     return problem(e.status(), e.title(), e.getMessage(), e.errorCode(), request);
   }
 
-  @ExceptionHandler(NoSuchElementException.class)
+  @ExceptionHandler(InvestigationNotFoundException.class)
   public ResponseEntity<ProblemDetailsDto> handleNotFound(
-      NoSuchElementException e, HttpServletRequest request) {
+      InvestigationNotFoundException e, HttpServletRequest request) {
     return problem(
         404, "Investigation not found", e.getMessage(), "INVESTIGATION_NOT_FOUND", request);
   }
 
-  @ExceptionHandler(IllegalStateException.class)
+  @ExceptionHandler(InvestigationNotActionableException.class)
   public ResponseEntity<ProblemDetailsDto> handleConflict(
-      IllegalStateException e, HttpServletRequest request) {
+      InvestigationNotActionableException e, HttpServletRequest request) {
     return problem(
         409,
         "Investigation not ready for decision",
         e.getMessage(),
         "INVESTIGATION_NOT_ACTIONABLE",
         request);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ProblemDetailsDto> handleBadRequest(
+      IllegalArgumentException e, HttpServletRequest request) {
+    return problem(400, "Invalid request", e.getMessage(), "INVALID_REQUEST", request);
   }
 
   @ExceptionHandler(dev.langchain4j.exception.HttpException.class)

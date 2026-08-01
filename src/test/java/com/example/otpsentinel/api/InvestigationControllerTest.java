@@ -61,6 +61,15 @@ class InvestigationControllerTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void rejectsMalformedIdWith400NotServerError() {
+    ResponseEntity<String> response =
+        restTemplate.getForEntity("/api/v1/investigations/not-a-uuid", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).contains("INVALID_REQUEST");
+  }
+
+  @Test
   void investigatesTheOtpDropOneOhOneFixtureAndAllowsRefetch() {
     String body =
         """

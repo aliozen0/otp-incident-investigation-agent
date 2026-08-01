@@ -52,5 +52,19 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
     assertThat(orchestrator.findInvestigation(outcome.id())).isPresent();
+
+    var actions =
+        jdbcTemplate.queryForList(
+            "SELECT action FROM audit_event WHERE investigation_id = ?",
+            String.class,
+            outcome.id().value());
+    assertThat(actions)
+        .contains(
+            "REQUEST_ACCEPTED",
+            "TIME_WINDOW_RESOLVED",
+            "TOOL_CALLED",
+            "RAG_COMPLETED",
+            "LLM_COMPLETED",
+            "VALIDATION_PASSED");
   }
 }

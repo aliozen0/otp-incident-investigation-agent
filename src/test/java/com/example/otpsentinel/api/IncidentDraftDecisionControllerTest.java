@@ -108,6 +108,27 @@ class IncidentDraftDecisionControllerTest extends AbstractPostgresIntegrationTes
     Integer draftCount =
         jdbcTemplate.queryForObject("SELECT count(*) FROM incident_draft", Integer.class);
     assertThat(draftCount).isEqualTo(1);
+    var actions =
+        jdbcTemplate.queryForList(
+            "SELECT action FROM audit_event WHERE investigation_id = ?",
+            String.class,
+            investigation.id().value());
+    assertThat(actions).contains("APPROVAL_DECIDED", "INCIDENT_CREATED");
+  }
+
+  @Test
+  void invalidDecisionValueIsRejectedWith400AndPersistsNoDraft() {
+    Investigation investigation = completedInvestigation();
+    newInvestigationRepository().save(investigation);
+
+    ResponseEntity<String> response =
+        decide(investigation.id().toString(), "idem-invalid", "BANANA", "reason");
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).contains("INVALID_REQUEST");
+    Integer draftCount =
+        jdbcTemplate.queryForObject("SELECT count(*) FROM incident_draft", Integer.class);
+    assertThat(draftCount).isZero();
   }
 
   @Test
@@ -142,5 +163,9 @@ class IncidentDraftDecisionControllerTest extends AbstractPostgresIntegrationTes
             "SELECT count(*) FROM incident_draft WHERE external_incident_id IS NOT NULL",
             Integer.class);
     assertThat(createdCount).isZero();
+    Integer rejectedCount =
+        jdbcTemplate.queryForObject(
+            "SELECT count(*) FROM incident_draft WHERE status = 'REJECTED'", Integer.class);
+    assertThat(rejectedCount).isEqualTo(1);
   }
 }

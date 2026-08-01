@@ -72,6 +72,26 @@ class IncidentDraftPreviewControllerTest extends AbstractPostgresIntegrationTest
   }
 
   @Test
+  void previewOfFailedInvestigationReturns409NotServerError() {
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+    Investigation investigation =
+        Investigation.receive("why did OTP success rate drop", window, "v1", "v1");
+    investigation.fail("no matching fixture scenario");
+    newInvestigationRepository().save(investigation);
+
+    ResponseEntity<String> response =
+        restTemplate.postForEntity(
+            "/api/v1/investigations/" + investigation.id() + "/incident-draft/preview",
+            null,
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).contains("INVESTIGATION_NOT_ACTIONABLE");
+  }
+
+  @Test
   void previewDoesNotPersistAnIncidentDraft() {
     Investigation investigation = completedInvestigation();
     newInvestigationRepository().save(investigation);

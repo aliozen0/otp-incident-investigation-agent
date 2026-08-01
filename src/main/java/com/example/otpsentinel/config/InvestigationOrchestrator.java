@@ -30,7 +30,6 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import java.time.Duration;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -165,7 +164,10 @@ public class InvestigationOrchestrator {
         investigationRepository
             .findById(investigationId)
             .orElseThrow(
-                () -> new NoSuchElementException("investigation not found: " + investigationId));
+                () ->
+                    new InvestigationNotFoundException(
+                        "investigation not found: " + investigationId));
+    requireReadyForDecision(investigation);
     IncidentDraftPreview preview = buildPreview(investigation);
     audit(AuditEventType.PREVIEW_GENERATED, investigationId, null, correlationId, "generated");
     return preview;
@@ -183,17 +185,17 @@ public class InvestigationOrchestrator {
       String reason,
       String idempotencyKey,
       String correlationId) {
+    if (!"APPROVE".equals(decision) && !"REJECT".equals(decision)) {
+      throw new IllegalArgumentException("decision must be APPROVE or REJECT");
+    }
     Investigation investigation =
         investigationRepository
             .findById(investigationId)
             .orElseThrow(
-                () -> new NoSuchElementException("investigation not found: " + investigationId));
-    if (investigation.phase() != InvestigationPhase.COMPLETED
-        || investigation.validationReport() == null
-        || investigation.validationReport().status() != ValidationStatus.PASSED) {
-      throw new IllegalStateException(
-          "investigation is not ready for a decision: " + investigationId);
-    }
+                () ->
+                    new InvestigationNotFoundException(
+                        "investigation not found: " + investigationId));
+    requireReadyForDecision(investigation);
     IncidentDraftPreview preview = buildPreview(investigation);
     IncidentDraft draft =
         IncidentDraft.preview(investigationId, renderPayload(preview), idempotencyKey);
@@ -221,6 +223,15 @@ public class InvestigationOrchestrator {
           incidentDraftRepository.findByIdempotencyKey(idempotencyKey).orElseThrow(() -> replay);
       return new DecisionOutcome(
           existing.id(), existing.externalIncidentId(), existing.status(), true);
+    }
+  }
+
+  private static void requireReadyForDecision(Investigation investigation) {
+    if (investigation.phase() != InvestigationPhase.COMPLETED
+        || investigation.validationReport() == null
+        || investigation.validationReport().status() != ValidationStatus.PASSED) {
+      throw new InvestigationNotActionableException(
+          "investigation is not ready for a decision: " + investigation.id());
     }
   }
 
