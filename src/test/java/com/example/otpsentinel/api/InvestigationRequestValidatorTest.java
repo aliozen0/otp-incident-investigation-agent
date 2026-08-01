@@ -14,11 +14,13 @@ class InvestigationRequestValidatorTest {
 
   @Test
   void rejectsFutureEndTime() {
-    InvestigationRequestDto request = new InvestigationRequestDto(
-        "why did OTP success rate drop suddenly",
-        new InvestigationRequestDto.TimeWindowRangeDto(
-            Instant.now().minus(10, ChronoUnit.MINUTES), Instant.now().plus(5, ChronoUnit.MINUTES)),
-        "tr-TR");
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "why did OTP success rate drop suddenly",
+            new InvestigationRequestDto.TimeWindowRangeDto(
+                Instant.now().minus(10, ChronoUnit.MINUTES),
+                Instant.now().plus(5, ChronoUnit.MINUTES)),
+            "tr-TR");
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -29,9 +31,11 @@ class InvestigationRequestValidatorTest {
   @Test
   void rejectsIntervalLongerThan24Hours() {
     Instant end = Instant.now().minus(1, ChronoUnit.MINUTES);
-    InvestigationRequestDto request = new InvestigationRequestDto(
-        "why did OTP success rate drop suddenly",
-        new InvestigationRequestDto.TimeWindowRangeDto(end.minus(25, ChronoUnit.HOURS), end), "tr-TR");
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "why did OTP success rate drop suddenly",
+            new InvestigationRequestDto.TimeWindowRangeDto(end.minus(25, ChronoUnit.HOURS), end),
+            "tr-TR");
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -42,9 +46,11 @@ class InvestigationRequestValidatorTest {
   @Test
   void acceptsAValidWindow() {
     Instant end = Instant.now().minus(1, ChronoUnit.MINUTES);
-    InvestigationRequestDto request = new InvestigationRequestDto(
-        "why did OTP success rate drop suddenly",
-        new InvestigationRequestDto.TimeWindowRangeDto(end.minus(15, ChronoUnit.MINUTES), end), "tr-TR");
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "why did OTP success rate drop suddenly",
+            new InvestigationRequestDto.TimeWindowRangeDto(end.minus(15, ChronoUnit.MINUTES), end),
+            "tr-TR");
 
     assertThat(validator.validate(request)).isNotNull();
   }

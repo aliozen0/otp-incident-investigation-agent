@@ -12,7 +12,15 @@ public class ApiException extends RuntimeException {
     this.title = title;
   }
 
-  public int status() { return status; }
-  public String errorCode() { return errorCode; }
-  public String title() { return title; }
+  public int status() {
+    return status;
+  }
+
+  public String errorCode() {
+    return errorCode;
+  }
+
+  public String title() {
+    return title;
+  }
 }
