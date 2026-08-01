@@ -32,6 +32,8 @@ public final class KnowledgeAutoIngestRunner implements ApplicationRunner {
     if (!enabled) {
       return;
     }
+    // ponytail: check-then-insert isn't safe against concurrent app instances; single-container
+    // demo makes this fine, add a DB-level unique constraint + ON CONFLICT if that ever changes.
     for (KnowledgeDocument document : KnowledgeFixtureCatalog.mvpDocuments()) {
       if (!repository.existsDocument(document.documentId(), document.version())) {
         ingestionService.ingest(document);

@@ -153,7 +153,9 @@ public final class IncidentInvestigationService {
       } catch (RuntimeException failure) {
         // Never logged before this fix: a live-model structured-output/tool-argument failure was
         // silently swallowed, making it impossible to diagnose (docs/superpowers M9 live e2e).
-        LOG.warn("aiService.analyze attempt {} failed: {}", attempt, failure.toString());
+        // Truncated: a structured-output parse failure can embed raw, unbounded model output
+        // derived from user input.
+        LOG.warn("aiService.analyze attempt {} failed: {}", attempt, describe(failure));
         if (causedByPolicyLimit(failure)) {
           return AnalysisAttempt.policyLimit();
         }
@@ -163,6 +165,14 @@ public final class IncidentInvestigationService {
       }
     }
     return AnalysisAttempt.invalid();
+  }
+
+  private static String describe(RuntimeException failure) {
+    String message = failure.getMessage();
+    if (message != null && message.length() > 300) {
+      message = message.substring(0, 300) + "...";
+    }
+    return failure.getClass().getSimpleName() + ": " + message;
   }
 
   private static boolean causedByPolicyLimit(Throwable failure) {

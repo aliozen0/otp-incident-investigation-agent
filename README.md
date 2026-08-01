@@ -129,9 +129,11 @@ knowledge fixture'ı (`INC-2026-041`, `RB-OTP-001`, `ERR-OTP-001`,
 gerekmez. Bu ingest idempotenttir: konteyner her yeniden başladığında zaten var
 olan belge/versiyon tekrar yazılmaz.
 
-`NVIDIA_API_KEY` olmadan `AI_MODE=live` ile başlatmak, ilk NVIDIA çağrısında
-hata verir. Ana test suite ve varsayılan demo akışı hep `AI_MODE=stub` ile
-çalışır ve gerçek bir key gerektirmez.
+`NVIDIA_API_KEY` olmadan `AI_MODE=live` ile başlatmak, açılışta (startup'ta,
+knowledge doküman auto-ingest adımında) hata verir — ilk API isteğini
+beklemeden konteyner ayağa kalkmadan başarısız olur. Ana test suite ve
+varsayılan demo akışı hep `AI_MODE=stub` ile çalışır ve gerçek bir key
+gerektirmez.
 
 ## Bilinen sınırlamalar
 

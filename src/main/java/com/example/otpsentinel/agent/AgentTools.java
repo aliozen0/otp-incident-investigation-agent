@@ -136,9 +136,14 @@ public final class AgentTools {
    * Some live models emit a JSON string ("true") instead of a JSON boolean for this argument;
    * LangChain4j's tool-argument coercion then throws before the tool body runs. Accepting the raw
    * string here and parsing deterministically avoids that — same fix as {@link #parseInstant} for
-   * {@code Instant} (docs/superpowers/plans M5 deviation #2).
+   * {@code Instant} (docs/superpowers/plans M5 deviation #2). This argument is optional (see the
+   * {@code @Tool} description on {@link #getOtpMetrics}), so a {@code null}/blank value — the model
+   * omitted it — means "not requested", matching {@link #optionalFilter}'s treatment of omission.
    */
   private static boolean parseBoolean(String value, String parameterName) {
+    if (value == null || value.isBlank()) {
+      return false;
+    }
     if ("true".equalsIgnoreCase(value)) {
       return true;
     }
