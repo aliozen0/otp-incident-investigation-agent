@@ -130,4 +130,18 @@ class ToolBudgetGuardTest {
                     }))
         .isInstanceOf(ToolTimeoutException.class);
   }
+
+  @Test
+  void rejectsNonPositiveMaxCallsAsAnInternalConfigBug() {
+    assertThatThrownBy(() -> new ToolBudgetGuard(0, Duration.ofSeconds(2), 1))
+        .isInstanceOf(IllegalStateException.class)
+        .isNotInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void rejectsNegativeRetryCountAsAnInternalConfigBug() {
+    assertThatThrownBy(() -> new ToolBudgetGuard(1, Duration.ofSeconds(2), -1))
+        .isInstanceOf(IllegalStateException.class)
+        .isNotInstanceOf(IllegalArgumentException.class);
+  }
 }
