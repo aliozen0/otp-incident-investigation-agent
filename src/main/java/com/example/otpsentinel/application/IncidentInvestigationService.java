@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Drives an {@link Investigation} lifecycle. Tool selection and hypothesis generation remain
@@ -26,6 +28,8 @@ import java.util.stream.Stream;
  * code. REST and persistence wiring are intentionally deferred to M7.
  */
 public final class IncidentInvestigationService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(IncidentInvestigationService.class);
 
   private final int maxRepairAttempts;
   private final ClaimValidator claimValidator = new ClaimValidator();
@@ -147,6 +151,11 @@ public final class IncidentInvestigationService {
       try {
         return AnalysisAttempt.success(aiService.analyze(request.question(), timeWindow));
       } catch (RuntimeException failure) {
+        // Never logged before this fix: a live-model structured-output/tool-argument failure was
+        // silently swallowed, making it impossible to diagnose (docs/superpowers M9 live e2e).
+        // Truncated: a structured-output parse failure can embed raw, unbounded model output
+        // derived from user input.
+        LOG.warn("aiService.analyze attempt {} failed: {}", attempt, describe(failure));
         if (causedByPolicyLimit(failure)) {
           return AnalysisAttempt.policyLimit();
         }
@@ -156,6 +165,14 @@ public final class IncidentInvestigationService {
       }
     }
     return AnalysisAttempt.invalid();
+  }
+
+  private static String describe(RuntimeException failure) {
+    String message = failure.getMessage();
+    if (message != null && message.length() > 300) {
+      message = message.substring(0, 300) + "...";
+    }
+    return failure.getClass().getSimpleName() + ": " + message;
   }
 
   private static boolean causedByPolicyLimit(Throwable failure) {

@@ -14,9 +14,17 @@ class KnowledgeIngestionServiceTest {
   private final List<KnowledgeDocument> saved = new ArrayList<>();
   private final List<EmbeddedChunk> savedChunks = new ArrayList<>();
   private final KnowledgeRepository fakeRepository =
-      (document, chunks) -> {
-        saved.add(document);
-        savedChunks.addAll(chunks);
+      new KnowledgeRepository() {
+        @Override
+        public void save(KnowledgeDocument document, List<EmbeddedChunk> chunks) {
+          saved.add(document);
+          savedChunks.addAll(chunks);
+        }
+
+        @Override
+        public boolean existsDocument(String documentId, String version) {
+          return false;
+        }
       };
   private final KnowledgeIngestionService service =
       new KnowledgeIngestionService(

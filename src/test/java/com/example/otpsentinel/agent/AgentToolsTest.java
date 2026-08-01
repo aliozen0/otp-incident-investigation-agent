@@ -43,15 +43,63 @@ class AgentToolsTest {
             collector);
 
     AgentToolResponse<?> response =
-        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", true);
+        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", "true");
 
     assertThat(response.status()).isEqualTo(ToolStatus.SUCCESS);
     assertThat(response.evidenceIds()).contains("ev-otp-success-rate-current");
     assertThat(guard.callCount()).isEqualTo(1);
-    assertThatThrownBy(() -> tools.getOtpMetrics("not-an-instant", "2026-07-30T11:30:00Z", true))
+    assertThatThrownBy(() -> tools.getOtpMetrics("not-an-instant", "2026-07-30T11:30:00Z", "true"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("startAt must be an ISO-8601 UTC instant");
     assertThat(guard.callCount()).isEqualTo(1);
+  }
+
+  @Test
+  void getOtpMetricsAcceptsFalseNullAndBlankIncludePreviousPeriodButRejectsInvalidValues() {
+    FixtureScenario scenario = FixtureCatalog.forFixture(FixtureId.OTP_DROP_001);
+    Investigation investigation =
+        Investigation.receive(
+            "why did OTP success rate drop",
+            new TimeWindow(
+                Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z")),
+            "v1",
+            "v1");
+    investigation.startCollectingEvidence();
+    ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofSeconds(2), 5);
+    EvidenceCollector collector = new EvidenceCollector(investigation);
+    KnowledgeSearchPort noResults = (query, provider, topK) -> List.of();
+
+    AgentTools tools =
+        new AgentTools(
+            new FixtureOtpMetricsTool(scenario),
+            new FixtureErrorDistributionTool(scenario),
+            new FixtureQueueHealthTool(scenario),
+            new FixtureProviderHealthTool(scenario),
+            new FixtureRecentChangesTool(scenario),
+            noResults,
+            guard,
+            collector);
+
+    // "false" is a valid, explicit value. Each call below uses a distinct window — the guard
+    // rejects duplicate identical calls, and includePreviousPeriod=false is otherwise the same
+    // request for null/blank/"false".
+    AgentToolResponse<?> falseResponse =
+        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", "false");
+    assertThat(falseResponse.status()).isEqualTo(ToolStatus.SUCCESS);
+
+    // Omitted (null) or blank means "not requested" — the M9 live-run regression this guards
+    // against, where the model omitted the optional argument entirely.
+    AgentToolResponse<?> nullResponse =
+        tools.getOtpMetrics("2026-07-30T11:16:00Z", "2026-07-30T11:30:00Z", null);
+    assertThat(nullResponse.status()).isEqualTo(ToolStatus.SUCCESS);
+    AgentToolResponse<?> blankResponse =
+        tools.getOtpMetrics("2026-07-30T11:17:00Z", "2026-07-30T11:30:00Z", "  ");
+    assertThat(blankResponse.status()).isEqualTo(ToolStatus.SUCCESS);
+
+    assertThatThrownBy(
+            () -> tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", "maybe"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("includePreviousPeriod must be true or false");
   }
 
   @Test

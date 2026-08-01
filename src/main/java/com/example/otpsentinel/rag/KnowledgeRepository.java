@@ -6,4 +6,7 @@ import java.util.List;
 public interface KnowledgeRepository {
 
   void save(KnowledgeDocument document, List<EmbeddedChunk> chunks);
+
+  /** Used by {@link KnowledgeAutoIngestRunner} to make startup ingestion idempotent. */
+  boolean existsDocument(String documentId, String version);
 }

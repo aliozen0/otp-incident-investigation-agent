@@ -47,10 +47,12 @@ public final class AgentTools {
   @Tool(
       "Get OTP delivery metrics (total/delivered/failed/success rate) for a time window, optionally including the previous period for comparison")
   public AgentToolResponse<OtpMetricsResult> getOtpMetrics(
-      String startAt, String endAt, boolean includePreviousPeriod) {
+      String startAt, String endAt, String includePreviousPeriod) {
     OtpMetricsRequest request =
         new OtpMetricsRequest(
-            parseInstant(startAt, "startAt"), parseInstant(endAt, "endAt"), includePreviousPeriod);
+            parseInstant(startAt, "startAt"),
+            parseInstant(endAt, "endAt"),
+            parseBoolean(includePreviousPeriod, "includePreviousPeriod"));
     ToolResult<OtpMetricsResult> result =
         guard.execute("getOtpMetrics", request, () -> otpMetricsTool.getOtpMetrics(request));
     return collector.collect(result);
@@ -128,6 +130,27 @@ public final class AgentTools {
     } catch (RuntimeException e) {
       throw new IllegalArgumentException(parameterName + " must be an ISO-8601 UTC instant", e);
     }
+  }
+
+  /**
+   * Some live models emit a JSON string ("true") instead of a JSON boolean for this argument;
+   * LangChain4j's tool-argument coercion then throws before the tool body runs. Accepting the raw
+   * string here and parsing deterministically avoids that — same fix as {@link #parseInstant} for
+   * {@code Instant} (docs/superpowers/plans M5 deviation #2). This argument is optional (see the
+   * {@code @Tool} description on {@link #getOtpMetrics}), so a {@code null}/blank value — the model
+   * omitted it — means "not requested", matching {@link #optionalFilter}'s treatment of omission.
+   */
+  private static boolean parseBoolean(String value, String parameterName) {
+    if (value == null || value.isBlank()) {
+      return false;
+    }
+    if ("true".equalsIgnoreCase(value)) {
+      return true;
+    }
+    if ("false".equalsIgnoreCase(value)) {
+      return false;
+    }
+    throw new IllegalArgumentException(parameterName + " must be true or false");
   }
 
   private static String optionalFilter(String value) {

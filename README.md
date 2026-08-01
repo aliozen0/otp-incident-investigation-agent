@@ -104,6 +104,37 @@ curl -s -X POST http://localhost:8080/api/v1/investigations/$INV_ID/incident-dra
 
 Or run `scripts/demo.sh` to execute all six steps in one command.
 
+## Canlı demo nasıl çalıştırılır
+
+Varsayılan mod (`AI_MODE=stub`) deterministik, sabit bir script kullanır — ağ
+bağlantısı veya API key gerektirmez, CI'de ve `docker compose up`'ta hep
+yeşildir. Canlı mod (`AI_MODE=live`) yerine gerçek NVIDIA NIM chat modeli
+(`NVIDIA_CHAT_MODEL`) ile gerçek tool-calling yapar ve gerçek pgvector RAG'dan
+(NVIDIA embedding modeliyle, `NVIDIA_EMBEDDING_MODEL`) sonuç döndürür — model
+her seferinde biraz farklı ifade/sıra üretebilir (stub'un birebir sabit
+script'inin aksine), ama aynı kanıt/hipotez/citation kurallarına uyar (bkz.
+`docs/16-adr.md` ADR-015, `docs/07-agent-tool-spec.md`).
+
+```bash
+cp .env.example .env
+# .env içinde:
+#   AI_MODE=live
+#   NVIDIA_API_KEY=<gerçek NVIDIA API key>
+docker compose up --build
+```
+
+Uygulama açılışında (`AI_MODE=live` iken) `docs/15-demo-fixtures.md`'deki 4
+knowledge fixture'ı (`INC-2026-041`, `RB-OTP-001`, `ERR-OTP-001`,
+`POL-CHANGE-001`) otomatik olarak pgvector'a ingest edilir — elle bir adım
+gerekmez. Bu ingest idempotenttir: konteyner her yeniden başladığında zaten var
+olan belge/versiyon tekrar yazılmaz.
+
+`NVIDIA_API_KEY` olmadan `AI_MODE=live` ile başlatmak, açılışta (startup'ta,
+knowledge doküman auto-ingest adımında) hata verir — ilk API isteğini
+beklemeden konteyner ayağa kalkmadan başarısız olur. Ana test suite ve
+varsayılan demo akışı hep `AI_MODE=stub` ile çalışır ve gerçek bir key
+gerektirmez.
+
 ## Bilinen sınırlamalar
 
 - Stub model modu (`AI_MODE=stub`, varsayılan) tek bir sabit script'e bağlıdır
@@ -112,6 +143,10 @@ Or run `scripts/demo.sh` to execute all six steps in one command.
   `OTP-INJECTION-001` gibi negatif fixture'lar stub modunda uçtan uca
   gösterilemez (yalnızca `AI_MODE=live` ile gerçek bir modelle). M8 kapsamı
   yeni script eklemeyi kapsamıyor.
+- CORS varsayılan olarak kapalıdır (frontend aynı origin'den servis edilir,
+  bkz. `docs/16-adr.md` ADR-016). Yalnızca `SPRING_PROFILES_ACTIVE=dev` ile
+  (M10 frontend geliştirme sırasında, ayrı port Vite dev server için) dar bir
+  CORS izni açılır.
 - `422 QUESTION_NOT_ACTIONABLE` / `429 INVESTIGATION_RATE_LIMITED` stub-only
   MVP path'te gerçekçi bir tetikleyicisi olmadığı için test edilmemiştir
   (M7-report'ta not düşülmüş, bilinçli boşluk).
