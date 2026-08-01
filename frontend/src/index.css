@@ -1,0 +1,34 @@
+@import "tailwindcss";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@theme {
+  --color-paper: #F7F7F4;
+  --color-ink: #14181C;
+  --color-ink-muted: #55606A;
+  --color-line: #D8DCE0;
+  --color-line-strong: #B8C0C8;
+  --color-signal: #1D4ED8;
+  --color-signal-soft: #E8EEFC;
+  --color-alert: #B45309;
+  --color-alert-soft: #FDF3E7;
+  --color-confirm: #15803D;
+  --color-confirm-soft: #E9F6ED;
+  --color-danger: #B91C1C;
+  --color-danger-soft: #FBEAEA;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
