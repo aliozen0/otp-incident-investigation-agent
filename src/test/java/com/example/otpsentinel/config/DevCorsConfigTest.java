@@ -2,15 +2,13 @@ package com.example.otpsentinel.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.otpsentinel.adapters.persistence.AbstractPostgresIntegrationTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 /**
  * ADR-016: CORS must be off by default (same-origin embedded frontend in the demo/production image)
@@ -19,42 +17,21 @@ import org.springframework.test.context.TestPropertySource;
  */
 class DevCorsConfigTest {
 
-  @Configuration
-  @Import(DevCorsConfig.class)
-  static class TestConfig {}
-
   @Nested
-  @SpringBootTest(classes = TestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-  @TestPropertySource(
-      properties = {
-        "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=none",
-        "spring.datasource.url=jdbc:h2:mem:",
-        "spring.h2.console.enabled=false"
-      })
-  class DefaultProfile {
-    @Autowired(required = false)
-    private ApplicationContext context;
+  @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+  class DefaultProfile extends AbstractPostgresIntegrationTest {
+    @Autowired private ApplicationContext context;
 
     @Test
     void corsConfigBeanIsAbsentByDefault() {
-      if (context != null) {
-        assertThat(context.getBeanNamesForType(DevCorsConfig.class)).isEmpty();
-      }
+      assertThat(context.getBeanNamesForType(DevCorsConfig.class)).isEmpty();
     }
   }
 
   @Nested
-  @SpringBootTest(classes = TestConfig.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+  @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
   @ActiveProfiles("dev")
-  @TestPropertySource(
-      properties = {
-        "spring.flyway.enabled=false",
-        "spring.jpa.hibernate.ddl-auto=none",
-        "spring.datasource.url=jdbc:h2:mem:",
-        "spring.h2.console.enabled=false"
-      })
-  class DevProfile {
+  class DevProfile extends AbstractPostgresIntegrationTest {
     @Autowired private ApplicationContext context;
 
     @Test
