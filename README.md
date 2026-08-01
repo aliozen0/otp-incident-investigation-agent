@@ -8,6 +8,118 @@ Sistem, OTP teslimat performansındaki düşüşleri doğal dilde verilen bir op
 
 Bu sistem bir metric dashboard veya tam otonom remediation ürünü değildir. Mevcut operasyon araçlarının üzerinde çalışan bir **araştırma ve karar destek katmanıdır**.
 
+## Quickstart
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Wait for `db` health to report `healthy`, then check the app:
+
+```bash
+curl -s http://localhost:8080/actuator/health
+# {"status":"UP"}
+```
+
+Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+The API walkthrough below requires `jq` and `uuidgen` (or `python3` as a
+fallback for `uuidgen`) on the host.
+
+If port `5432` is already used on the host, set `POSTGRES_PORT` in `.env` before
+`docker compose up` (e.g. `POSTGRES_PORT=55432`) — the app's own DB connection
+inside the compose network always uses `db:5432` internally, only the host
+mapping changes.
+
+## Bu bir mock/PoC'tur
+
+Bu proje NETGSM'in (veya herhangi bir şirketin) iç mimarisini temsil etme
+iddiası taşımaz. Tüm metrik, provider, kuyruk ve incident verisi
+`docs/15-demo-fixtures.md`'deki sabit fixture'lardır — gerçek OTP gönderimi,
+gerçek müşteri verisi veya gerçek provider entegrasyonu yoktur. Amaç, Java +
+Spring Boot + LangChain4j ile tool calling / RAG / structured output /
+human-in-the-loop onay akışını dar ve kanıtlanabilir bir problem üzerinde
+göstermektir.
+
+## Mimari
+
+```mermaid
+flowchart LR
+    User[OTP Operations Engineer]
+    App[OTP Investigation Agent]
+    Metrics[Metrics Source]
+    Queue[Queue Source]
+    Provider[Provider Source]
+    Changes[Change Source]
+    Incident[Incident System]
+    LLM[LLM Provider]
+    DB[(PostgreSQL + pgvector)]
+
+    User -->|REST| App
+    App --> Metrics
+    App --> Queue
+    App --> Provider
+    App --> Changes
+    App -->|Approved only| Incident
+    App --> LLM
+    App --> DB
+```
+
+MVP dış sistemleri mock adapter'dır. Detaylı container/sequence diyagramları:
+`docs/05-domain-and-architecture.md`.
+
+## API walkthrough
+
+```bash
+# 1. Start an investigation
+INV_ID=$(curl -s -X POST http://localhost:8080/api/v1/investigations \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "question": "Son 15 dakikada OTP teslimat oranı neden düştü?",
+        "timeWindow": {"startAt": "2026-07-30T11:15:00Z", "endAt": "2026-07-30T11:30:00Z"},
+        "locale": "tr-TR"
+      }' | jq -r '.investigationId')
+echo "$INV_ID"
+
+# 2. Fetch the persisted result
+curl -s http://localhost:8080/api/v1/investigations/$INV_ID | jq .
+
+# 3. Preview the incident draft (no persistence yet)
+curl -s -X POST http://localhost:8080/api/v1/investigations/$INV_ID/incident-draft/preview | jq .
+
+# 4. Approve — creates the incident, idempotency key required
+IDEMPOTENCY_KEY=$(uuidgen)
+curl -s -X POST http://localhost:8080/api/v1/investigations/$INV_ID/incident-draft/decisions \
+  -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+  -d '{"decision": "APPROVE", "reason": "Teknik ekip incelemesi için incident gerekli."}' | jq .
+
+# 5. Replay with the same key — same incident, idempotentReplay=true
+curl -s -X POST http://localhost:8080/api/v1/investigations/$INV_ID/incident-draft/decisions \
+  -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: $IDEMPOTENCY_KEY" \
+  -d '{"decision": "APPROVE", "reason": "Teknik ekip incelemesi için incident gerekli."}' | jq .
+```
+
+Or run `scripts/demo.sh` to execute all six steps in one command.
+
+## Bilinen sınırlamalar
+
+- Stub model modu (`AI_MODE=stub`, varsayılan) tek bir sabit script'e bağlıdır
+  (`OtpDropOneOhOneScript`); `DEMO_FIXTURE` sadece tool fixture verisini
+  değiştirir, stub script'i değiştirmez. Bu nedenle `OTP-PARTIAL-001` /
+  `OTP-INJECTION-001` gibi negatif fixture'lar stub modunda uçtan uca
+  gösterilemez (yalnızca `AI_MODE=live` ile gerçek bir modelle). M8 kapsamı
+  yeni script eklemeyi kapsamıyor.
+- `422 QUESTION_NOT_ACTIONABLE` / `429 INVESTIGATION_RATE_LIMITED` stub-only
+  MVP path'te gerçekçi bir tetikleyicisi olmadığı için test edilmemiştir
+  (M7-report'ta not düşülmüş, bilinçli boşluk).
+- Sistemde hiçbir yerde authentication/authorization yoktur — bu, yeni
+  eklenen Swagger UI/OpenAPI endpoint'leri (`/swagger-ui/**`, `/v3/api-docs`)
+  dahil tüm REST API'yi kapsar. PoC kapsamı için kabul edilebilir bir
+  boşluktur, ancak bilerek ve proaktif olarak burada belirtilmiştir.
+
 ## Sabit teknoloji tabanı
 
 - Java 21

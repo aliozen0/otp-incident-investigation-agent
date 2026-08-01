@@ -31,7 +31,7 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             newInvestigationRepository(),
             newIncidentDraftRepository(),
             newAuditEventRepository(),
-            new StubChatModel(OtpDropOneOhOneScript.build()),
+            () -> new StubChatModel(OtpDropOneOhOneScript.build()),
             new FixtureKnowledgeSearchPort(),
             new FixtureOtpMetricsTool(scenario),
             new FixtureErrorDistributionTool(scenario),
@@ -66,5 +66,38 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             "RAG_COMPLETED",
             "LLM_COMPLETED",
             "VALIDATION_PASSED");
+  }
+
+  @Test
+  void secondInvestigationOnTheSameOrchestratorInstanceStillSucceeds() {
+    FixtureScenario scenario = FixtureCatalog.forFixture(FixtureId.OTP_DROP_001);
+    InvestigationOrchestrator orchestrator =
+        new InvestigationOrchestrator(
+            newInvestigationRepository(),
+            newIncidentDraftRepository(),
+            newAuditEventRepository(),
+            () -> new StubChatModel(OtpDropOneOhOneScript.build()),
+            new FixtureKnowledgeSearchPort(),
+            new FixtureOtpMetricsTool(scenario),
+            new FixtureErrorDistributionTool(scenario),
+            new FixtureQueueHealthTool(scenario),
+            new FixtureProviderHealthTool(scenario),
+            new FixtureRecentChangesTool(scenario),
+            8,
+            2000,
+            1,
+            1);
+
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+
+    Investigation first =
+        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2a");
+    Investigation second =
+        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2b");
+
+    assertThat(first.phase()).isEqualTo(InvestigationPhase.COMPLETED);
+    assertThat(second.phase()).isEqualTo(InvestigationPhase.COMPLETED);
   }
 }

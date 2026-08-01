@@ -235,6 +235,22 @@ class IncidentInvestigationServiceTest {
         .isInstanceOf(IllegalArgumentException.class);
   }
 
+  @Test
+  void mismatchedRequestIsAnInternalWiringBugNotAClientError() {
+    TestContext ctx =
+        context(
+            8, (query, provider, topK) -> List.of(), StubScriptStep.finalAnswer(noAnomalyJson()));
+    IncidentInvestigationService service = new IncidentInvestigationService(1);
+    InvestigationRequest mismatched =
+        new InvestigationRequest("a different question", window(), "v1", "v1");
+    assertThatThrownBy(
+            () ->
+                service.investigate(
+                    mismatched, ctx.investigation(), ctx.aiService(), ctx.guard(), ctx.collector()))
+        .isInstanceOf(IllegalStateException.class)
+        .isNotInstanceOf(IllegalArgumentException.class);
+  }
+
   private static Investigation investigate(TestContext context) {
     IncidentInvestigationService service = new IncidentInvestigationService(1);
     return service.investigate(

@@ -12,15 +12,23 @@ class AgentConfigTest {
 
   @Test
   void selectsOfflineStubModelByDefaultMode() {
-    assertThat(config.chatModel("stub", "https://example.invalid/v1", "", ""))
+    assertThat(config.chatModelFactory("stub", "https://example.invalid/v1", "", "").get())
         .isInstanceOf(StubChatModel.class);
+  }
+
+  @Test
+  void stubSupplierReturnsFreshInstanceOnEachCall() {
+    var supplier = config.chatModelFactory("stub", "https://example.invalid/v1", "", "");
+    assertThat(supplier.get()).isNotSameAs(supplier.get());
   }
 
   @Test
   void selectsNvidiaCompatibleOpenAiModelInLiveMode() {
     assertThat(
-            config.chatModel(
-                "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model"))
+            config
+                .chatModelFactory(
+                    "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
+                .get())
         .isInstanceOf(OpenAiChatModel.class);
   }
 }

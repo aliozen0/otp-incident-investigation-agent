@@ -34,12 +34,12 @@ public final class ToolBudgetGuard {
 
   public ToolBudgetGuard(int maxCalls, Duration toolTimeout, int retryCount) {
     if (maxCalls <= 0) {
-      throw new IllegalArgumentException("maxCalls must be positive");
+      throw new IllegalStateException("maxCalls must be positive");
     }
     this.maxCalls = maxCalls;
     this.toolTimeout = Objects.requireNonNull(toolTimeout, "toolTimeout must not be null");
     if (retryCount < 0) {
-      throw new IllegalArgumentException("retryCount must not be negative");
+      throw new IllegalStateException("retryCount must not be negative");
     }
     this.retryCount = retryCount;
   }

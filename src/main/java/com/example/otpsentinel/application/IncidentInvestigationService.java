@@ -201,7 +201,7 @@ public final class IncidentInvestigationService {
         || !request.resolvedTimeWindow().equals(investigation.resolvedTimeWindow())
         || !request.promptVersion().equals(investigation.promptVersion())
         || !request.schemaVersion().equals(investigation.schemaVersion())) {
-      throw new IllegalArgumentException("request does not match investigation");
+      throw new IllegalStateException("request does not match investigation");
     }
   }
 
