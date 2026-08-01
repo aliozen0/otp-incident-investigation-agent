@@ -63,6 +63,17 @@ public final class JdbcKnowledgeRepository implements KnowledgeRepository {
     }
   }
 
+  @Override
+  public boolean existsDocument(String documentId, String version) {
+    Integer count =
+        jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM knowledge_document WHERE document_id = ? AND version = ?",
+            Integer.class,
+            documentId,
+            version);
+    return count != null && count > 0;
+  }
+
   /** Tags are plain strings only, so a hand-rolled JSON array avoids pulling in Jackson here. */
   private String toJsonArray(List<String> tags) {
     return tags.stream()
