@@ -54,4 +54,34 @@ class InvestigationRequestValidatorTest {
 
     assertThat(validator.validate(request)).isNotNull();
   }
+
+  @Test
+  void rejectsNullStartAt() {
+    Instant end = Instant.now().minus(1, ChronoUnit.MINUTES);
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "why did OTP success rate drop suddenly",
+            new InvestigationRequestDto.TimeWindowRangeDto(null, end),
+            "tr-TR");
+
+    assertThatThrownBy(() -> validator.validate(request))
+        .isInstanceOf(ApiException.class)
+        .extracting(e -> ((ApiException) e).errorCode())
+        .isEqualTo("INVALID_TIME_WINDOW");
+  }
+
+  @Test
+  void rejectsNullEndAt() {
+    Instant start = Instant.now().minus(15, ChronoUnit.MINUTES);
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "why did OTP success rate drop suddenly",
+            new InvestigationRequestDto.TimeWindowRangeDto(start, null),
+            "tr-TR");
+
+    assertThatThrownBy(() -> validator.validate(request))
+        .isInstanceOf(ApiException.class)
+        .extracting(e -> ((ApiException) e).errorCode())
+        .isEqualTo("INVALID_TIME_WINDOW");
+  }
 }

@@ -35,6 +35,10 @@ public final class InvestigationRequestValidator {
     }
     Instant startAt = request.timeWindow().startAt();
     Instant endAt = request.timeWindow().endAt();
+    if (startAt == null || endAt == null) {
+      throw new ApiException(
+          400, "INVALID_TIME_WINDOW", "Invalid time window", "startAt and endAt are required");
+    }
     Instant now = Instant.now();
     if (endAt.isAfter(now) || startAt.isAfter(now)) {
       throw new ApiException(
