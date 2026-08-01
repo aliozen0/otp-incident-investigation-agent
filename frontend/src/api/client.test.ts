@@ -1,0 +1,104 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { createInvestigation, ApiError } from './client'
+
+describe('createInvestigation', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('returns parsed investigation on 200', async () => {
+    const body = {
+      investigationId: 'inv-1',
+      status: 'ANOMALY_CONFIRMED',
+      validation: { status: 'PASSED', warnings: [] },
+      evidence: [],
+      hypotheses: [],
+      recommendedActions: [],
+      knowledgeReferences: [],
+    }
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    })
+
+    const result = await createInvestigation({ question: 'Why did OTP delivery drop?' })
+
+    expect(result).toEqual(body)
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/investigations',
+      expect.objectContaining({ method: 'POST' })
+    )
+  })
+
+  it('normalizes null validation and missing arrays to safe defaults', async () => {
+    const body = {
+      investigationId: 'inv-2',
+      status: 'PARTIAL_ANALYSIS',
+      validation: null,
+      // evidence, hypotheses, recommendedActions, knowledgeReferences omitted entirely
+    }
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    })
+
+    const result = await createInvestigation({ question: 'Why did OTP delivery drop?' })
+
+    expect(result.validation).toEqual({ status: 'PASSED', warnings: [] })
+    expect(result.evidence).toEqual([])
+    expect(result.hypotheses).toEqual([])
+    expect(result.recommendedActions).toEqual([])
+    expect(result.knowledgeReferences).toEqual([])
+  })
+
+  it('throws ApiError with parsed problem-details on non-2xx', async () => {
+    const problem = {
+      type: 'https://errors.example.local/investigation-timeout',
+      title: 'Investigation timed out',
+      status: 504,
+      detail: 'The investigation exceeded the configured deadline.',
+      instance: '/api/v1/investigations',
+      correlationId: 'corr-ec3c',
+      errorCode: 'INVESTIGATION_TIMEOUT',
+    }
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 504,
+      json: async () => problem,
+    })
+
+    await expect(createInvestigation({ question: 'x' })).rejects.toBeInstanceOf(ApiError)
+    try {
+      await createInvestigation({ question: 'x' })
+      throw new Error('expected rejection')
+    } catch (err) {
+      expect((err as ApiError).problemDetails.errorCode).toBe('INVESTIGATION_TIMEOUT')
+    }
+  })
+
+  it('throws ApiError with fallback problem-details when non-2xx body is not JSON', async () => {
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 502,
+      statusText: 'Bad Gateway',
+      json: async () => {
+        throw new SyntaxError('Unexpected end of JSON input')
+      },
+    })
+
+    await expect(createInvestigation({ question: 'x' })).rejects.toBeInstanceOf(ApiError)
+    try {
+      await createInvestigation({ question: 'x' })
+      throw new Error('expected rejection')
+    } catch (err) {
+      expect((err as ApiError).problemDetails.errorCode).toBe('UNKNOWN_ERROR')
+      expect((err as ApiError).problemDetails.status).toBe(502)
+      expect((err as ApiError).problemDetails.title).toBe('Bad Gateway')
+    }
+  })
+})
