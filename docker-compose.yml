@@ -33,6 +33,10 @@ services:
       TOOL_TIMEOUT_MILLIS: ${TOOL_TIMEOUT_MILLIS:-2000}
       TOOL_RETRY_COUNT: ${TOOL_RETRY_COUNT:-1}
       DEMO_FIXTURE: ${DEMO_FIXTURE:-OTP-DROP-001}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NVIDIA_CHAT_MODEL: ${NVIDIA_CHAT_MODEL:-}
+      NVIDIA_EMBEDDING_MODEL: ${NVIDIA_EMBEDDING_MODEL:-}
     depends_on:
       db:
         condition: service_healthy
