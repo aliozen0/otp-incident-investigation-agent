@@ -11,17 +11,24 @@ import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationId;
 import com.example.otpsentinel.domain.RecommendedAction;
 import com.example.otpsentinel.domain.TimeWindow;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/investigations")
+@Tag(
+    name = "Investigations",
+    description = "Evidence-backed OTP incident investigation (mock/PoC — see README)")
 public class InvestigationController {
 
   private final InvestigationOrchestrator orchestrator;
@@ -32,8 +39,28 @@ public class InvestigationController {
   }
 
   @PostMapping
+  @Operation(
+      summary = "Start an evidence-backed investigation",
+      description =
+          "Collects OTP metrics/errors/queue/provider/change evidence via tool calling, "
+              + "retrieves similar past incidents via RAG, and returns a structured, validated"
+              + " analysis.")
+  @RequestBody(
+      content =
+          @Content(
+              examples =
+                  @ExampleObject(
+                      name = "OTP-DROP-001",
+                      value =
+                          """
+                          {
+                            "question": "Son 15 dakikada OTP teslimat oranı neden düştü?",
+                            "timeWindow": {"startAt": "2026-07-30T11:15:00Z", "endAt": "2026-07-30T11:30:00Z"},
+                            "locale": "tr-TR"
+                          }""")))
   public ResponseEntity<InvestigationResponseDto> create(
-      @RequestBody InvestigationRequestDto request, HttpServletRequest httpRequest) {
+      @org.springframework.web.bind.annotation.RequestBody InvestigationRequestDto request,
+      HttpServletRequest httpRequest) {
     TimeWindow window = validator.validate(request);
     String correlationId = (String) httpRequest.getAttribute("correlationId");
     Investigation outcome =
@@ -42,6 +69,9 @@ public class InvestigationController {
   }
 
   @GetMapping("/{id}")
+  @Operation(
+      summary = "Get an investigation by id",
+      description = "Canonical persisted result snapshot'ını döndürür.")
   public ResponseEntity<InvestigationResponseDto> get(@PathVariable String id) {
     Investigation investigation =
         orchestrator
