@@ -50,15 +50,31 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
-export function createInvestigation(req: InvestigationRequest): Promise<Investigation> {
-  return request<Investigation>('/investigations', {
+// The backend omits/nulls these fields when not yet populated (e.g. validation
+// before a report exists). Normalize once at the API boundary so every
+// downstream consumer can rely on safe defaults instead of null-checking.
+export function normalizeInvestigation(raw: Investigation): Investigation {
+  return {
+    ...raw,
+    validation: raw.validation ?? { status: 'PASSED', warnings: [] },
+    evidence: raw.evidence ?? [],
+    hypotheses: raw.hypotheses ?? [],
+    recommendedActions: raw.recommendedActions ?? [],
+    knowledgeReferences: raw.knowledgeReferences ?? [],
+  }
+}
+
+export async function createInvestigation(req: InvestigationRequest): Promise<Investigation> {
+  const raw = await request<Investigation>('/investigations', {
     method: 'POST',
     body: JSON.stringify(req),
   })
+  return normalizeInvestigation(raw)
 }
 
-export function getInvestigation(id: string): Promise<Investigation> {
-  return request<Investigation>(`/investigations/${id}`, { method: 'GET' })
+export async function getInvestigation(id: string): Promise<Investigation> {
+  const raw = await request<Investigation>(`/investigations/${id}`, { method: 'GET' })
+  return normalizeInvestigation(raw)
 }
 
 export function previewIncidentDraft(investigationId: string): Promise<IncidentDraftPreview> {

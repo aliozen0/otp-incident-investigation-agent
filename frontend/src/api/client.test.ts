@@ -10,7 +10,15 @@ describe('createInvestigation', () => {
   })
 
   it('returns parsed investigation on 200', async () => {
-    const body = { investigationId: 'inv-1', status: 'ANOMALY_CONFIRMED' }
+    const body = {
+      investigationId: 'inv-1',
+      status: 'ANOMALY_CONFIRMED',
+      validation: { status: 'PASSED', warnings: [] },
+      evidence: [],
+      hypotheses: [],
+      recommendedActions: [],
+      knowledgeReferences: [],
+    }
     ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
@@ -24,6 +32,28 @@ describe('createInvestigation', () => {
       '/api/v1/investigations',
       expect.objectContaining({ method: 'POST' })
     )
+  })
+
+  it('normalizes null validation and missing arrays to safe defaults', async () => {
+    const body = {
+      investigationId: 'inv-2',
+      status: 'PARTIAL_ANALYSIS',
+      validation: null,
+      // evidence, hypotheses, recommendedActions, knowledgeReferences omitted entirely
+    }
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    })
+
+    const result = await createInvestigation({ question: 'Why did OTP delivery drop?' })
+
+    expect(result.validation).toEqual({ status: 'PASSED', warnings: [] })
+    expect(result.evidence).toEqual([])
+    expect(result.hypotheses).toEqual([])
+    expect(result.recommendedActions).toEqual([])
+    expect(result.knowledgeReferences).toEqual([])
   })
 
   it('throws ApiError with parsed problem-details on non-2xx', async () => {

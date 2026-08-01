@@ -7,11 +7,17 @@ const MESSAGES: Record<string, string> = {
   INVESTIGATION_RATE_LIMITED: 'Too many investigations were started in a short time. Wait a moment and try again.',
   MODEL_PROVIDER_ERROR: 'The analysis model is currently unavailable. This is a live dependency, not a bug — try again shortly.',
   INVESTIGATION_TIMEOUT: 'The investigation took too long and timed out before finishing.',
+  INVESTIGATION_NOT_ACTIONABLE: 'This investigation did not pass validation, so no incident action can be taken on it yet.',
+  INVESTIGATION_NOT_FOUND: 'This investigation could not be found. It may have expired or the link may be incorrect.',
 }
 
 export function toUserMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    return MESSAGES[error.problemDetails.errorCode] ?? error.problemDetails.detail
+    return (
+      MESSAGES[error.problemDetails.errorCode] ??
+      error.problemDetails.detail ??
+      'The request failed for an unknown reason. Check your connection and try again.'
+    )
   }
   return 'Something unexpected happened and the request failed. Check your connection and try again.'
 }

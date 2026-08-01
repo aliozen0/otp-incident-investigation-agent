@@ -30,6 +30,15 @@ describe('toUserMessage', () => {
     expect(msg).toBe('Something specific happened.')
   })
 
+  it('never returns undefined when errorCode is unrecognized and detail is missing', () => {
+    const p = problem('SOME_UNMAPPED_CODE')
+    // @ts-expect-error simulating a backend response with no detail field
+    delete p.detail
+    const msg = toUserMessage(new ApiError(p))
+    expect(typeof msg).toBe('string')
+    expect(msg.length).toBeGreaterThan(0)
+  })
+
   it('handles non-ApiError unknowns with a generic message', () => {
     const msg = toUserMessage(new Error('network down'))
     expect(msg).toMatch(/unexpected|failed/i)

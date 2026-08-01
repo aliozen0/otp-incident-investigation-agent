@@ -46,10 +46,10 @@ export interface RecommendedAction {
 
 export interface KnowledgeReference {
   documentId: string
-  version: string
-  chunkId: string
-  title: string
-  similarityScore: number
+  version?: string
+  chunkId?: string
+  title?: string
+  similarityScore?: number
 }
 
 export interface Validation {
