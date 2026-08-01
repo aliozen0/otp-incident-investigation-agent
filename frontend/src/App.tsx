@@ -4,6 +4,7 @@ import { Footer } from './components/Footer'
 import { QuestionForm } from './components/QuestionForm'
 import { LoadingState } from './components/LoadingState'
 import { ResultCard } from './components/ResultCard'
+import { ErrorPanel } from './components/ErrorPanel'
 import { createInvestigation } from './api/client'
 import { toUserMessage } from './lib/errors'
 import type { Investigation, InvestigationRequest } from './api/types'
@@ -37,7 +38,7 @@ export default function App() {
         <div className="mt-6">
           {phase === 'loading' && <LoadingState />}
           {phase === 'error' && errorMessage && (
-            <p className="text-danger text-sm">{errorMessage}</p>
+            <ErrorPanel message={errorMessage} />
           )}
           {phase === 'result' && investigation && (
             <ResultCard investigation={investigation} />
