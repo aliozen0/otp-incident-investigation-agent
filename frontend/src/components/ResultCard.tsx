@@ -4,6 +4,7 @@ import { EvidenceLedger } from './EvidenceLedger'
 import { HypothesisList } from './HypothesisList'
 import { ActionsList } from './ActionsList'
 import { KnowledgeReferences } from './KnowledgeReferences'
+import { IncidentDecisionPanel } from './IncidentDecisionPanel'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -53,6 +54,10 @@ export function ResultCard({ investigation }: { investigation: Investigation }) 
       <Section title="Related incidents">
         <KnowledgeReferences refs={inv.knowledgeReferences} />
       </Section>
+
+      {inv.status !== 'FAILED' && (
+        <IncidentDecisionPanel investigationId={inv.investigationId} />
+      )}
     </div>
   )
 }
