@@ -95,6 +95,20 @@ public class IncidentDraftController {
                           "reason": "Provider bakım duyurusu doğrulandı."
                         }""")
               }))
+  @ApiResponse(
+      responseCode = "201",
+      content =
+          @Content(
+              examples =
+                  @ExampleObject(
+                      value =
+                          """
+                          {
+                            "incidentDraftId": "5b14fbad-bc66-49e5-89c4-96f8e56d3813",
+                            "externalIncidentId": "DEMO-INC-0001",
+                            "status": "CREATED",
+                            "idempotentReplay": false
+                          }""")))
   public ResponseEntity<IncidentDraftDecisionResponseDto> decide(
       @PathVariable String investigationId,
       @org.springframework.web.bind.annotation.RequestBody IncidentDraftDecisionRequestDto request,
