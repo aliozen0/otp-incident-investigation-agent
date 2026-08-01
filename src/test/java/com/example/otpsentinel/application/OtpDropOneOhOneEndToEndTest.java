@@ -6,9 +6,9 @@ import com.example.otpsentinel.agent.AgentTools;
 import com.example.otpsentinel.agent.EvidenceCollector;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
+import com.example.otpsentinel.agent.stub.OtpDropOneOhOneScript;
 import com.example.otpsentinel.agent.stub.StubChatModel;
 import com.example.otpsentinel.agent.stub.StubScript;
-import com.example.otpsentinel.agent.stub.StubScriptStep;
 import com.example.otpsentinel.domain.Evidence;
 import com.example.otpsentinel.domain.Hypothesis;
 import com.example.otpsentinel.domain.Investigation;
@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -67,75 +66,7 @@ class OtpDropOneOhOneEndToEndTest {
                         "When active connections approach max and timeout rate rises, suspect connection pool exhaustion.")),
             guard,
             collector);
-    StubScript script =
-        new StubScript(
-            List.of(
-                call(
-                    "getOtpMetrics",
-                    Map.of(
-                        "startAt",
-                        "2026-07-30T11:15:00Z",
-                        "endAt",
-                        "2026-07-30T11:30:00Z",
-                        "includePreviousPeriod",
-                        true)),
-                call(
-                    "getErrorDistribution",
-                    Map.of(
-                        "startAt",
-                        "2026-07-30T11:15:00Z",
-                        "endAt",
-                        "2026-07-30T11:30:00Z",
-                        "provider",
-                        "")),
-                call("getQueueHealth", Map.of()),
-                call(
-                    "getProviderHealth",
-                    Map.of(
-                        "provider",
-                        "OPERATOR_B",
-                        "startAt",
-                        "2026-07-30T11:15:00Z",
-                        "endAt",
-                        "2026-07-30T11:30:00Z")),
-                call(
-                    "getRecentChanges",
-                    Map.of(
-                        "from",
-                        "2026-07-30T11:00:00Z",
-                        "to",
-                        "2026-07-30T11:30:00Z",
-                        "component",
-                        "OTP_GATEWAY")),
-                call(
-                    "searchIncidentKnowledge",
-                    Map.of(
-                        "query",
-                        "OTP success rate drop connection pool timeout",
-                        "providerFilter",
-                        "OPERATOR_B",
-                        "topK",
-                        5)),
-                StubScriptStep.finalAnswer(
-                    """
-                    {"status":"ANOMALY_CONFIRMED","severity":"HIGH",
-                     "summary":"OTP success rate dropped to 72.10% with OPERATOR_B timeouts near connection pool capacity; gateway v2.4 deployment timing is correlated, not proven causal.",
-                     "evidence":[{"evidenceId":"ev-otp-success-rate-current"},{"evidenceId":"ev-otp-success-rate-previous"},
-                       {"evidenceId":"ev-timeout-rate"},{"evidenceId":"ev-connection-capacity"},{"evidenceId":"ev-change-chg-102"}],
-                     "hypotheses":[
-                       {"rank":1,"possibleCause":"OPERATOR_B connection pool exhaustion","probability":0.7,
-                        "supportingEvidenceIds":["ev-timeout-rate","ev-connection-capacity"],
-                        "contradictingEvidenceIds":[],"verificationSteps":["check pool metrics dashboard"]},
-                       {"rank":2,"possibleCause":"Gateway v2.4 deploy is correlated in time, not a confirmed cause","probability":0.3,
-                        "supportingEvidenceIds":["ev-change-chg-102"],"contradictingEvidenceIds":[],
-                        "verificationSteps":["compare deploy configuration"]}
-                     ],
-                     "recommendedActions":[{"actionType":"MANUAL_CHECK",
-                       "description":"Inspect OPERATOR_B connection pool sizing","risk":"MEDIUM",
-                       "requiresApproval":false,"executionMode":"MANUAL_CHECK"}],
-                     "knowledgeReferences":[{"documentId":"INC-2026-041","chunkId":"INC-2026-041#v1#c0"}],
-                     "confidence":0.85}
-                    """)));
+    StubScript script = OtpDropOneOhOneScript.build();
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(new StubChatModel(script))
@@ -187,10 +118,6 @@ class OtpDropOneOhOneEndToEndTest {
     assertThat(lower(deploy.possibleCause())).contains("correlat");
     assertThat(lower(deploy.possibleCause())).contains("not a confirmed cause");
     assertThat(lower(deploy.possibleCause())).doesNotContain("caused", "neden oldu");
-  }
-
-  private static StubScriptStep call(String toolName, Map<String, Object> arguments) {
-    return StubScriptStep.callTools(new StubScriptStep.PlannedToolCall(toolName, arguments));
   }
 
   private static double metric(Investigation investigation, String evidenceId) {

@@ -69,7 +69,7 @@
 - [x] Ana fixture doğru
 - [x] INC-2026-041 citation
 - [x] Onaysız incident yok
-- [ ] Idempotency pass
+- [x] Idempotency pass
 - [x] Prompt injection pass
 - [x] Tool budget pass
 - [x] Stub API key olmadan çalışır
@@ -77,3 +77,12 @@
 - [ ] 5–7 dakika demo
 - [ ] Secret scan temiz
 - [ ] Mock olduğu açık
+
+### M7 status
+
+M7 (REST/approval) satisfied US-011/012/013 rows above: preview, human-approval, and idempotency
+Gherkin scenarios (`docs/12`) all pass, closing the `Idempotency pass` checkbox. `GlobalExceptionHandler`
+now maps `dev.langchain4j.exception.HttpException` → `502 MODEL_PROVIDER_ERROR` and
+`dev.langchain4j.exception.TimeoutException` → `504 INVESTIGATION_TIMEOUT`; both are live-model-only
+transport failure paths (AI_MODE=live) and are intentionally not exercised by the offline stub test
+suite. `docker compose up --build`, `README quickstart`, demo, and secret scan remain M8 per `docs/14`.

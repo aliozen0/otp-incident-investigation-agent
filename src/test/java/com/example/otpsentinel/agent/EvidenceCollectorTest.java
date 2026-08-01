@@ -188,6 +188,101 @@ class EvidenceCollectorTest {
     assertThat(auditRepo.events).isEmpty();
   }
 
+  @Test
+  void auditsToolCalledAndCompletedWhenAuditRepositoryPresent() {
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+    Investigation investigation = Investigation.receive("q", window, "v1", "v1");
+    investigation.startCollectingEvidence();
+    List<AuditEvent> captured = new ArrayList<>();
+    AuditEventRepository auditRepo =
+        new AuditEventRepository() {
+          public void append(AuditEvent event) {
+            captured.add(event);
+          }
+
+          public List<AuditEvent> findByInvestigationId(InvestigationId id) {
+            return List.of();
+          }
+        };
+    EvidenceCollector collector = new EvidenceCollector(investigation, auditRepo, "corr-1");
+
+    ToolResult<QueueHealthResult> success =
+        ToolResult.success(
+            "exec-1",
+            "getQueueHealth",
+            Instant.now(),
+            new QueueHealthResult(1L, 1000L, 0L, 0L, 1, 1, 0L, "NORMAL", "HEALTHY"));
+    collector.collect(success);
+
+    assertThat(captured)
+        .extracting(AuditEvent::action)
+        .containsExactly(AuditEventType.TOOL_CALLED, AuditEventType.TOOL_COMPLETED);
+    assertThat(captured).allSatisfy(e -> assertThat(e.correlationId()).isEqualTo("corr-1"));
+    assertThat(captured.get(1).result()).contains("getQueueHealth");
+  }
+
+  @Test
+  void auditsToolFailedOnNonSuccessResult() {
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+    Investigation investigation = Investigation.receive("q", window, "v1", "v1");
+    investigation.startCollectingEvidence();
+    List<AuditEvent> captured = new ArrayList<>();
+    AuditEventRepository auditRepo =
+        new AuditEventRepository() {
+          public void append(AuditEvent event) {
+            captured.add(event);
+          }
+
+          public List<AuditEvent> findByInvestigationId(InvestigationId id) {
+            return List.of();
+          }
+        };
+    EvidenceCollector collector = new EvidenceCollector(investigation, auditRepo, "corr-2");
+
+    ToolResult<QueueHealthResult> timedOut =
+        ToolResult.timeout(
+            "exec-2", "getProviderHealth", Instant.now(), new ToolError("TIMEOUT", "no response"));
+    collector.collect(timedOut);
+
+    assertThat(captured)
+        .extracting(AuditEvent::action)
+        .containsExactly(AuditEventType.TOOL_CALLED, AuditEventType.TOOL_FAILED);
+  }
+
+  @Test
+  void auditsRagCompletedOnKnowledgeCollection() {
+    TimeWindow window =
+        new TimeWindow(
+            Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
+    Investigation investigation = Investigation.receive("q", window, "v1", "v1");
+    investigation.startCollectingEvidence();
+    List<AuditEvent> captured = new ArrayList<>();
+    AuditEventRepository auditRepo =
+        new AuditEventRepository() {
+          public void append(AuditEvent event) {
+            captured.add(event);
+          }
+
+          public List<AuditEvent> findByInvestigationId(InvestigationId id) {
+            return List.of();
+          }
+        };
+    EvidenceCollector collector = new EvidenceCollector(investigation, auditRepo, "corr-3");
+
+    collector.collectKnowledge(
+        List.of(
+            new KnowledgeSearchResult(
+                "INC-2026-041", "1", "title", "chunk-0", 0.9, "benign content")));
+
+    assertThat(captured)
+        .extracting(AuditEvent::action)
+        .containsExactly(AuditEventType.RAG_COMPLETED);
+  }
+
   private static final class InMemoryAuditEventRepository implements AuditEventRepository {
     private final List<AuditEvent> events = new ArrayList<>();
 

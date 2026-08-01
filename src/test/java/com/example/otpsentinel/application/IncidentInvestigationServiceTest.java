@@ -10,7 +10,11 @@ import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.agent.stub.StubChatModel;
 import com.example.otpsentinel.agent.stub.StubScript;
 import com.example.otpsentinel.agent.stub.StubScriptStep;
+import com.example.otpsentinel.domain.AuditEvent;
+import com.example.otpsentinel.domain.AuditEventRepository;
+import com.example.otpsentinel.domain.AuditEventType;
 import com.example.otpsentinel.domain.Investigation;
+import com.example.otpsentinel.domain.InvestigationId;
 import com.example.otpsentinel.domain.InvestigationPhase;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.TimeWindow;
@@ -27,6 +31,7 @@ import com.example.otpsentinel.tools.fixtures.FixtureScenario;
 import dev.langchain4j.service.AiServices;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -167,6 +172,61 @@ class IncidentInvestigationServiceTest {
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.FAILED);
     assertThat(outcome.validationReport().warnings().getFirst())
         .contains("FORBIDDEN_AUTOMATIC_ACTION");
+  }
+
+  @Test
+  void auditsLlmCompletedAndValidationPassedOnSuccessfulCompletion() {
+    List<AuditEvent> captured = new ArrayList<>();
+    AuditEventRepository auditRepo =
+        new AuditEventRepository() {
+          public void append(AuditEvent event) {
+            captured.add(event);
+          }
+
+          public List<AuditEvent> findByInvestigationId(InvestigationId id) {
+            return List.of();
+          }
+        };
+    Investigation investigation = Investigation.receive("q", window(), "v1", "v1");
+    ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofSeconds(2), 1);
+    EvidenceCollector collector = new EvidenceCollector(investigation, auditRepo, "corr-4");
+    FixtureScenario scenario = FixtureCatalog.forFixture(FixtureId.OTP_NORMAL_001);
+    AgentTools tools =
+        new AgentTools(
+            new FixtureOtpMetricsTool(scenario),
+            new FixtureErrorDistributionTool(scenario),
+            new FixtureQueueHealthTool(scenario),
+            new FixtureProviderHealthTool(scenario),
+            new FixtureRecentChangesTool(scenario),
+            (query, provider, topK) -> List.of(),
+            guard,
+            collector);
+    IncidentAnalysisAiService aiService =
+        AiServices.builder(IncidentAnalysisAiService.class)
+            .chatModel(
+                new StubChatModel(
+                    new StubScript(
+                        List.of(
+                            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+                            StubScriptStep.finalAnswer(noAnomalyJson())))))
+            .tools(tools)
+            .build();
+
+    Investigation outcome =
+        new IncidentInvestigationService(1)
+            .investigate(
+                new InvestigationRequest("q", window(), "v1", "v1"),
+                investigation,
+                aiService,
+                guard,
+                collector,
+                auditRepo,
+                "corr-4");
+
+    assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
+    assertThat(captured)
+        .extracting(AuditEvent::action)
+        .contains(AuditEventType.LLM_COMPLETED, AuditEventType.VALIDATION_PASSED);
   }
 
   @Test
