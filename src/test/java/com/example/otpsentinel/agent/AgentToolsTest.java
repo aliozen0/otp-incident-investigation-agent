@@ -43,12 +43,12 @@ class AgentToolsTest {
             collector);
 
     AgentToolResponse<?> response =
-        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", true);
+        tools.getOtpMetrics("2026-07-30T11:15:00Z", "2026-07-30T11:30:00Z", "true");
 
     assertThat(response.status()).isEqualTo(ToolStatus.SUCCESS);
     assertThat(response.evidenceIds()).contains("ev-otp-success-rate-current");
     assertThat(guard.callCount()).isEqualTo(1);
-    assertThatThrownBy(() -> tools.getOtpMetrics("not-an-instant", "2026-07-30T11:30:00Z", true))
+    assertThatThrownBy(() -> tools.getOtpMetrics("not-an-instant", "2026-07-30T11:30:00Z", "true"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("startAt must be an ISO-8601 UTC instant");
     assertThat(guard.callCount()).isEqualTo(1);

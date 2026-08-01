@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Drives an {@link Investigation} lifecycle. Tool selection and hypothesis generation remain
@@ -26,6 +28,8 @@ import java.util.stream.Stream;
  * code. REST and persistence wiring are intentionally deferred to M7.
  */
 public final class IncidentInvestigationService {
+
+  private static final Logger LOG = LoggerFactory.getLogger(IncidentInvestigationService.class);
 
   private final int maxRepairAttempts;
   private final ClaimValidator claimValidator = new ClaimValidator();
@@ -147,6 +151,9 @@ public final class IncidentInvestigationService {
       try {
         return AnalysisAttempt.success(aiService.analyze(request.question(), timeWindow));
       } catch (RuntimeException failure) {
+        // Never logged before this fix: a live-model structured-output/tool-argument failure was
+        // silently swallowed, making it impossible to diagnose (docs/superpowers M9 live e2e).
+        LOG.warn("aiService.analyze attempt {} failed: {}", attempt, failure.toString());
         if (causedByPolicyLimit(failure)) {
           return AnalysisAttempt.policyLimit();
         }

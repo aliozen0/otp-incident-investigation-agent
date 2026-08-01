@@ -22,7 +22,7 @@ public final class OtpDropOneOhOneScript {
                     "endAt",
                     "2026-07-30T11:30:00Z",
                     "includePreviousPeriod",
-                    true)),
+                    "true")),
             call(
                 "getErrorDistribution",
                 Map.of(
