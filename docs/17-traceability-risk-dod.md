@@ -64,8 +64,8 @@
 - [x] `mvn verify`
 - [x] Unit/integration/ATDD pass
 - [x] Testcontainers pgvector pass
-- [ ] `docker compose up --build`
-- [ ] Health UP
+- [x] `docker compose up --build`
+- [x] Health UP
 - [x] Ana fixture doğru
 - [x] INC-2026-041 citation
 - [x] Onaysız incident yok
@@ -73,10 +73,10 @@
 - [x] Prompt injection pass
 - [x] Tool budget pass
 - [x] Stub API key olmadan çalışır
-- [ ] README quickstart
-- [ ] 5–7 dakika demo
-- [ ] Secret scan temiz
-- [ ] Mock olduğu açık
+- [x] README quickstart
+- [ ] 5–7 dakika demo (ayrı, insan-anlatımlı olarak bu oturumda zamanlanmadı — bkz. M8 status)
+- [x] Secret scan temiz
+- [x] Mock olduğu açık
 
 ### M7 status
 
@@ -86,3 +86,13 @@ now maps `dev.langchain4j.exception.HttpException` → `502 MODEL_PROVIDER_ERROR
 `dev.langchain4j.exception.TimeoutException` → `504 INVESTIGATION_TIMEOUT`; both are live-model-only
 transport failure paths (AI_MODE=live) and are intentionally not exercised by the offline stub test
 suite. `docker compose up --build`, `README quickstart`, demo, and secret scan remain M8 per `docs/14`.
+
+### M8 status
+
+- `mvn -B spotless:apply verify`: `BUILD SUCCESS`, `Tests run: 141, Failures: 0, Errors: 0, Skipped: 0` (matches expected 140 + 1 M8-branch bugfix test), HEAD `85ac762`.
+- `docker compose up --build` verified clean (`docker compose down -v && up --build -d`, WSL2, host port 5432 free, no `POSTGRES_PORT` override needed): `db` healthy, `app` healthy/Up, `GET /actuator/health` -> `{"status":"UP"}`.
+- `scripts/demo.sh` run end to end (`time` real 0.446s, well under a minute): investigation created (`ANOMALY_CONFIRMED`/`HIGH`), preview generated (`requiresExplicitApproval=true`), approved (`incidentDraftId=0de1f2c8-a807-42b0-b7c2-d87f37780d18`, `externalIncidentId=DEMO-INC-4A8472AF`), replayed with the same Idempotency-Key -> `idempotentReplay=true`, same `incidentDraftId`.
+- README quickstart + API walkthrough re-run verbatim against the same live environment (separately from `demo.sh`): `docker compose up --build`, health check, Swagger UI (`/swagger-ui/index.html` -> HTTP 200), and the 5-step curl walkthrough all worked with no undocumented flags; second idempotency replay again returned `idempotentReplay=true` with the same `incidentDraftId`.
+- Secret scan: `git log -p milestone/M8-demo-readiness ^main | grep -iE "nvapi-|api[_-]?key.*=|password.*="` -> clean (no match); `grep -rn "nvapi-" . --include=*.md --include=*.yml --include=*.java --include=*.env*` -> only doc/plan files mentioning the literal string `nvapi-` as documentation text (this checklist and the M8 plan doc itself), no real key; `git ls-files .env` -> empty (untracked, confirmed).
+- Mock/PoC disclaimer present in README ("Bu bir mock/PoC'tur" section, with explicit "Mimari" and "MVP dışı" sections listing no real OTP/customer/provider integration).
+- 5-7 minute demo: scripted flow (`scripts/demo.sh`) runs in well under a minute as required; the 5-7 minute figure is presenter narration time per `docs/18-demo-interview-guide.md` and was not separately re-timed with a human narrator in this session — left unticked above for that reason (the script's own runtime is verified and evidenced here).
