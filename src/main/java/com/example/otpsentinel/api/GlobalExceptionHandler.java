@@ -34,6 +34,23 @@ public class GlobalExceptionHandler {
         request);
   }
 
+  @ExceptionHandler(dev.langchain4j.exception.HttpException.class)
+  public ResponseEntity<ProblemDetailsDto> handleModelProviderError(
+      dev.langchain4j.exception.HttpException e, HttpServletRequest request) {
+    return problem(502, "Model provider error", e.getMessage(), "MODEL_PROVIDER_ERROR", request);
+  }
+
+  // Note: langchain4j's own TimeoutException (dev.langchain4j.exception.TimeoutException), not
+  // java.util.concurrent.TimeoutException -- verified against langchain4j-http-client-jdk 1.18.1
+  // sources: JdkHttpClient.execute() catches java.net.http.HttpTimeoutException and rethrows this
+  // type.
+  @ExceptionHandler(dev.langchain4j.exception.TimeoutException.class)
+  public ResponseEntity<ProblemDetailsDto> handleTimeout(
+      dev.langchain4j.exception.TimeoutException e, HttpServletRequest request) {
+    return problem(
+        504, "Investigation timed out", e.getMessage(), "INVESTIGATION_TIMEOUT", request);
+  }
+
   private ResponseEntity<ProblemDetailsDto> problem(
       int status, String title, String detail, String errorCode, HttpServletRequest request) {
     String correlationId = (String) request.getAttribute("correlationId");
