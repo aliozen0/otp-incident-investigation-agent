@@ -3,6 +3,7 @@ import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { QuestionForm } from './components/QuestionForm'
 import { LoadingState } from './components/LoadingState'
+import { ResultCard } from './components/ResultCard'
 import { createInvestigation } from './api/client'
 import { toUserMessage } from './lib/errors'
 import type { Investigation, InvestigationRequest } from './api/types'
@@ -39,9 +40,7 @@ export default function App() {
             <p className="text-danger text-sm">{errorMessage}</p>
           )}
           {phase === 'result' && investigation && (
-            <p className="text-ink-muted text-sm">
-              Result rendering arrives in Task 4 (investigationId: {investigation.investigationId})
-            </p>
+            <ResultCard investigation={investigation} />
           )}
         </div>
       </main>
