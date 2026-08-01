@@ -12,6 +12,7 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
   const [decision, setDecision] = useState<IncidentDecisionResponse | null>(null)
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [isResubmitting, setIsResubmitting] = useState(false)
   const [idempotencyKey] = useState(() => generateIdempotencyKey())
 
   async function handlePreview() {
@@ -41,6 +42,23 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
     } catch (err) {
       setError(toUserMessage(err))
       setStage('previewed')
+    }
+  }
+
+  async function handleResubmit() {
+    setIsResubmitting(true)
+    setError(null)
+    try {
+      const result = await submitIncidentDecision(
+        investigationId,
+        { decision: decision!.status === 'CREATED' ? 'APPROVE' : 'REJECT', reason },
+        idempotencyKey
+      )
+      setDecision(result)
+    } catch (err) {
+      setError(toUserMessage(err))
+    } finally {
+      setIsResubmitting(false)
     }
   }
 
@@ -123,8 +141,9 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
             </p>
           )}
           <button
-            onClick={() => handleDecision(decision.status === 'CREATED' ? 'APPROVE' : 'REJECT')}
-            className="block mt-3 text-xs text-ink-muted underline"
+            onClick={handleResubmit}
+            disabled={isResubmitting}
+            className="block mt-3 text-xs text-ink-muted underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Resubmit with the same idempotency key (demonstrates replay)
           </button>
