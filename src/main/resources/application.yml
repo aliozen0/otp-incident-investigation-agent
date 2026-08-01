@@ -18,6 +18,12 @@ management:
     health:
       show-details: never
 
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.springframework.web: INFO
+
 server:
   port: ${SERVER_PORT:8080}
 
