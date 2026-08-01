@@ -84,3 +84,11 @@
 - **Reason:** Kullanıcının mevcut NVIDIA API key'i var; NIM OpenAI-uyumlu şema sunduğu için LangChain4j'nin OpenAI adaptörü değişiklik gerektirmeden çalışır (ADR-002'deki provider soyutlamasına uygun).
 - **Consequence:** Chat ve embedding model ID'leri (`NVIDIA_CHAT_MODEL`, `NVIDIA_EMBEDDING_MODEL`) M4 (RAG/embedding) ve M5 (agent) oturumlarında NVIDIA build katalogundan seçilip pinlenecek; küçük bir compatibility spike (`docs/19-technology-baseline.md`) bu seçimden önce çalıştırılmalı. `test`/`local-stub` profillerinde bu sağlayıcıya ihtiyaç yoktur (deterministic stub kullanılır).
 - **Not:** `NVIDIA_API_KEY` asla repoya/loglara girmez (`docs/09-security-governance.md`).
+
+## ADR-016 — Portfolyo demosu için birinci sınıf web UI
+
+- **Status:** Accepted
+- **Decision:** `docs/02-prd.md`'nin "UI kapsamı" bölümü ("Swagger yeterlidir, basit UI yalnızca zaman kalırsa") revize edildi: proje artık gerçek, canlı (stub değil) uçtan uca bir demoyu gösterecek bir web arayüzü içerir (M9/M10). Frontend, backend'e ayrı bir servis/container olarak değil, statik build çıktısı Spring Boot'un `static/` kaynaklarına (multi-stage Dockerfile ile) gömülerek sunulur — `docker compose up --build` tek komut kuralı (ADR-004, NFR-003) bozulmaz, yeni container/altyapı eklenmez.
+- **Reason:** Kullanıcı bu projeyi iş görüşmelerinde/portföyde göstermek istiyor; yalnızca Swagger/curl ile "gerçekten çalışıyor" hissi verilemiyor. Amaç, sistemin gerçek NVIDIA NIM canlı model + gerçek pgvector RAG + gerçek agentic tool-calling ile uçtan uca çalıştığını (stub değil) görsel olarak kanıtlamak.
+- **Tech stack:** React + TypeScript + Vite + Tailwind CSS (SPA, backend'in REST API'sini doğrudan tüketir). Açık/beyaz tema; koyu tema yok. "Yapay zeka ile üretilmiş şablon" görünümünden kaçınılır (bkz. `frontend-design` skill rehberliği) — kasıtlı tipografi/renk/layout kararları olan, sıradan olmayan bir tasarım hedeflenir.
+- **Consequence:** M9, canlı modun (gerçek NVIDIA chat + gerçek pgvector RAG + gerçek tool-calling) uçtan uca çalıştığını kanıtlar (önceden yalnızca izole spike'larla doğrulanmıştı). M10 bu kanıtlanmış canlı API'nin üzerine UI'ı kurar. Mock veri (`OTP-DROP-001` fixture) küçük ve gerçekçi kalır; UI bunu "gerçek bir sistem" gibi sunar ama README/ADR'de mock olduğu açık kalır (docs/18 "Gösterilmemesi gerekenler" ihlal edilmez).

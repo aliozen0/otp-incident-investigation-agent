@@ -118,4 +118,6 @@ Tool, RAG, model, validation ve onay akışı kaydedilir.
 
 ## UI kapsamı
 
-MVP için Swagger yeterlidir. Basit UI yalnızca zaman kalırsa eklenir.
+MVP (M0-M8) için Swagger yeterliydi. M9/M10'da bu revize edildi: proje artık portföy/demo amacıyla
+birinci sınıf bir web UI içerir — bkz. `docs/16-adr.md` ADR-016. Swagger hâlâ API sözleşmesi için
+mevcut kalır; UI onun üzerine, aynı REST API'yi tüketen ayrı bir SPA olarak eklenir.
