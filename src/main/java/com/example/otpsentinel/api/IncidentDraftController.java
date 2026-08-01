@@ -41,6 +41,7 @@ public class IncidentDraftController {
       responseCode = "200",
       content =
           @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
               examples =
                   @ExampleObject(
                       value =
@@ -77,6 +78,7 @@ public class IncidentDraftController {
   @RequestBody(
       content =
           @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
               examples = {
                 @ExampleObject(
                     name = "APPROVE",
@@ -99,6 +101,7 @@ public class IncidentDraftController {
       responseCode = "201",
       content =
           @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
               examples =
                   @ExampleObject(
                       value =
@@ -108,6 +111,22 @@ public class IncidentDraftController {
                             "externalIncidentId": "DEMO-INC-0001",
                             "status": "CREATED",
                             "idempotentReplay": false
+                          }""")))
+  @ApiResponse(
+      responseCode = "200",
+      description = "Idempotent replay: same Idempotency-Key resubmitted, same draft returned.",
+      content =
+          @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
+              examples =
+                  @ExampleObject(
+                      value =
+                          """
+                          {
+                            "incidentDraftId": "5b14fbad-bc66-49e5-89c4-96f8e56d3813",
+                            "externalIncidentId": "DEMO-INC-0001",
+                            "status": "CREATED",
+                            "idempotentReplay": true
                           }""")))
   public ResponseEntity<IncidentDraftDecisionResponseDto> decide(
       @PathVariable String investigationId,

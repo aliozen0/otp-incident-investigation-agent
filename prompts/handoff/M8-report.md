@@ -41,8 +41,9 @@ Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && sou
 [INFO] ------------------------------------------------------------------------
 [INFO] Total time:  44.512 s
 ```
-141 = beklenen sayı (140 mevcut + 1, bu branch'teki `secondInvestigationOnTheSameOrchestratorInstanceStillSucceeds`
-stub-script-exhaustion bugfix testinden — `prompts/handoff/M8-bugfix-stub-script-exhaustion.md`).
+141 = beklenen sayı (137 `main`'de mevcut + bu branch'teki 4 yeni test: exception-mislabeling
+regression'ından 3 test + `secondInvestigationOnTheSameOrchestratorInstanceStillSucceeds`
+stub-script-exhaustion bugfix testinden 1 test — `prompts/handoff/M8-bugfix-stub-script-exhaustion.md`).
 
 ### Adım 2 — Clean-environment compose up
 Komut: `docker compose down -v` (WSL2) — çıktı: `Volume otp-incident-agent_pgdata Removed`.
@@ -109,7 +110,7 @@ teyit ediyor: aynı container üzerinde ikinci kez `POST /investigations` çağr
 `ANOMALY_CONFIRMED` dönüyor, ilk bugfix öncesindeki gibi `FAILED` değil.
 
 ## Karşılanan requirement/AC
-- `docs/17` MVP release checklist — 15 kutunun 14'ü kanıtla işaretlendi (`c6cefbc`).
+- `docs/17` MVP release checklist — 16 kutunun 15'i kanıtla işaretlendi (`c6cefbc`).
 - US-011/012/013 (preview/approval/idempotency) — Adım 3 ve Adım 5'te canlı ortamda tekrar kanıtlandı.
 - R-09 (secret loglama) — Adım 4 secret scan'i çalıştırıldı, temiz.
 - R-13 (mock algısı) — README "Bu bir mock/PoC'tur" bölümü canlı ortamda mevcut ve tutarlı.

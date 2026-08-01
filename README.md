@@ -24,6 +24,9 @@ curl -s http://localhost:8080/actuator/health
 
 Swagger UI: http://localhost:8080/swagger-ui/index.html
 
+The API walkthrough below requires `jq` and `uuidgen` (or `python3` as a
+fallback for `uuidgen`) on the host.
+
 If port `5432` is already used on the host, set `POSTGRES_PORT` in `.env` before
 `docker compose up` (e.g. `POSTGRES_PORT=55432`) — the app's own DB connection
 inside the compose network always uses `db:5432` internally, only the host
@@ -99,7 +102,7 @@ curl -s -X POST http://localhost:8080/api/v1/investigations/$INV_ID/incident-dra
   -d '{"decision": "APPROVE", "reason": "Teknik ekip incelemesi için incident gerekli."}' | jq .
 ```
 
-Or run `scripts/demo.sh` (Task 5) to execute all five steps in one command.
+Or run `scripts/demo.sh` to execute all six steps in one command.
 
 ## Bilinen sınırlamalar
 
@@ -112,6 +115,10 @@ Or run `scripts/demo.sh` (Task 5) to execute all five steps in one command.
 - `422 QUESTION_NOT_ACTIONABLE` / `429 INVESTIGATION_RATE_LIMITED` stub-only
   MVP path'te gerçekçi bir tetikleyicisi olmadığı için test edilmemiştir
   (M7-report'ta not düşülmüş, bilinçli boşluk).
+- Sistemde hiçbir yerde authentication/authorization yoktur — bu, yeni
+  eklenen Swagger UI/OpenAPI endpoint'leri (`/swagger-ui/**`, `/v3/api-docs`)
+  dahil tüm REST API'yi kapsar. PoC kapsamı için kabul edilebilir bir
+  boşluktur, ancak bilerek ve proaktif olarak burada belirtilmiştir.
 
 ## Sabit teknoloji tabanı
 

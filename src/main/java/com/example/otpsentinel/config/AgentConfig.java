@@ -38,9 +38,13 @@ public class AgentConfig {
       @Value("${NVIDIA_API_KEY:}") String apiKey,
       @Value("${NVIDIA_CHAT_MODEL:}") String modelId) {
     if ("live".equalsIgnoreCase(aiMode)) {
-      return () ->
+      // Stateless HTTP client: build once and share across investigations.
+      ChatModel live =
           OpenAiChatModel.builder().baseUrl(baseUrl).apiKey(apiKey).modelName(modelId).build();
+      return () -> live;
     }
+    // StubScript's stepIndex is mutable and monotonic, so each investigation needs its own
+    // instance — do NOT collapse this to a cached instance like the live branch above.
     return () -> new StubChatModel(OtpDropOneOhOneScript.build());
   }
 

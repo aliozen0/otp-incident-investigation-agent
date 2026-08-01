@@ -17,6 +17,12 @@ class AgentConfigTest {
   }
 
   @Test
+  void stubSupplierReturnsFreshInstanceOnEachCall() {
+    var supplier = config.chatModelFactory("stub", "https://example.invalid/v1", "", "");
+    assertThat(supplier.get()).isNotSameAs(supplier.get());
+  }
+
+  @Test
   void selectsNvidiaCompatibleOpenAiModelInLiveMode() {
     assertThat(
             config

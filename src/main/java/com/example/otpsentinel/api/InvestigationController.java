@@ -49,6 +49,7 @@ public class InvestigationController {
   @RequestBody(
       content =
           @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
               examples =
                   @ExampleObject(
                       name = "OTP-DROP-001",
@@ -63,6 +64,7 @@ public class InvestigationController {
       responseCode = "200",
       content =
           @Content(
+              mediaType = org.springframework.http.MediaType.APPLICATION_JSON_VALUE,
               examples =
                   @ExampleObject(
                       value =
