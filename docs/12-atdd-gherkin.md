@@ -219,3 +219,87 @@ Feature: Explore the knowledge base safely
     When I run a relevant retrieval preview with topK 5
     Then the document should appear with version, chunk id and similarity score
 ```
+
+## Feature: Intent-aware OTP operational conversation
+
+```gherkin
+Feature: Route OTP assistant messages safely
+
+  Scenario: Answer a greeting without investigation
+    When I send "Merhaba, ne yapıyorsun?" in AUTO mode
+    Then response type should be "CHAT"
+    And no investigation tool should be exposed or called
+    And no investigation should be persisted
+
+  Scenario: Report selected model identity
+    Given I selected a verified model
+    When I ask "Hangi modelisin?"
+    Then response type should be "CHAT"
+    And the answer should identify the selected model and OTP Sentinel role
+
+  Scenario: Clarify an ambiguous operational question
+    When a new session sends "Operatör B nasıl?"
+    Then response type should be "CLARIFICATION"
+    And one clear follow-up question should be returned
+    And no tool should be called
+
+  Scenario: Investigate an explicit root-cause request
+    When I ask why OTP success dropped in the last 15 minutes
+    Then response type should be "INVESTIGATION"
+    And the existing evidence and claim validation pipeline should run
+
+  Scenario: Override AUTO safely
+    When I send a message with explicit CHAT mode
+    Then the tool-free conversation responder should run
+    When I send an analysis request with explicit INVESTIGATION mode
+    Then the existing investigation orchestrator should run
+
+  Scenario: Preserve and isolate bounded context
+    Given a session completed an investigation
+    When that session asks whether timeouts and deploy started together
+    Then prior validated summary may inform routing and the fresh investigation
+    But another session should receive no context from it
+```
+
+## Feature: Evidence-bound investigation visualizations
+
+```gherkin
+Feature: Render only canonical evidence values
+
+  Scenario: Render OTP-DROP-001 comparison
+    When OTP-DROP-001 investigation completes
+    Then at least one visualization should compare current and previous success
+    And every point should reference canonical numeric evidence
+    And fetching the investigation should return the same visualization
+
+  Scenario: Reject fabricated visualization value
+    Given a proposal references a known evidence id with a different metric value
+    When visualization validation runs
+    Then the visualization should not be persisted or returned
+    And validation should warn "VISUALIZATION_REJECTED"
+
+  Scenario: Resist visualization prompt injection
+    Given input asks for executable chart configuration and incident creation
+    When the assistant handles the message
+    Then no executable configuration should be accepted
+    And no incident should be created without explicit authorized approval
+```
+
+## Feature: Adaptive assistant console
+
+```gherkin
+Feature: Render response types at the right density
+
+  Scenario: Send a short greeting
+    When I submit "Merhaba"
+    Then the chat request should be sent
+    And no ten-character investigation minimum should block it
+
+  Scenario: Hide analysis controls in CHAT mode
+    When I choose CHAT interaction mode
+    Then investigation depth and manual time controls should be hidden or disabled accessibly
+
+  Scenario: Render response-specific panels
+    Then CHAT and CLARIFICATION turns should not show evidence, RAG, graph or approval panels
+    And INVESTIGATION turns should show canonical investigation sections and valid visualizations
+```

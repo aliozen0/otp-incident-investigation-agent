@@ -4,9 +4,16 @@ Java tabanlı, kanıta dayalı OTP operasyon inceleme agent'ı için **spec-driv
 
 ## Amaç
 
-Sistem, OTP teslimat performansındaki düşüşleri doğal dilde verilen bir operasyon sorusu üzerinden araştırır. Anlık operasyon verilerini tool calling ile toplar, geçmiş incident ve runbook belgelerini RAG ile getirir, kanıtlarla desteklenen hipotezler üretir ve kullanıcı onayıyla incident taslağı oluşturur.
+Sistem, sınırlı kapsamlı bir **OTP Sentinel operasyon asistanı** olarak normal konuşmayı operasyonel
+inceleme niyetinden ayırır. Normal sohbet ve belirsizliği gideren takip soruları toolsuz yanıtlanır;
+inceleme isteğinde anlık operasyon verileri tool calling ile toplanır, geçmiş incident/runbook
+belgeleri RAG ile getirilir, kanıta bağlı hipotezler ve güvenli görseller üretilir. Incident taslağı
+yalnız kullanıcı onayıyla oluşturulur.
 
 Bu sistem bir metric dashboard veya tam otonom remediation ürünü değildir. Mevcut operasyon araçlarının üzerinde çalışan bir **araştırma ve karar destek katmanıdır**.
+
+Genel bilgi chatbot'u değildir: hava durumu, haber, kod yazma ve kişisel tavsiye gibi OTP operasyon
+kapsamı dışındaki taleplerde kapsamını açıklar ve investigation tool'u çağırmaz.
 
 ## Quickstart
 
@@ -28,6 +35,12 @@ Konsolda sohbet kutusunun içinden doğrulanmış NVIDIA modelini ve hızlı/det
 inceleme modunu seçebilirsiniz. Sağdaki **Bilgi tabanı** alanı indekslenen
 belgeleri, chunk sayılarını, temizlenmiş belge içeriğini ve retrieval testini
 gösterir; aynı alandan yeni belge de yüklenebilir.
+
+Composer ayrıca `Otomatik | Sohbet | İnceleme` etkileşim modunu sunar. Otomatik modda seçili model
+mesajın niyetini semantik olarak belirler; belirsiz OTP sorusunda toolsuz tek takip sorusu sorar.
+Örneğin `Merhaba, ne yapıyorsun?` sade bir sohbet yanıtı, `Operatör B nasıl?` yeni bir oturumda
+açıklama sorusu, `Son 15 dakikada OTP başarı oranı neden düştü?` ise canonical investigation sonucu
+üretir. `Hızlı | Detaylı` yalnız investigation derinliğidir.
 
 ### Windows + WSL2 Docker
 
@@ -97,6 +110,9 @@ MVP dış sistemleri mock adapter'dır. Detaylı container/sequence diyagramlar�
 `docs/05-domain-and-architecture.md`.
 
 ## API walkthrough
+
+Sohbet konsolunun ana endpoint'i `POST /api/v1/chat/messages`'tır. Eski
+`POST /api/v1/investigations` sözleşmesi geriye uyumlu kalır.
 
 ```bash
 # 1. Start an investigation

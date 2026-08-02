@@ -2,7 +2,9 @@
 
 ## Agent rolü
 
-Agent bir **OTP Incident Investigator**'dır.
+Tek asistan/orchestrator, sınırlı kapsamlı bir **OTP Sentinel operasyon asistanı**dır. Tool-free
+router önce CHAT, CLARIFICATION veya INVESTIGATION seçer; aşağıdaki investigation araçları yalnız
+INVESTIGATION dalına bağlanır. CHAT/CLARIFICATION adapter'ında tool specification bulunmaz.
 
 Kuralları:
 
@@ -165,7 +167,8 @@ record IncidentAnalysisResult(
     List<RecommendedAction> recommendedActions,
     List<KnowledgeReference> knowledgeReferences,
     double confidence,
-    boolean approvalRequired
+    boolean approvalRequired,
+    List<VisualizationProposal> visualizations
 ) {}
 ```
 
@@ -195,4 +198,18 @@ record IncidentAnalysisResult(
 
 ## Chat memory
 
-MVP'de kalıcı chat memory yoktur. Her investigation izoledir. Böylece context sızıntısı ve flaky test riski azalır.
+Kalıcı chat memory yoktur. M12.3'te bounded session semantic context, investigation agent'ın tool
+mesaj belleğinden ayrıdır ve restart ile silinir. Router/RAG prompt'una retrieved belge talimatı
+girmez. Her investigation fresh evidence toplar; geçmiş evidence ID yeni kanıt gibi kullanılamaz.
+
+## Intent output
+
+Router output'u `intent`, `confidence`, kısa `normalizedRequest` ve yalnız CLARIFICATION durumunda
+`clarificationQuestion` taşır. Java enum, confidence, gereksiz/eksik alan, boyut ve PII doğrular;
+bir repair sonrası hata verir. Explicit CHAT/INVESTIGATION güvenli override'dır.
+
+## Visualization proposal
+
+Model yalnız kendisine verilen evidence ID/metric değerlerinden `LINE|BAR|GROUPED_BAR|GAUGE|TABLE`
+seçer. Java canonical `VisualizationSpec` kimliğini/metadata'sını doğrular; bilinmeyen evidence,
+uydurma sayı, incompatible unit veya limit aşımı yayımlanmaz/persist edilmez.

@@ -16,6 +16,11 @@
 | US-011 Preview | FR-013 | AC-013 |
 | US-012 Approval | FR-014, SEC-002 | AC-013, AC-015 |
 | US-013 Idempotency | FR-015 | AC-014 |
+| US-014 Normal operational chat | FR-020, FR-022, SEC-007 | AC-041, AC-042, AC-051 |
+| US-015 Clarification | FR-020, FR-023 | AC-044, AC-050 |
+| US-016 Intent-routed investigation | FR-021, FR-024 | AC-043, AC-045 |
+| US-017 Session context | FR-025, NFR-011 | AC-046 |
+| US-018 Safe visualization | FR-026–FR-028, SEC-008 | AC-047–AC-049 |
 
 ## Tool traceability
 
@@ -47,6 +52,11 @@
 | R-12 | Fixture tutarsızlığı | Orta | Yüksek | Arithmetic tests |
 | R-13 | İç mimari varmış algısı | Orta | Orta | Açık mock disclaimer |
 | R-14 | Windows Docker sorunu | Orta | Orta | Portable paths/smoke |
+| R-15 | Her mesajın investigation'a dönüşmesi | Orta | Yüksek | Tool-free LLM route + typed Java gate |
+| R-16 | Route prompt injection / invalid output | Orta | Yüksek | Explicit mode policy, schema validation, repair once, fail closed |
+| R-17 | Chat tool sızıntısı | Düşük | Kritik | Ayrı tool-free adapter + request-level tool specification tests |
+| R-18 | Grafik halüsinasyonu | Orta | Yüksek | Canonical evidence/value/unit binding + bounded schema |
+| R-19 | Session context sızıntısı | Düşük | Yüksek | Separate bounded LRU contexts + isolation tests |
 
 ## Backlog item Definition of Done
 
@@ -58,6 +68,8 @@
 - Spec/API/tool dokümanı günceldir.
 - Input validation, log redaction ve write etkisi değerlendirilmiştir.
 - Correlation log/metric vardır.
+- Response branch'inde izin verilmeyen tool/persistence olmadığını ve visualization provenance'ını
+  kullanıcı görünür integration/ATDD testi doğrular.
 
 ## MVP release checklist
 

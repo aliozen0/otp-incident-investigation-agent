@@ -132,3 +132,25 @@
 - **Consequence:** `GET /api/v1/models` geriye uyumlu ID listesinin yanında zengin seçenek metadata'sı
   döndürür. Knowledge explorer yalnızca sanitize edilmiş içerik ve read-only retrieval preview
   sunar; delete/re-index/config mutation veya yeni servis eklenmez.
+
+## ADR-019 — LLM intent routing with deterministic safety gates
+
+- **Status:** Accepted
+- **Decision:** M12.3 sınırlı kapsamlı OTP operasyon sohbetini kabul eder. `AUTO` mesajında seçili,
+  doğrulanmış LLM; hiçbir tool bağlanmadan structured `CHAT | CLARIFICATION | INVESTIGATION` intent
+  üretir. Java enum/schema/confidence/model/PII/boyut validation ve bir repair sınırını uygular.
+  Explicit CHAT/INVESTIGATION güvenli override'dır. INVESTIGATION mevcut orchestration, tool budget,
+  evidence, RAG, claim validation ve approval hattını atlamaz.
+- **Reason:** Her mesajı investigation'a çevirmek doğal sohbeti bozar; keyword/regex routing ise
+  semantik takip taleplerini güvenilir anlayamaz. LLM semantik beyin, Java deterministik emniyet
+  kemeri olmalıdır.
+- **Boundaries:** Bu karar açık alan chatbot, internet araması, CRM, monitoring veya autonomous
+  remediation yetkisi vermez. CHAT/CLARIFICATION sıfır tool ve sıfır investigation save üretir.
+  Router/chat semantic context'i tool-call memory'den ayrı, session-scoped, LRU/message-bounded ve
+  restart ile silinendir; ADR-017 izolasyonu korunur.
+- **Visualization:** Model yalnız canonical evidence ID/değerleri içinden dar chart type/unit
+  allowlist'i seçebilir. Java evidence/value/unit/limit/sanitization doğrular; invalid chart düşer ve
+  warning üretir. Arbitrary executable renderer config kabul edilmez.
+- **Consequence:** Yeni `/api/v1/chat/messages` discriminated response döndürür; eski investigation
+  ve approval endpointleri geriye uyumludur. Offline purpose-specific stubs CI'ın internet/key
+  gerektirmemesini korur.

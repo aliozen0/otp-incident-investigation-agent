@@ -107,3 +107,38 @@ Ağ tekrarı nedeniyle iki incident oluşmamasını istiyorum.
 5. Taslak oluşturulur ve audit edilir.
 6. Aynı key tekrarında eski ID döner.
 7. `REJECT` durumunda incident oluşmaz.
+
+## Epic E-04 — Niyet farkındalıklı OTP operasyon sohbeti
+
+### US-014
+
+Bir operasyon çalışanı olarak selamlaşma, model kimliği ve kullanım sorularına toolsuz doğal cevap
+almak istiyorum; böylece her mesaj gereksiz investigation başlatmaz.
+
+### US-015
+
+Belirsiz bir OTP sorusunda tek açıklayıcı takip sorusu almak istiyorum; böylece yanlış kapsamda tool
+çağrısı yapılmaz.
+
+### US-016
+
+Açık analiz/kıyas/kök neden isteğimin mevcut agentic evidence pipeline'ına yönlenmesini istiyorum.
+
+### US-017
+
+Aynı oturumdaki doğrulanmış final özet üzerinden takip sorusu sorabilmek, farklı oturumlardan bağlam
+sızmamasını istiyorum.
+
+### US-018
+
+Agent'ın seçtiği grafikleri yalnız canonical evidence değerleriyle görmek istiyorum; böylece görsel
+halüsinasyonla karşılaşmam.
+
+### UC-03 — Uyarlanabilir sohbet mesajı
+
+1. Kullanıcı session/model/interaction mode ile mesaj gönderir.
+2. AUTO ise toolsuz LLM router semantic intent üretir; Java route'u doğrular.
+3. CHAT toolsuz doğal cevap, CLARIFICATION tek soru döndürür.
+4. INVESTIGATION ise zaman aralığı çözülür ve mevcut orchestration/validation hattı çalışır.
+5. Yalnız canonical evidence ile doğrulanan grafikler snapshot'a ve UI'a ulaşır.
+6. Doğrulanmış kullanıcı/asistan turn'leri bounded session context'e eklenir.
