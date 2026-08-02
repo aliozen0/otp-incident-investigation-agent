@@ -13,6 +13,29 @@ class InvestigationRequestValidatorTest {
   private final InvestigationRequestValidator validator = new InvestigationRequestValidator();
 
   @Test
+  void resolveModeDefaultsToThoroughAndAcceptsKnownModesCaseInsensitively() {
+    assertThat(validator.resolveMode(null))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+    assertThat(validator.resolveMode("  "))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+    assertThat(validator.resolveMode("quick"))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.QUICK);
+    assertThat(validator.resolveMode("Thorough"))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+  }
+
+  @Test
+  void resolveModeRejectsAnUnknownModeWith400() {
+    assertThatThrownBy(() -> validator.resolveMode("blazing"))
+        .isInstanceOf(ApiException.class)
+        .satisfies(
+            e -> {
+              assertThat(((ApiException) e).status()).isEqualTo(400);
+              assertThat(((ApiException) e).errorCode()).isEqualTo("INVALID_REQUEST");
+            });
+  }
+
+  @Test
   void rejectsFutureEndTime() {
     InvestigationRequestDto request =
         new InvestigationRequestDto(

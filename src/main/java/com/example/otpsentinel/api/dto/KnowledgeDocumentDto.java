@@ -13,6 +13,9 @@ public record KnowledgeDocumentDto(
     String language,
     String content) {
 
+  /** Response body of a successful upload, so the client can cite/track the generated id. */
+  public record UploadResponse(String documentId, String version) {}
+
   public record ListItem(
       String documentId,
       String version,

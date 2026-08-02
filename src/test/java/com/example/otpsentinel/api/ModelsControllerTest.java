@@ -20,6 +20,10 @@ class ModelsControllerTest extends AbstractPostgresIntegrationTest {
     ResponseEntity<String> response = restTemplate.getForEntity("/api/v1/models", String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody()).contains("meta/llama-3.1-8b-instruct");
+    // Both verified models must be exposed — a picker with one option is not a picker (Task 4).
+    assertThat(response.getBody())
+        .contains("meta/llama-3.1-8b-instruct")
+        .contains("meta/llama-3.3-70b-instruct");
+    assertThat(ModelCatalog.VERIFIED_MODELS).hasSize(2);
   }
 }

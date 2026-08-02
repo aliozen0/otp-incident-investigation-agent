@@ -32,12 +32,14 @@ public class KnowledgeController {
   }
 
   @PostMapping
-  public ResponseEntity<Void> upload(@RequestBody KnowledgeDocumentDto request) {
+  public ResponseEntity<KnowledgeDocumentDto.UploadResponse> upload(
+      @RequestBody KnowledgeDocumentDto request) {
     String documentId = "UPLOAD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    String version = "1";
     try {
       ingestionService.ingest(
           documentId,
-          "1",
+          version,
           request.title(),
           request.documentType(),
           request.provider(),
@@ -50,7 +52,8 @@ public class KnowledgeController {
       throw new ApiException(
           400, "KNOWLEDGE_DOCUMENT_REJECTED", "Document rejected", e.getMessage());
     }
-    return ResponseEntity.status(HttpStatus.CREATED).build();
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(new KnowledgeDocumentDto.UploadResponse(documentId, version));
   }
 
   @GetMapping
