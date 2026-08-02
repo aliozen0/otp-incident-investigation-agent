@@ -9,4 +9,6 @@ public interface KnowledgeRepository {
 
   /** Used by {@link KnowledgeAutoIngestRunner} to make startup ingestion idempotent. */
   boolean existsDocument(String documentId, String version);
+
+  List<KnowledgeDocumentSummary> listDocuments();
 }

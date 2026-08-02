@@ -6,6 +6,7 @@ import com.example.otpsentinel.adapters.persistence.JdbcInvestigationRepository;
 import com.example.otpsentinel.agent.AgentTools;
 import com.example.otpsentinel.agent.EvidenceCollector;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
+import com.example.otpsentinel.agent.SessionChatMemoryStore;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.application.IncidentInvestigationService;
 import com.example.otpsentinel.application.InvestigationRequest;
@@ -32,7 +33,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -53,7 +53,7 @@ public class InvestigationOrchestrator {
   private final JdbcInvestigationRepository investigationRepository;
   private final JdbcIncidentDraftRepository incidentDraftRepository;
   private final JdbcAuditEventRepository auditEventRepository;
-  private final Supplier<ChatModel> chatModelFactory;
+  private final java.util.function.Function<String, ChatModel> chatModelFactory;
   private final KnowledgeSearchPort knowledgeSearchPort;
   private final FixtureOtpMetricsTool otpMetricsTool;
   private final FixtureErrorDistributionTool errorDistributionTool;
@@ -61,15 +61,17 @@ public class InvestigationOrchestrator {
   private final FixtureProviderHealthTool providerHealthTool;
   private final FixtureRecentChangesTool recentChangesTool;
   private final int maxToolCalls;
+  private final int quickModeMaxToolCalls;
   private final Duration toolTimeout;
   private final int toolRetryCount;
   private final int maxRepairAttempts;
+  private final SessionChatMemoryStore sessionChatMemoryStore;
 
   public InvestigationOrchestrator(
       JdbcInvestigationRepository investigationRepository,
       JdbcIncidentDraftRepository incidentDraftRepository,
       JdbcAuditEventRepository auditEventRepository,
-      Supplier<ChatModel> chatModelFactory,
+      java.util.function.Function<String, ChatModel> chatModelFactory,
       KnowledgeSearchPort knowledgeSearchPort,
       FixtureOtpMetricsTool otpMetricsTool,
       FixtureErrorDistributionTool errorDistributionTool,
@@ -77,9 +79,12 @@ public class InvestigationOrchestrator {
       FixtureProviderHealthTool providerHealthTool,
       FixtureRecentChangesTool recentChangesTool,
       @Value("${otp-sentinel.ai.max-tool-calls:8}") int maxToolCalls,
+      @Value("${otp-sentinel.ai.quick-mode-max-tool-calls:5}") int quickModeMaxToolCalls,
       @Value("${otp-sentinel.tool.timeout-millis:2000}") long toolTimeoutMillis,
       @Value("${otp-sentinel.tool.retry-count:1}") int toolRetryCount,
-      @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts) {
+      @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
+      @Value("${otp-sentinel.ai.chat-memory-max-messages:40}") int chatMemoryMaxMessages,
+      @Value("${otp-sentinel.ai.chat-memory-max-sessions:1000}") int chatMemoryMaxSessions) {
     this.investigationRepository = investigationRepository;
     this.incidentDraftRepository = incidentDraftRepository;
     this.auditEventRepository = auditEventRepository;
@@ -91,15 +96,24 @@ public class InvestigationOrchestrator {
     this.providerHealthTool = providerHealthTool;
     this.recentChangesTool = recentChangesTool;
     this.maxToolCalls = maxToolCalls;
+    this.quickModeMaxToolCalls = quickModeMaxToolCalls;
     this.toolTimeout = Duration.ofMillis(toolTimeoutMillis);
     this.toolRetryCount = toolRetryCount;
     this.maxRepairAttempts = maxRepairAttempts;
+    this.sessionChatMemoryStore =
+        new SessionChatMemoryStore(chatMemoryMaxMessages, chatMemoryMaxSessions);
   }
 
   public Investigation runInvestigation(
-      String question, TimeWindow resolvedTimeWindow, String correlationId) {
+      String question,
+      TimeWindow resolvedTimeWindow,
+      String correlationId,
+      String sessionId,
+      String modelId,
+      com.example.otpsentinel.agent.InvestigationMode mode) {
     Investigation investigation =
-        Investigation.receive(question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION);
+        Investigation.receive(
+            question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION, sessionId);
     audit(
         AuditEventType.REQUEST_ACCEPTED,
         investigation.id(),
@@ -113,7 +127,12 @@ public class InvestigationOrchestrator {
         correlationId,
         resolvedTimeWindow.startAt() + "/" + resolvedTimeWindow.endAt());
 
-    ToolBudgetGuard guard = new ToolBudgetGuard(maxToolCalls, toolTimeout, toolRetryCount);
+    // Quick mode = same live-signal tools, no RAG lookup (docs/16 ADR-017 / M11 finding 3). The
+    // knowledge tool short-circuits without consuming the budget, so the quick budget covers
+    // exactly the five non-RAG tools and the run still finishes with a complete result.
+    boolean ragEnabled = mode != com.example.otpsentinel.agent.InvestigationMode.QUICK;
+    int effectiveMaxToolCalls = ragEnabled ? maxToolCalls : quickModeMaxToolCalls;
+    ToolBudgetGuard guard = new ToolBudgetGuard(effectiveMaxToolCalls, toolTimeout, toolRetryCount);
     EvidenceCollector collector =
         new EvidenceCollector(investigation, auditEventRepository, correlationId);
     AgentTools tools =
@@ -125,12 +144,16 @@ public class InvestigationOrchestrator {
             recentChangesTool,
             knowledgeSearchPort,
             guard,
-            collector);
-    ChatModel chatModel = chatModelFactory.get();
+            collector,
+            ragEnabled);
+    ChatModel chatModel = chatModelFactory.apply(modelId);
+    String memoryId =
+        (sessionId == null || sessionId.isBlank()) ? investigation.id().toString() : sessionId;
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(chatModel)
             .tools(tools)
+            .chatMemoryProvider(id -> sessionChatMemoryStore.get((String) id))
             .build();
 
     Investigation outcome =
@@ -143,13 +166,18 @@ public class InvestigationOrchestrator {
                 guard,
                 collector,
                 auditEventRepository,
-                correlationId);
+                correlationId,
+                memoryId);
     investigationRepository.save(outcome);
     return outcome;
   }
 
   public Optional<Investigation> findInvestigation(InvestigationId id) {
     return investigationRepository.findById(id);
+  }
+
+  public List<Investigation> findBySessionId(String sessionId) {
+    return investigationRepository.findBySessionId(sessionId);
   }
 
   public record IncidentDraftPreview(

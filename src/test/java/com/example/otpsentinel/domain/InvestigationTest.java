@@ -234,6 +234,19 @@ class InvestigationTest {
   }
 
   @Test
+  void receiveWithoutSessionIdLeavesItNull() {
+    Investigation investigation = Investigation.receive("why did it drop", WINDOW, "v1", "v1");
+    assertThat(investigation.sessionId()).isNull();
+  }
+
+  @Test
+  void receiveWithSessionIdKeepsIt() {
+    Investigation investigation =
+        Investigation.receive("why did it drop", WINDOW, "v1", "v1", "thread-123");
+    assertThat(investigation.sessionId()).isEqualTo("thread-123");
+  }
+
+  @Test
   void rejectsCompletionFromWrongPhase() {
     Investigation investigation = received();
 

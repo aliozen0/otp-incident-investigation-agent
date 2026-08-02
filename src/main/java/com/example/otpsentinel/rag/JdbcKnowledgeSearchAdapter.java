@@ -21,6 +21,7 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
       JOIN knowledge_document kd
         ON kd.document_id = kc.document_id AND kd.version = kc.version
       WHERE (kd.effective_to IS NULL OR kd.effective_to >= CURRENT_DATE)
+        AND kc.embedding_model = ?
         AND (?::text IS NULL OR kd.provider = ?::text)
       ORDER BY kc.embedding <=> ?::vector
       LIMIT ?
@@ -60,6 +61,10 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
             SEARCH,
             this::mapRow,
             queryVector,
+            // Cosine distance between two different embedding families is meaningless, so a
+            // hash-embedded corpus and an NVIDIA-embedded corpus are never compared in one query
+            // even when both live in knowledge_chunk (DATA-004 / M11 finding 5).
+            embeddingService.modelId(),
             providerFilter,
             providerFilter,
             queryVector,

@@ -24,7 +24,7 @@ class JdbcKnowledgeRetrievalIntegrationTest extends AbstractPostgresIntegrationT
 
   @BeforeEach
   void ingestFixtures() {
-    EmbeddingService embeddingService = new DeterministicHashEmbeddingService(DIMENSION);
+    EmbeddingService embeddingService = new HashEmbeddingService(DIMENSION);
     KnowledgeIngestionService ingestionService =
         new KnowledgeIngestionService(
             new ContentSanitizer(),

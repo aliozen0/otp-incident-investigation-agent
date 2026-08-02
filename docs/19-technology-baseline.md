@@ -134,4 +134,9 @@ NVIDIA_EMBEDDING_MODEL=nvidia/nv-embedqa-e5-v5
 
 `NVIDIA_CHAT_MODEL` M5 spike'ıyla doğrulandı: `meta/llama-3.1-8b-instruct`, tool/function calling destekli (NvidiaNimChatServiceLiveTest ile gerçek endpoint'e karşı bir tool-call round trip doğrulandı). NVIDIA build katalogundaki Llama 3.x Instruct ailesinden seçildi (ADR-015); `meta/llama-3.3-70b-instruct` ilk denemede endpoint kapasite sınırına (`503 ResourceExhausted`) takıldı, `meta/llama-3.1-8b-instruct` tool-call'ı güvenilir şekilde tamamladı.
 
+M11 re-verified a second chat model for the console's model picker: `meta/llama-3.3-70b-instruct`, confirmed via
+`NvidiaNimAlternateModelLiveTest` with a real tool-call round trip against the NVIDIA NIM endpoint.
+Both models are listed in `ModelCatalog`; `GET /api/v1/models` only ever returns ids that have a
+passing `@Tag("local-live")` spike backing them — no unverified model id is exposed.
+
 `NVIDIA_EMBEDDING_MODEL` M4'te compatibility spike ile doğrulandı: `nvidia/nv-embedqa-e5-v5`, dimension 1024, OpenAI-uyumlu `/v1/embeddings` şemasına ek `input_type` (`query`/`passage`) parametresi kabul ediyor. LangChain4j 1.18+'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u bu alanı ayrı bir HTTP interceptor yazmadan taşıyor (bkz. `NvidiaNimEmbeddingService`).

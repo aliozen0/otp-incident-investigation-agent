@@ -4,14 +4,16 @@ import com.example.otpsentinel.agent.stub.OtpDropOneOhOneScript;
 import com.example.otpsentinel.agent.stub.StubChatModel;
 import com.example.otpsentinel.rag.Chunker;
 import com.example.otpsentinel.rag.ContentSanitizer;
-import com.example.otpsentinel.rag.EmbeddingInputType;
 import com.example.otpsentinel.rag.EmbeddingService;
+import com.example.otpsentinel.rag.HashEmbeddingService;
 import com.example.otpsentinel.rag.JdbcKnowledgeRepository;
 import com.example.otpsentinel.rag.JdbcKnowledgeSearchAdapter;
 import com.example.otpsentinel.rag.KnowledgeAutoIngestRunner;
 import com.example.otpsentinel.rag.KnowledgeIngestionService;
+import com.example.otpsentinel.rag.KnowledgeRepository;
 import com.example.otpsentinel.rag.KnowledgeSearchPort;
 import com.example.otpsentinel.rag.NvidiaNimEmbeddingService;
+import com.example.otpsentinel.rag.fixtures.CompositeKnowledgeSearchPort;
 import com.example.otpsentinel.rag.fixtures.FixtureKnowledgeSearchPort;
 import com.example.otpsentinel.tools.fixtures.FixtureCatalog;
 import com.example.otpsentinel.tools.fixtures.FixtureErrorDistributionTool;
@@ -23,7 +25,6 @@ import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureScenario;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,28 +39,44 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Configuration
 public class AgentConfig {
 
+  /**
+   * {@code otp-sentinel.rag.min-score} (0.70) is tuned for NVIDIA embeddings. Hash-trick cosine
+   * scores track raw vocabulary overlap and sit far lower, so the non-live adapter uses the same
+   * threshold the M4 hash-embedding retrieval tests use.
+   */
+  private static final double HASH_EMBEDDING_MIN_SCORE = 0.10;
+
   @Bean
-  public Supplier<ChatModel> chatModelFactory(
+  public java.util.function.Function<String, ChatModel> chatModelFactory(
       @Value("${AI_MODE:stub}") String aiMode,
       @Value("${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}") String baseUrl,
       @Value("${NVIDIA_API_KEY:}") String apiKey,
-      @Value("${NVIDIA_CHAT_MODEL:}") String modelId) {
+      @Value("${NVIDIA_CHAT_MODEL:}") String defaultModelId) {
     if ("live".equalsIgnoreCase(aiMode)) {
-      // Stateless HTTP client: build once and share across investigations. logResponses (not
-      // logRequests, which would include the Authorization header) proves real NVIDIA calls
-      // happened without ever logging NVIDIA_API_KEY (docs/09-security-governance.md).
-      ChatModel live =
-          OpenAiChatModel.builder()
-              .baseUrl(baseUrl)
-              .apiKey(apiKey)
-              .modelName(modelId)
-              .logResponses(true)
-              .build();
-      return () -> live;
+      java.util.concurrent.ConcurrentMap<String, ChatModel> cache =
+          new java.util.concurrent.ConcurrentHashMap<>();
+      return requestedModelId -> {
+        String modelId =
+            (requestedModelId == null || requestedModelId.isBlank())
+                ? defaultModelId
+                : requestedModelId;
+        // Lazily cached per model id: the first request for a given model builds one stateless
+        // HTTP client and shares it across subsequent investigations, same rationale as before
+        // (logResponses, never logRequests — NVIDIA_API_KEY never gets logged).
+        return cache.computeIfAbsent(
+            modelId,
+            id ->
+                OpenAiChatModel.builder()
+                    .baseUrl(baseUrl)
+                    .apiKey(apiKey)
+                    .modelName(id)
+                    .logResponses(true)
+                    .build());
+      };
     }
     // StubScript's stepIndex is mutable and monotonic, so each investigation needs its own
     // instance — do NOT collapse this to a cached instance like the live branch above.
-    return () -> new StubChatModel(OtpDropOneOhOneScript.build());
+    return requestedModelId -> new StubChatModel(OtpDropOneOhOneScript.build());
   }
 
   @Bean
@@ -78,26 +95,41 @@ public class AgentConfig {
           topK,
           minScore);
     }
-    return new FixtureKnowledgeSearchPort();
+    // Non-live: keep the deterministic demo citation AND surface anything actually ingested with
+    // the hash embedding (uploads via POST /api/v1/knowledge/documents) — M11 finding 4.
+    return new CompositeKnowledgeSearchPort(
+        new FixtureKnowledgeSearchPort(),
+        new JdbcKnowledgeSearchAdapter(
+            jdbcTemplate, new HashEmbeddingService(1024), topK, HASH_EMBEDDING_MIN_SCORE));
+  }
+
+  @Bean
+  public KnowledgeRepository knowledgeRepository(JdbcTemplate jdbcTemplate) {
+    return new JdbcKnowledgeRepository(jdbcTemplate);
+  }
+
+  @Bean
+  public KnowledgeIngestionService knowledgeIngestionService(
+      @Value("${AI_MODE:stub}") String aiMode,
+      KnowledgeRepository knowledgeRepository,
+      @Value("${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}") String baseUrl,
+      @Value("${NVIDIA_API_KEY:}") String apiKey,
+      @Value("${NVIDIA_EMBEDDING_MODEL:}") String embeddingModel) {
+    EmbeddingService embeddingService =
+        "live".equalsIgnoreCase(aiMode)
+            ? new NvidiaNimEmbeddingService(baseUrl, apiKey, embeddingModel, 1024)
+            : new HashEmbeddingService(1024);
+    return new KnowledgeIngestionService(
+        new ContentSanitizer(), new Chunker(), embeddingService, knowledgeRepository);
   }
 
   @Bean
   public KnowledgeAutoIngestRunner knowledgeAutoIngestRunner(
       @Value("${AI_MODE:stub}") String aiMode,
-      JdbcTemplate jdbcTemplate,
-      @Value("${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}") String baseUrl,
-      @Value("${NVIDIA_API_KEY:}") String apiKey,
-      @Value("${NVIDIA_EMBEDDING_MODEL:}") String embeddingModel) {
+      KnowledgeRepository knowledgeRepository,
+      KnowledgeIngestionService knowledgeIngestionService) {
     boolean live = "live".equalsIgnoreCase(aiMode);
-    JdbcKnowledgeRepository repository = new JdbcKnowledgeRepository(jdbcTemplate);
-    EmbeddingService embeddingService =
-        live
-            ? new NvidiaNimEmbeddingService(baseUrl, apiKey, embeddingModel, 1024)
-            : new DisabledEmbeddingService();
-    KnowledgeIngestionService ingestionService =
-        new KnowledgeIngestionService(
-            new ContentSanitizer(), new Chunker(), embeddingService, repository);
-    return new KnowledgeAutoIngestRunner(ingestionService, repository, live);
+    return new KnowledgeAutoIngestRunner(knowledgeIngestionService, knowledgeRepository, live);
   }
 
   @Bean
@@ -130,25 +162,5 @@ public class AgentConfig {
   @Bean
   public FixtureRecentChangesTool fixtureRecentChangesTool(FixtureScenario demoFixtureScenario) {
     return new FixtureRecentChangesTool(demoFixtureScenario);
-  }
-
-  /**
-   * Never invoked — {@link KnowledgeAutoIngestRunner#run} short-circuits when disabled (stub mode).
-   */
-  private static final class DisabledEmbeddingService implements EmbeddingService {
-    @Override
-    public java.util.List<Float> embed(String text, EmbeddingInputType inputType) {
-      throw new UnsupportedOperationException("stub mode never ingests knowledge documents");
-    }
-
-    @Override
-    public int dimension() {
-      throw new UnsupportedOperationException("stub mode never ingests knowledge documents");
-    }
-
-    @Override
-    public String modelId() {
-      return "disabled";
-    }
   }
 }

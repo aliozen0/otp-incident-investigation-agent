@@ -32,7 +32,11 @@ public record KnowledgeDocument(
       throw new IllegalArgumentException("title must not be blank");
     }
     Objects.requireNonNull(documentType, "documentType must not be null");
-    Objects.requireNonNull(effectiveFrom, "effectiveFrom must not be null");
+    // IllegalArgumentException, not NPE: this is client-supplied input and the API layer maps
+    // IllegalArgumentException to 400 (an NPE would surface as an unmapped 500).
+    if (effectiveFrom == null) {
+      throw new IllegalArgumentException("effectiveFrom must not be null");
+    }
     if (language == null || language.isBlank()) {
       throw new IllegalArgumentException("language must not be blank");
     }

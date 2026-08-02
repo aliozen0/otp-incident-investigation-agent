@@ -64,10 +64,13 @@ class IncidentAnalysisAiServiceStubTest {
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(stubChatModel)
             .tools(tools)
+            .chatMemoryProvider(
+                sessionId ->
+                    dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
             .build();
 
     IncidentAnalysisResult result =
-        service.analyze("is anything wrong", "2026-07-30T11:15Z/11:30Z");
+        service.analyze("is anything wrong", "2026-07-30T11:15Z/11:30Z", "test-session");
 
     assertThat(result.status()).isEqualTo(InvestigationStatus.NO_ANOMALY);
     assertThat(result.evidence()).containsExactly(new EvidenceReference("ev-queue-health"));

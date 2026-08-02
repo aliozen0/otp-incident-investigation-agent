@@ -31,7 +31,7 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             newInvestigationRepository(),
             newIncidentDraftRepository(),
             newAuditEventRepository(),
-            () -> new StubChatModel(OtpDropOneOhOneScript.build()),
+            modelId -> new StubChatModel(OtpDropOneOhOneScript.build()),
             new FixtureKnowledgeSearchPort(),
             new FixtureOtpMetricsTool(scenario),
             new FixtureErrorDistributionTool(scenario),
@@ -39,15 +39,24 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
+            5,
             2000,
             1,
-            1);
+            1,
+            40,
+            1000);
 
     TimeWindow window =
         new TimeWindow(
             Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
     Investigation outcome =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-1");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-1",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
 
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
@@ -76,7 +85,7 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             newInvestigationRepository(),
             newIncidentDraftRepository(),
             newAuditEventRepository(),
-            () -> new StubChatModel(OtpDropOneOhOneScript.build()),
+            modelId -> new StubChatModel(OtpDropOneOhOneScript.build()),
             new FixtureKnowledgeSearchPort(),
             new FixtureOtpMetricsTool(scenario),
             new FixtureErrorDistributionTool(scenario),
@@ -84,18 +93,33 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
+            5,
             2000,
             1,
-            1);
+            1,
+            40,
+            1000);
 
     TimeWindow window =
         new TimeWindow(
             Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
 
     Investigation first =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2a");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-2a",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
     Investigation second =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2b");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-2b",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
 
     assertThat(first.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(second.phase()).isEqualTo(InvestigationPhase.COMPLETED);

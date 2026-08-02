@@ -53,4 +53,17 @@ public final class InvestigationRequestValidator {
       throw new ApiException(400, "INVALID_TIME_WINDOW", "Invalid time window", e.getMessage());
     }
   }
+
+  public com.example.otpsentinel.agent.InvestigationMode resolveMode(String mode) {
+    if (mode == null || mode.isBlank()) {
+      return com.example.otpsentinel.agent.InvestigationMode.THOROUGH;
+    }
+    try {
+      return com.example.otpsentinel.agent.InvestigationMode.valueOf(
+          mode.toUpperCase(java.util.Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      throw new ApiException(
+          400, "INVALID_REQUEST", "Invalid request", "mode must be 'quick' or 'thorough'");
+    }
+  }
 }

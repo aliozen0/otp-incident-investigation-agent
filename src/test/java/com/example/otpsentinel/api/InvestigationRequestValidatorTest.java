@@ -13,6 +13,29 @@ class InvestigationRequestValidatorTest {
   private final InvestigationRequestValidator validator = new InvestigationRequestValidator();
 
   @Test
+  void resolveModeDefaultsToThoroughAndAcceptsKnownModesCaseInsensitively() {
+    assertThat(validator.resolveMode(null))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+    assertThat(validator.resolveMode("  "))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+    assertThat(validator.resolveMode("quick"))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.QUICK);
+    assertThat(validator.resolveMode("Thorough"))
+        .isEqualTo(com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
+  }
+
+  @Test
+  void resolveModeRejectsAnUnknownModeWith400() {
+    assertThatThrownBy(() -> validator.resolveMode("blazing"))
+        .isInstanceOf(ApiException.class)
+        .satisfies(
+            e -> {
+              assertThat(((ApiException) e).status()).isEqualTo(400);
+              assertThat(((ApiException) e).errorCode()).isEqualTo("INVALID_REQUEST");
+            });
+  }
+
+  @Test
   void rejectsFutureEndTime() {
     InvestigationRequestDto request =
         new InvestigationRequestDto(
@@ -20,7 +43,10 @@ class InvestigationRequestValidatorTest {
             new InvestigationRequestDto.TimeWindowRangeDto(
                 Instant.now().minus(10, ChronoUnit.MINUTES),
                 Instant.now().plus(5, ChronoUnit.MINUTES)),
-            "tr-TR");
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -35,7 +61,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(end.minus(25, ChronoUnit.HOURS), end),
-            "tr-TR");
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -50,7 +79,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(end.minus(15, ChronoUnit.MINUTES), end),
-            "tr-TR");
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThat(validator.validate(request)).isNotNull();
   }
@@ -62,7 +94,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(null, end),
-            "tr-TR");
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -77,7 +112,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(start, null),
-            "tr-TR");
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
