@@ -23,7 +23,17 @@ class ModelsControllerTest extends AbstractPostgresIntegrationTest {
     // Both verified models must be exposed — a picker with one option is not a picker (Task 4).
     assertThat(response.getBody())
         .contains("meta/llama-3.1-8b-instruct")
-        .contains("meta/llama-3.3-70b-instruct");
-    assertThat(ModelCatalog.VERIFIED_MODELS).hasSize(2);
+        .contains("meta/llama-3.3-70b-instruct")
+        .contains("nvidia/llama-3.3-nemotron-super-49b-v1.5")
+        .contains("nvidia/nemotron-3-nano-30b-a3b")
+        .contains("\"defaultModelId\":\"meta/llama-3.1-8b-instruct\"")
+        .contains("\"options\"")
+        .contains("\"label\":\"Llama 3.1 8B\"")
+        .contains("\"profile\":\"FAST\"")
+        .contains("\"verified\":true");
+    assertThat(ModelCatalog.VERIFIED_MODELS).hasSize(4);
+    assertThat(ModelCatalog.VERIFIED_OPTIONS)
+        .extracting(ModelCatalog.ModelOption::id)
+        .containsExactlyElementsOf(ModelCatalog.VERIFIED_MODELS);
   }
 }

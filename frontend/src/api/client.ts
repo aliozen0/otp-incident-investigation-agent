@@ -6,7 +6,10 @@ import type {
   IncidentDecisionResponse,
   ProblemDetails,
   ModelsResponse,
+  ModelOption,
   KnowledgeDocumentSummary,
+  KnowledgeDocumentDetail,
+  KnowledgeSearchResponse,
   KnowledgeDocumentUploadRequest,
   KnowledgeDocumentUploadResponse,
 } from './types'
@@ -111,12 +114,56 @@ export async function listSessionInvestigations(sessionId: string): Promise<Inve
 }
 
 export async function listModels(): Promise<string[]> {
+  return (await getModelCatalog()).models
+}
+
+export async function getModelCatalog(): Promise<{
+  models: string[]
+  options: ModelOption[]
+  defaultModelId: string | null
+}> {
   const raw = await request<ModelsResponse>('/models', { method: 'GET' })
-  return raw.models
+  const options =
+    raw.options ??
+    raw.models.map((id) => ({
+      id,
+      label: id.split('/').at(-1) ?? id,
+      provider: 'NVIDIA NIM',
+      profile: 'BALANCED',
+      description: 'Doğrulanmış analiz modeli',
+      verified: true,
+    }))
+  return {
+    models: raw.models,
+    options,
+    defaultModelId: raw.defaultModelId ?? raw.models[0] ?? null,
+  }
 }
 
 export function listKnowledgeDocuments(): Promise<KnowledgeDocumentSummary[]> {
   return request<KnowledgeDocumentSummary[]>('/knowledge/documents', { method: 'GET' })
+}
+
+export function getKnowledgeDocument(
+  documentId: string,
+  version: string
+): Promise<KnowledgeDocumentDetail> {
+  return request<KnowledgeDocumentDetail>(
+    `/knowledge/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(version)}`,
+    { method: 'GET' }
+  )
+}
+
+export async function previewKnowledgeSearch(
+  query: string,
+  provider?: string,
+  topK = 5
+) {
+  const response = await request<KnowledgeSearchResponse>('/knowledge/search-preview', {
+    method: 'POST',
+    body: JSON.stringify({ query, provider: provider || undefined, topK }),
+  })
+  return response.results
 }
 
 export function uploadKnowledgeDocument(

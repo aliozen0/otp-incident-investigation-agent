@@ -5,6 +5,7 @@ import com.example.otpsentinel.domain.AuditEventRepository;
 import com.example.otpsentinel.domain.AuditEventType;
 import com.example.otpsentinel.domain.Evidence;
 import com.example.otpsentinel.domain.Investigation;
+import com.example.otpsentinel.domain.KnowledgeCitation;
 import com.example.otpsentinel.rag.ContentSanitizer;
 import com.example.otpsentinel.rag.KnowledgeSearchResult;
 import com.example.otpsentinel.tools.*;
@@ -25,6 +26,7 @@ public final class EvidenceCollector {
   private final String correlationId;
   private final ContentSanitizer contentSanitizer = new ContentSanitizer();
   private final List<KnowledgeReference> knownKnowledgeReferences = new ArrayList<>();
+  private final List<KnowledgeSearchResult> knownKnowledgeResults = new ArrayList<>();
 
   public EvidenceCollector(Investigation investigation) {
     this(investigation, null);
@@ -98,6 +100,7 @@ public final class EvidenceCollector {
     List<KnowledgeReference> refs =
         results.stream().map(r -> new KnowledgeReference(r.documentId(), r.chunkId())).toList();
     knownKnowledgeReferences.addAll(refs);
+    knownKnowledgeResults.addAll(results);
     if (auditEventRepository != null && correlationId != null) {
       auditEventRepository.append(
           AuditEvent.of(
@@ -129,6 +132,31 @@ public final class EvidenceCollector {
 
   public List<KnowledgeReference> knownKnowledgeReferences() {
     return List.copyOf(knownKnowledgeReferences);
+  }
+
+  /** Resolves model-requested ids back to canonical retrieval metadata; unknown ids are dropped. */
+  public List<KnowledgeCitation> canonicalKnowledgeCitations(List<KnowledgeReference> requested) {
+    return requested.stream()
+        .distinct()
+        .map(
+            reference ->
+                knownKnowledgeResults.stream()
+                    .filter(
+                        result ->
+                            result.documentId().equals(reference.documentId())
+                                && result.chunkId().equals(reference.chunkId()))
+                    .findFirst()
+                    .map(
+                        result ->
+                            new KnowledgeCitation(
+                                result.documentId(),
+                                result.version(),
+                                result.title(),
+                                result.chunkId(),
+                                result.similarityScore()))
+                    .orElse(null))
+        .filter(Objects::nonNull)
+        .toList();
   }
 
   public List<String> knownEvidenceIds() {

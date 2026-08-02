@@ -10,5 +10,17 @@ public record KnowledgeSearchResult(
     String version,
     String title,
     String chunkId,
+    String sectionTitle,
     double similarityScore,
-    String content) {}
+    String content) {
+
+  public KnowledgeSearchResult(
+      String documentId,
+      String version,
+      String title,
+      String chunkId,
+      double similarityScore,
+      String content) {
+    this(documentId, version, title, chunkId, null, similarityScore, content);
+  }
+}

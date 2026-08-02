@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ChatMessage, type ChatTurn } from './components/ChatMessage'
 import { ChatComposer } from './components/ChatComposer'
-import { createInvestigation, listSessionInvestigations } from './api/client'
+import { EmptyState } from './components/EmptyState'
+import { createInvestigation, getModelCatalog, listSessionInvestigations } from './api/client'
 import {
   listSessions,
   createSession,
@@ -14,12 +15,13 @@ import {
   type SessionMeta,
 } from './lib/sessionStore'
 import { toUserMessage } from './lib/errors'
-import type { InvestigationRequest } from './api/types'
+import type { InvestigationRequest, ModelOption } from './api/types'
 
 export default function App() {
   const [sessions, setSessions] = useState<SessionMeta[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [turns, setTurns] = useState<ChatTurn[]>([])
+  const [models, setModels] = useState<ModelOption[]>([])
   const [modelId, setModelId] = useState<string | null>(null)
   const [mode, setMode] = useState<'quick' | 'thorough'>('thorough')
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -34,12 +36,26 @@ export default function App() {
     } else {
       handleNewChat()
     }
+    getModelCatalog()
+      .then((catalog) => {
+        setModels(catalog.options.filter((option) => option.verified))
+        setModelId((current) => current ?? catalog.defaultModelId)
+      })
+      .catch(() => {
+        setModels([])
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     scrollRef.current?.scrollTo?.({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [turns])
+
+  const activeSession = useMemo(
+    () => sessions.find((session) => session.sessionId === activeSessionId),
+    [sessions, activeSessionId]
+  )
+  const activeModel = models.find((model) => model.id === modelId)
 
   function handleNewChat() {
     const session = createSession()
@@ -55,7 +71,7 @@ export default function App() {
       setTurns(
         investigations.map((investigation) => ({
           id: investigation.investigationId,
-          question: getRecordedQuestion(sessionId, investigation.investigationId) ?? '—',
+          question: getRecordedQuestion(sessionId, investigation.investigationId) ?? 'Önceki inceleme',
           status: 'done' as const,
           investigation,
         }))
@@ -68,33 +84,41 @@ export default function App() {
   async function handleSubmit(question: string, timeWindow?: { startAt: string; endAt: string }) {
     if (!activeSessionId) return
     const turnId = crypto.randomUUID()
-    setTurns((prev) => [...prev, { id: turnId, question, status: 'pending' }])
+    const isFirstTurn = turns.length === 0
+    setTurns((previous) => [...previous, { id: turnId, question, status: 'pending' }])
     setBusy(true)
 
-    if (turns.length === 0) {
+    if (isFirstTurn) {
       renameSession(activeSessionId, question)
       setSessions(listSessions())
     }
 
-    const req: InvestigationRequest = {
+    const request: InvestigationRequest = {
       question,
       timeWindow,
       sessionId: activeSessionId,
       modelId: modelId ?? undefined,
       mode,
+      locale: 'tr-TR',
     }
 
     try {
-      const investigation = await createInvestigation(req)
+      const investigation = await createInvestigation(request)
       recordQuestion(activeSessionId, investigation.investigationId, question)
-      setTurns((prev) =>
-        prev.map((t) =>
-          t.id === turnId ? { ...t, id: investigation.investigationId, status: 'done', investigation } : t
+      setTurns((previous) =>
+        previous.map((turn) =>
+          turn.id === turnId
+            ? { ...turn, id: investigation.investigationId, status: 'done', investigation }
+            : turn
         )
       )
-    } catch (err) {
-      setTurns((prev) =>
-        prev.map((t) => (t.id === turnId ? { ...t, status: 'error', errorMessage: toUserMessage(err) } : t))
+    } catch (error) {
+      setTurns((previous) =>
+        previous.map((turn) =>
+          turn.id === turnId
+            ? { ...turn, status: 'error', errorMessage: toUserMessage(error) }
+            : turn
+        )
       )
     } finally {
       setBusy(false)
@@ -102,28 +126,65 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-paper text-ink font-body flex flex-col">
-      <Header onOpenSettings={() => setSettingsOpen(true)} />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar
-          sessions={sessions}
-          activeSessionId={activeSessionId}
-          onSelect={selectSession}
+    <div className="app-shell">
+      <Sidebar
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onSelect={selectSession}
+        onNewChat={handleNewChat}
+        className="hidden lg:flex"
+      />
+
+      <section className="flex min-w-0 flex-1 flex-col bg-paper">
+        <Header
+          onOpenSettings={() => setSettingsOpen(true)}
           onNewChat={handleNewChat}
+          activeModel={activeModel?.label}
+          mode={mode}
+          sessionTitle={activeSession?.title}
         />
-        <main className="flex-1 flex flex-col min-h-0">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 max-w-[880px] w-full mx-auto">
-            {turns.map((turn) => (
-              <div key={turn.id} className="mb-6">
-                <ChatMessage turn={turn} />
+
+        <main ref={scrollRef} className="conversation-scroll">
+          <div className="mx-auto min-h-full w-full max-w-[940px] px-4 py-8 sm:px-8 lg:px-10">
+            {turns.length === 0 ? (
+              <EmptyState onPrompt={(prompt) => handleSubmit(prompt)} />
+            ) : (
+              <div className="space-y-10 pb-8">
+                {turns.map((turn) => (
+                  <ChatMessage key={turn.id} turn={turn} />
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="px-6 pb-6 max-w-[880px] w-full mx-auto shrink-0">
-            <ChatComposer disabled={busy} onSubmit={handleSubmit} />
+            )}
           </div>
         </main>
-      </div>
+
+        <div className="composer-dock">
+          <div className="mx-auto w-full max-w-[940px] px-4 pb-4 sm:px-8 lg:px-10">
+            <ChatComposer
+              disabled={busy}
+              onSubmit={handleSubmit}
+              models={models}
+              modelId={modelId}
+              onModelChange={setModelId}
+              mode={mode}
+              onModeChange={setMode}
+            />
+            <p className="mt-2 text-center text-[10px] tracking-wide text-ink-subtle">
+              Çıktılar operasyonel kanıtlara dayanır. Değişiklik ve incident işlemleri açık onay gerektirir.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <SettingsPanel
+        modelId={modelId}
+        onModelChange={setModelId}
+        mode={mode}
+        onModeChange={setMode}
+        onClose={() => setSettingsOpen(false)}
+        embedded
+      />
+
       {settingsOpen && (
         <SettingsPanel
           modelId={modelId}

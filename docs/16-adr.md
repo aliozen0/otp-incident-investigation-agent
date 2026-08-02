@@ -116,3 +116,19 @@
   collects its own fresh evidence via the M5/M6 tool-budget and validation pipeline — chat memory
   only carries the model's own prior turns for conversational continuity, never past evidence ids
   as if they were newly collected (docs/16 ADR-008 evidence-id provenance is unaffected).
+
+## ADR-018 — Curated model catalog and canonical RAG presentation (M12.1)
+
+- **Status:** Accepted
+- **Decision:** Agent console NVIDIA'nın canlı katalogunu doğrudan kullanıcıya açmaz. Model picker
+  yalnızca LangChain4j tool calling, structured output, Türkçe OTP senaryosu ve policy-limit
+  testlerinden geçen statik allowlist'i kullanıcı dostu metadata ile sunar. Model seçimi composer
+  içinde yer alır. Investigation summary ve RAG citation'ları canonical snapshot'ta saklanır;
+  citation metadata'sı modelden kabul edilmez, application-side evidence collector tarafından
+  retrieval sonuçlarından üretilir.
+- **Reason:** Katalog erişilebilirliği ve model yetenekleri zamanla değişebilir. Doğrulanmamış bir
+  modeli göstermek tool policy, structured output ve demo güvenilirliğini bozabilir. Aynı şekilde
+  model tarafından yeniden yazılan citation metadata'sı kaynak uydurma riski taşır.
+- **Consequence:** `GET /api/v1/models` geriye uyumlu ID listesinin yanında zengin seçenek metadata'sı
+  döndürür. Knowledge explorer yalnızca sanitize edilmiş içerik ve read-only retrieval preview
+  sunar; delete/re-index/config mutation veya yeni servis eklenmez.

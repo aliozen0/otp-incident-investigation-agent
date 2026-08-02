@@ -64,7 +64,7 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
   }
 
   return (
-    <div className="mt-6 border-t border-line pt-6">
+    <div>
       <h2 className="font-display text-sm uppercase tracking-wide text-ink-muted mb-2">
         Olay taslağı
       </h2>

@@ -4,7 +4,6 @@ import com.example.otpsentinel.agent.DuplicateToolCallException;
 import com.example.otpsentinel.agent.EvidenceCollector;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
 import com.example.otpsentinel.agent.IncidentAnalysisResult;
-import com.example.otpsentinel.agent.KnowledgeReference;
 import com.example.otpsentinel.agent.ToolBudgetExceededException;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.domain.AuditEvent;
@@ -14,10 +13,8 @@ import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.ValidationReport;
 import com.example.otpsentinel.domain.ValidationStatus;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,14 +120,13 @@ public final class IncidentInvestigationService {
       return investigation;
     }
 
-    List<String> acceptedKnowledgeReferences =
-        filterKnownKnowledgeReferences(analysis.knowledgeReferences(), collector);
     try {
       investigation.proposeAnalysis(
+          analysis.summary(),
           analysis.severity(),
           analysis.hypotheses(),
           analysis.recommendedActions(),
-          acceptedKnowledgeReferences,
+          collector.canonicalKnowledgeCitations(analysis.knowledgeReferences()),
           analysis.confidence());
       investigation.startValidating();
       finish(investigation, analysis, claimReport.warnings());
@@ -212,16 +208,6 @@ public final class IncidentInvestigationService {
       }
     }
     return false;
-  }
-
-  private static List<String> filterKnownKnowledgeReferences(
-      List<KnowledgeReference> requested, EvidenceCollector collector) {
-    Set<KnowledgeReference> known = new HashSet<>(collector.knownKnowledgeReferences());
-    return requested.stream()
-        .filter(known::contains)
-        .map(KnowledgeReference::documentId)
-        .distinct()
-        .toList();
   }
 
   private static void finish(

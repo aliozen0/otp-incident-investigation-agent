@@ -101,6 +101,19 @@ Tamamlanan investigation ID ile tekrar görüntülenebilmelidir.
 - approval/rejection
 - incident created
 
+### FR-018 — Agent console
+
+- Aynı session içindeki investigation'lar sohbet akışında gösterilmelidir.
+- Doğrulanmış model allowlist'i composer içinden seçilebilmelidir.
+- Structured result içindeki doğal dil özeti canonical snapshot'ta saklanmalıdır.
+- RAG citation alanları uygulamanın topladığı canonical metadata'dan üretilmelidir.
+
+### FR-019 — Knowledge explorer
+
+- Knowledge belgeleri tam metadata, güvenli içerik ve chunk ayrıntılarıyla listelenebilmelidir.
+- Kullanıcı en fazla 5 sonuç döndüren salt-okunur retrieval preview çalıştırabilmelidir.
+- Preview sonucu document ID, version, title, chunk ID ve similarity score taşımalıdır.
+
 ## AI requirements
 
 ### AI-001 — Evidence bounded
@@ -142,6 +155,8 @@ Model provider/name, prompt version ve schema version saklanmalıdır.
 - **DATA-003:** Knowledge belge sürümü taşır.
 - **DATA-004:** Embedding model/version saklanır.
 - **DATA-005:** Audit append-only yaklaşımında tutulur.
+- **DATA-006:** Canonical investigation snapshot doğal dil özetini ve zengin knowledge citation
+  metadata'sını saklar.
 
 ## Non-functional requirements
 
@@ -154,6 +169,8 @@ Model provider/name, prompt version ve schema version saklanmalıdır.
 - **NFR-007:** Hatalar tutarlı problem-details formatında olmalıdır.
 - **NFR-008:** Tool timeout, retry ve total deadline bulunmalıdır.
 - **NFR-009:** Hipotez-evidence ilişkisi kullanıcıya görünmelidir.
+- **NFR-010:** Agent console masaüstü ve mobil genişliklerde kullanılabilir, klavye ile erişilebilir
+  ve tüm statik metinleri Türkçe olmalıdır.
 
 ## Security requirements
 

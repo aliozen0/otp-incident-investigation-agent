@@ -90,7 +90,7 @@ public final class KnowledgeIngestionService {
                         embeddingService.modelId()))
             .toList();
 
-    repository.save(document, embedded);
+    repository.save(document, sanitized, embedded);
   }
 
   /**

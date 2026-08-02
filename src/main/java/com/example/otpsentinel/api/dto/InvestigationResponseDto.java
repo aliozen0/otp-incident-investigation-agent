@@ -33,7 +33,8 @@ public record InvestigationResponseDto(
   public record RecommendedActionDto(
       String actionType, String description, String risk, boolean requiresApproval) {}
 
-  public record KnowledgeReferenceDto(String documentId) {}
+  public record KnowledgeReferenceDto(
+      String documentId, String version, String chunkId, String title, Double similarityScore) {}
 
   public record ValidationDto(String status, List<String> warnings) {}
 }

@@ -9,8 +9,49 @@ import java.util.List;
  */
 public final class ModelCatalog {
 
+  public record ModelOption(
+      String id,
+      String label,
+      String provider,
+      String profile,
+      String description,
+      boolean verified) {}
+
+  public static final List<ModelOption> VERIFIED_OPTIONS =
+      List.of(
+          new ModelOption(
+              "meta/llama-3.1-8b-instruct",
+              "Llama 3.1 8B",
+              "Meta / NVIDIA NIM",
+              "FAST",
+              "Hızlı operasyon sorguları ve düşük gecikmeli incelemeler",
+              true),
+          new ModelOption(
+              "meta/llama-3.3-70b-instruct",
+              "Llama 3.3 70B",
+              "Meta / NVIDIA NIM",
+              "BALANCED",
+              "Daha kapsamlı hipotez üretimi ve güçlü tool calling",
+              true),
+          new ModelOption(
+              "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+              "Llama 3.3 Nemotron Super 49B",
+              "NVIDIA NIM",
+              "DEEP_ANALYSIS",
+              "Karmaşık olaylarda ayrıntılı muhakeme ve güvenilir araç kullanımı",
+              true),
+          new ModelOption(
+              "nvidia/nemotron-3-nano-30b-a3b",
+              "Nemotron 3 Nano 30B",
+              "NVIDIA NIM",
+              "EFFICIENT",
+              "Hız ve analiz kalitesi arasında dengeli, verimli inceleme",
+              true));
+
   public static final List<String> VERIFIED_MODELS =
-      List.of("meta/llama-3.1-8b-instruct", "meta/llama-3.3-70b-instruct");
+      VERIFIED_OPTIONS.stream().map(ModelOption::id).toList();
+
+  public static final String DEFAULT_MODEL_ID = VERIFIED_MODELS.getFirst();
 
   private ModelCatalog() {}
 }

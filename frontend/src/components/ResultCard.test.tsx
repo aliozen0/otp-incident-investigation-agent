@@ -36,4 +36,19 @@ describe('ResultCard', () => {
     render(<ResultCard investigation={INVESTIGATION} />)
     expect(screen.getByText(/Anomali doğrulandı/, { selector: 'p' })).toBeInTheDocument()
   })
+
+  it('renders a validated natural language model summary when available', () => {
+    render(
+      <ResultCard
+        investigation={{
+          ...INVESTIGATION,
+          summary: 'OTP başarısı düştü ve hata Operatör B üzerinde yoğunlaştı.',
+        }}
+      />
+    )
+
+    expect(
+      screen.getByText('OTP başarısı düştü ve hata Operatör B üzerinde yoğunlaştı.')
+    ).toBeInTheDocument()
+  })
 })

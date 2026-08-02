@@ -8,64 +8,105 @@ import { IncidentDecisionPanel } from './IncidentDecisionPanel'
 import { HypothesisChart } from './charts/HypothesisChart'
 import { ConfidenceGauge } from './charts/ConfidenceGauge'
 import { synthesizeSummary } from '../lib/summarize'
-import { UI_TEXT } from '../lib/labels'
+import { formatDateTime, UI_TEXT } from '../lib/labels'
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function DetailSection({
+  title,
+  count,
+  children,
+  open = false,
+}: {
+  title: string
+  count?: number
+  children: React.ReactNode
+  open?: boolean
+}) {
   return (
-    <section className="mt-6">
-      <h2 className="font-display text-sm uppercase tracking-wide text-ink-muted mb-2">{title}</h2>
-      {children}
-    </section>
+    <details className="result-detail" open={open}>
+      <summary>
+        <span>{title}</span>
+        {count !== undefined && <span className="detail-count">{count}</span>}
+      </summary>
+      <div className="px-4 pb-4 pt-2">{children}</div>
+    </details>
   )
 }
 
 export function ResultCard({ investigation }: { investigation: Investigation }) {
   const inv = investigation
+  const naturalSummary =
+    inv.summary && inv.summary !== inv.status ? inv.summary : synthesizeSummary(inv)
+
   return (
-    <div className="border border-line rounded-lg p-6">
-      <StatusBadge status={inv.status} severity={inv.severity} />
-      <p className="mt-3 text-ink">{synthesizeSummary(inv)}</p>
+    <article className="assistant-result">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge status={inv.status} severity={inv.severity} />
+        <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.16em] text-ink-subtle">
+          {formatDateTime(inv.timeWindow.endAt)}
+        </span>
+      </div>
+
+      <p className="mt-4 text-[15px] leading-7 text-ink">{naturalSummary}</p>
+
+      <div className="result-stats">
+        <div>
+          <span>Güven skoru</span>
+          {inv.confidence !== null ? (
+            <ConfidenceGauge confidence={inv.confidence} />
+          ) : (
+            <strong>—</strong>
+          )}
+        </div>
+        <div>
+          <span>Kanıt</span>
+          <strong>{inv.evidence.length}</strong>
+        </div>
+        <div>
+          <span>Hipotez</span>
+          <strong>{inv.hypotheses.length}</strong>
+        </div>
+        <div>
+          <span>RAG kaynağı</span>
+          <strong>{inv.knowledgeReferences.length}</strong>
+        </div>
+      </div>
 
       {inv.validation.warnings.length > 0 && (
-        <div className="mt-3 border border-alert bg-alert-soft rounded-md p-3">
-          <p className="font-display text-xs uppercase text-alert mb-1">Doğrulama uyarıları</p>
-          <ul className="list-disc list-inside text-sm text-ink">
-            {inv.validation.warnings.map((w, i) => (
-              <li key={i}>{w}</li>
+        <div className="mt-4 border-l-2 border-alert bg-alert-soft px-4 py-3">
+          <p className="font-display text-xs font-semibold uppercase tracking-wide text-alert">
+            Doğrulama notu
+          </p>
+          <ul className="mt-1 space-y-1 text-sm leading-5 text-ink">
+            {inv.validation.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {inv.confidence !== null && (
-        <div className="mt-3">
-          <p className="font-display text-xs uppercase text-ink-muted mb-1">{UI_TEXT.confidenceLabel}</p>
-          <ConfidenceGauge confidence={inv.confidence} />
-        </div>
-      )}
-
-      <Section title={UI_TEXT.evidenceSection}>
-        <EvidenceLedger evidence={inv.evidence} />
-      </Section>
-
-      <Section title={UI_TEXT.hypothesesSection}>
-        <HypothesisChart hypotheses={inv.hypotheses} />
-        <div className="mt-4">
-          <HypothesisList hypotheses={inv.hypotheses} />
-        </div>
-      </Section>
-
-      <Section title={UI_TEXT.actionsSection}>
-        <ActionsList actions={inv.recommendedActions} />
-      </Section>
-
-      <Section title={UI_TEXT.knowledgeRefsSection}>
-        <KnowledgeReferences refs={inv.knowledgeReferences} />
-      </Section>
+      <div className="mt-5 overflow-hidden rounded-lg border border-line">
+        <DetailSection title={UI_TEXT.hypothesesSection} count={inv.hypotheses.length} open>
+          <HypothesisChart hypotheses={inv.hypotheses} />
+          <div className="mt-4">
+            <HypothesisList hypotheses={inv.hypotheses} />
+          </div>
+        </DetailSection>
+        <DetailSection title={UI_TEXT.evidenceSection} count={inv.evidence.length}>
+          <EvidenceLedger evidence={inv.evidence} />
+        </DetailSection>
+        <DetailSection title={UI_TEXT.actionsSection} count={inv.recommendedActions.length}>
+          <ActionsList actions={inv.recommendedActions} />
+        </DetailSection>
+        <DetailSection title={UI_TEXT.knowledgeRefsSection} count={inv.knowledgeReferences.length}>
+          <KnowledgeReferences refs={inv.knowledgeReferences} />
+        </DetailSection>
+      </div>
 
       {inv.status !== 'FAILED' && (
-        <IncidentDecisionPanel investigationId={inv.investigationId} />
+        <div className="mt-5 border-t border-line pt-5">
+          <IncidentDecisionPanel investigationId={inv.investigationId} />
+        </div>
       )}
-    </div>
+    </article>
   )
 }

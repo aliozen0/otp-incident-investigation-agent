@@ -1,19 +1,39 @@
-import { UI_TEXT } from '../lib/labels'
+interface Props {
+  onOpenSettings: () => void
+  activeModel?: string
+  mode?: 'quick' | 'thorough'
+  sessionTitle?: string
+  onNewChat?: () => void
+}
 
-export function Header({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function Header({ onOpenSettings, activeModel, mode = 'thorough', sessionTitle, onNewChat }: Props) {
   return (
-    <header className="border-b border-line px-6 py-3 flex items-center justify-between shrink-0">
-      <div>
-        <span className="font-display font-semibold text-lg tracking-tight">{UI_TEXT.appName}</span>
-        <span className="ml-2 text-ink-muted text-sm">{UI_TEXT.appTagline}</span>
+    <header className="app-header">
+      <div className="min-w-0">
+        <p className="truncate font-display text-[15px] font-semibold text-ink">
+          {sessionTitle || 'Yeni inceleme'}
+        </p>
+        <p className="mt-0.5 hidden text-[11px] text-ink-subtle sm:block">
+          Kanıta dayalı OTP olay araştırması
+        </p>
       </div>
-      <button
-        type="button"
-        onClick={onOpenSettings}
-        className="font-mono text-xs uppercase tracking-wide text-ink-muted border border-line rounded px-3 py-1.5 hover:bg-line/30"
-      >
-        {UI_TEXT.settings}
-      </button>
+      <div className="ml-auto flex items-center gap-2">
+        {onNewChat && (
+          <button type="button" onClick={onNewChat} className="header-action lg:hidden" aria-label="Yeni sohbet">
+            <span aria-hidden="true">＋</span>
+          </button>
+        )}
+        {activeModel && (
+          <span className="header-chip hidden md:inline-flex">
+            <span className="status-dot bg-confirm" /> {activeModel}
+          </span>
+        )}
+        <span className="header-chip">{mode === 'quick' ? 'Hızlı' : 'Detaylı'}</span>
+        <button type="button" onClick={onOpenSettings} className="header-action" aria-label="Bilgi tabanı ve ayarlar">
+          <span aria-hidden="true">☰</span>
+          <span className="hidden sm:inline">Bilgi tabanı</span>
+        </button>
+      </div>
     </header>
   )
 }

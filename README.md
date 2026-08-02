@@ -22,6 +22,33 @@ curl -s http://localhost:8080/actuator/health
 # {"status":"UP"}
 ```
 
+Kurumsal agent konsolu: http://localhost:8080/
+
+Konsolda sohbet kutusunun içinden doğrulanmış NVIDIA modelini ve hızlı/detaylı
+inceleme modunu seçebilirsiniz. Sağdaki **Bilgi tabanı** alanı indekslenen
+belgeleri, chunk sayılarını, temizlenmiş belge içeriğini ve retrieval testini
+gösterir; aynı alandan yeni belge de yüklenebilir.
+
+### Windows + WSL2 Docker
+
+Windows'ta Docker komutu yoksa ve Docker Engine WSL2 dağıtımında çalışıyorsa
+Compose'u doğrudan WSL üzerinden başlatın:
+
+```powershell
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build"
+```
+
+Arka planda başlatmak ve durumu görmek için:
+
+```powershell
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d && docker compose ps"
+```
+
+Windows tarayıcısından yine http://localhost:8080/ adresini açın. Compose
+frontend'i ayrı bir servis olarak değil, Spring Boot üretim imajına gömülü
+olarak sunar; bu nedenle tek komut uygulama, arayüz ve PostgreSQL/pgvector'ü
+birlikte ayağa kaldırır.
+
 Swagger UI: http://localhost:8080/swagger-ui/index.html
 
 The API walkthrough below requires `jq` and `uuidgen` (or `python3` as a
@@ -154,6 +181,9 @@ gerektirmez.
   eklenen Swagger UI/OpenAPI endpoint'leri (`/swagger-ui/**`, `/v3/api-docs`)
   dahil tüm REST API'yi kapsar. PoC kapsamı için kabul edilebilir bir
   boşluktur, ancak bilerek ve proaktif olarak burada belirtilmiştir.
+- Model listesi NVIDIA kataloğunun tamamını dinamik olarak yansıtmaz. Yalnızca
+  gerçek endpoint'e karşı tool-call kabul testini geçen dört model sunulur;
+  böylece seçim kutusunda uyumsuz veya doğrulanmamış bir model görünmez.
 
 ## Sabit teknoloji tabanı
 

@@ -8,12 +8,18 @@ export function KnowledgeReferences({ refs }: { refs: KnowledgeReference[] }) {
   }
 
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2">
       {refs.map((r, i) => (
-        <li key={`${r.documentId}-${r.chunkId ?? i}`} className="text-sm text-ink-muted">
-          <code className="font-mono text-xs text-ink">{r.documentId}{r.version ? ` v${r.version}` : ''}</code>
-          {r.title && <>{' — '}{r.title}</>}
-          <span className="ml-2"><SimilarityBar reference={r} /></span>
+        <li key={`${r.documentId}-${r.chunkId ?? i}`} className="rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-ink-muted">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <strong className="block text-xs font-medium text-ink">{r.title ?? r.documentId}</strong>
+              <code className="mt-1 block font-mono text-[9px] text-ink-subtle">
+                {r.documentId}{r.version ? ` · v${r.version}` : ''}{r.chunkId ? ` · ${r.chunkId}` : ''}
+              </code>
+            </div>
+            <SimilarityBar reference={r} />
+          </div>
         </li>
       ))}
     </ul>

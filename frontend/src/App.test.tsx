@@ -12,7 +12,20 @@ describe('App chat flow', () => {
           return Promise.resolve({
             ok: true,
             status: 200,
-            json: async () => ({ models: ['meta/llama-3.1-8b-instruct'] }),
+            json: async () => ({
+              models: ['meta/llama-3.1-8b-instruct'],
+              defaultModelId: 'meta/llama-3.1-8b-instruct',
+              options: [
+                {
+                  id: 'meta/llama-3.1-8b-instruct',
+                  label: 'Llama 3.1 8B',
+                  provider: 'Meta / NVIDIA NIM',
+                  profile: 'FAST',
+                  description: 'Hızlı',
+                  verified: true,
+                },
+              ],
+            }),
           })
         }
         if (url.includes('/knowledge/documents')) {
@@ -27,7 +40,7 @@ describe('App chat flow', () => {
               investigationId: `inv-${body.question.length}`,
               status: 'ANOMALY_CONFIRMED',
               severity: 'HIGH',
-              summary: 'ANOMALY_CONFIRMED',
+              summary: 'OTP başarısı düştü ve Operatör B üzerinde yoğunlaştı.',
               timeWindow: { startAt: '2026-07-30T11:15:00Z', endAt: '2026-07-30T11:30:00Z' },
               evidence: [],
               hypotheses: [],
@@ -51,6 +64,7 @@ describe('App chat flow', () => {
     render(<App />)
 
     const textarea = await screen.findByPlaceholderText(/Ne araştırmak istersiniz/)
+    expect(screen.getByLabelText('Analiz modeli')).toHaveValue('meta/llama-3.1-8b-instruct')
     fireEvent.change(textarea, { target: { value: 'OTP oranı neden düştü?' } })
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
 
@@ -71,5 +85,9 @@ describe('App chat flow', () => {
     const secondSessionId = JSON.parse(postCalls[1][1].body as string).sessionId
     expect(firstSessionId).toBeTruthy()
     expect(firstSessionId).toBe(secondSessionId)
+    expect(JSON.parse(postCalls[0][1].body as string).modelId)
+      .toBe('meta/llama-3.1-8b-instruct')
+    expect(screen.getAllByText('OTP başarısı düştü ve Operatör B üzerinde yoğunlaştı.').length)
+      .toBeGreaterThan(0)
   })
 })

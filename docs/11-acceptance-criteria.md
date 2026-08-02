@@ -127,3 +127,34 @@ Response zorunlu alanları ve geçerli enum değerlerini taşımalıdır.
 ### AC-030
 
 GET endpoint aynı canonical result snapshot'ını döndürmelidir.
+
+## M12.1 agent console ve RAG explorer
+
+### AC-031
+
+POST ve sonraki GET response'ları aynı doğal dil `summary` değerini döndürmelidir.
+
+### AC-032
+
+Knowledge reference `documentId`, `version`, `title`, `chunkId` ve canonical similarity score
+taşımalıdır; model bilinmeyen citation metadata'sı ekleyememelidir.
+
+### AC-033
+
+Model seçici composer içinde görünmeli ve yalnızca canlı compatibility testiyle doğrulanmış allowlist
+değerlerini investigation request'e göndermelidir.
+
+### AC-034
+
+Knowledge explorer yüklenen belgeleri metadata, sanitize edilmiş içerik ve chunk ayrıntılarıyla
+göstermelidir.
+
+### AC-035
+
+Retrieval preview en fazla beş sonuç döndürmeli ve yeni yüklenen alakalı belgeyi citation alanlarıyla
+gösterebilmelidir.
+
+### AC-036
+
+WSL2 üzerinden `docker compose up --build` sonrasında SPA, API ve PostgreSQL healthy olmalı; stub
+akışı API key olmadan çalışmalıdır.

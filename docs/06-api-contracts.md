@@ -112,6 +112,32 @@
 
 Canonical persisted result snapshot'ını döndürür.
 
+`summary` modelin ürettiği ve deterministik validator'dan geçen doğal dil özetidir. Persist edilen
+snapshot tekrar okunduğunda değişmez. `knowledgeReferences` yalnızca model çıktısından kopyalanmaz;
+uygulamanın retrieval sırasında topladığı canonical `documentId`, `version`, `title`, `chunkId` ve
+`similarityScore` alanlarıyla zenginleştirilir.
+
+## GET `/api/v1/models`
+
+Geriye uyumluluk için `models` alanında doğrulanmış model ID listesi korunur. `options` alanı
+composer'ın kullanacağı kullanıcı dostu metadata'yı, `defaultModelId` varsayılan seçimi taşır.
+Yalnızca canlı NVIDIA NIM tool-calling + structured-output compatibility testi geçen modeller
+listelenir.
+
+## GET `/api/v1/knowledge/documents`
+
+Belge envanterini tam metadata ve chunk sayısıyla döndürür. Ham/unsanitized içerik dönmez.
+
+## GET `/api/v1/knowledge/documents/{documentId}/versions/{version}`
+
+Belgenin metadata'sını, sanitize edilmiş canonical içeriğini ve chunk ayrıntılarını döndürür.
+
+## POST `/api/v1/knowledge/search-preview`
+
+Salt-okunur RAG doğrulama endpoint'idir. `query` zorunlu, `provider` opsiyonel ve `topK` 1–5
+aralığındadır. Sonuçlar `documentId`, `version`, `title`, `chunkId`, `sectionTitle`, sanitize edilmiş
+content excerpt ve `similarityScore` taşır. Tool budget veya incident approval akışını değiştirmez.
+
 ## POST `/api/v1/investigations/{id}/incident-draft/preview`
 
 Kalıcı kayıt oluşturmadan taslak gösterir.

@@ -121,3 +121,9 @@ Tool, RAG, model, validation ve onay akışı kaydedilir.
 MVP (M0-M8) için Swagger yeterliydi. M9/M10'da bu revize edildi: proje artık portföy/demo amacıyla
 birinci sınıf bir web UI içerir — bkz. `docs/16-adr.md` ADR-016. Swagger hâlâ API sözleşmesi için
 mevcut kalır; UI onun üzerine, aynı REST API'yi tüketen ayrı bir SPA olarak eklenir.
+
+M12.1 ile web UI kurumsal bir agent console olarak ele alınır: model seçimi doğrudan sohbet
+composer'ında görünür, agent'ın doğrulanmış doğal dil özeti sohbet mesajı olarak sunulur ve RAG
+bilgi tabanı belge envanteri, güvenli içerik/chunk ayrıntısı ile read-only retrieval preview sağlar.
+Konsol projeyi genel amaçlı bir chatbot'a dönüştürmez; yalnızca OTP incident investigation akışını
+görselleştirir.

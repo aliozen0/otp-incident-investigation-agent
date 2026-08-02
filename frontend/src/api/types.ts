@@ -108,6 +108,17 @@ export interface ProblemDetails {
 
 export interface ModelsResponse {
   models: string[]
+  options?: ModelOption[]
+  defaultModelId?: string
+}
+
+export interface ModelOption {
+  id: string
+  label: string
+  provider: string
+  profile: 'FAST' | 'BALANCED' | 'DEEP' | string
+  description: string
+  verified: boolean
 }
 
 export interface KnowledgeDocumentSummary {
@@ -115,7 +126,41 @@ export interface KnowledgeDocumentSummary {
   version: string
   title: string
   documentType: string
+  provider?: string
+  tags?: string[]
   effectiveFrom: string
+  effectiveTo?: string
+  language?: string
+  chunkCount?: number
+  embeddingModel?: string
+  createdAt?: string
+}
+
+export interface KnowledgeChunk {
+  chunkId: string
+  sectionTitle?: string
+  content: string
+  tokenCount: number
+  embeddingModel: string
+}
+
+export interface KnowledgeDocumentDetail extends KnowledgeDocumentSummary {
+  sanitizedContent: string
+  chunks: KnowledgeChunk[]
+}
+
+export interface KnowledgeSearchResult {
+  documentId: string
+  version: string
+  title: string
+  chunkId: string
+  sectionTitle?: string
+  similarityScore: number
+  contentExcerpt: string
+}
+
+export interface KnowledgeSearchResponse {
+  results: KnowledgeSearchResult[]
 }
 
 export interface KnowledgeDocumentUploadRequest {

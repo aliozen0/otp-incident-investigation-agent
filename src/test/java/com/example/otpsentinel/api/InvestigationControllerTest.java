@@ -85,12 +85,20 @@ class InvestigationControllerTest extends AbstractPostgresIntegrationTest {
 
     assertThat(created.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(created.getBody()).contains("ANOMALY_CONFIRMED");
+    assertThat(created.getBody())
+        .contains("OTP success rate dropped to 72.10%")
+        .contains("\"version\":\"1\"")
+        .contains("\"chunkId\":\"INC-2026-041#v1#c0\"")
+        .contains("\"similarityScore\":0.85");
     String investigationId = created.getBody().split("\"investigationId\":\"")[1].split("\"")[0];
 
     ResponseEntity<String> fetched =
         restTemplate.getForEntity("/api/v1/investigations/" + investigationId, String.class);
 
     assertThat(fetched.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(fetched.getBody()).contains("ANOMALY_CONFIRMED");
+    assertThat(fetched.getBody())
+        .contains("ANOMALY_CONFIRMED")
+        .contains("OTP success rate dropped to 72.10%")
+        .contains("\"chunkId\":\"INC-2026-041#v1#c0\"");
   }
 }

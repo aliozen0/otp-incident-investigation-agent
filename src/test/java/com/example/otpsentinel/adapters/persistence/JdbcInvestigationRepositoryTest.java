@@ -8,6 +8,7 @@ import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationId;
 import com.example.otpsentinel.domain.InvestigationPhase;
 import com.example.otpsentinel.domain.InvestigationStatus;
+import com.example.otpsentinel.domain.KnowledgeCitation;
 import com.example.otpsentinel.domain.Severity;
 import com.example.otpsentinel.domain.TimeWindow;
 import com.example.otpsentinel.domain.ValidationReport;
@@ -42,7 +43,16 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
             List.of("ev-1", "ev-2"),
             List.of(),
             List.of("Inspect pool metrics"));
-    investigation.proposeAnalysis(Severity.HIGH, List.of(hypothesis), List.of(), List.of(), 0.87);
+    KnowledgeCitation citation =
+        new KnowledgeCitation(
+            "INC-2026-041", "1", "Connection pool incident", "INC-2026-041#v1#c0", 0.85);
+    investigation.proposeAnalysis(
+        "OTP başarısı düştü ve Operatör B üzerinde yoğunlaştı.",
+        Severity.HIGH,
+        List.of(hypothesis),
+        List.of(),
+        List.of(citation),
+        0.87);
     investigation.startValidating();
     investigation.complete(
         InvestigationStatus.ANOMALY_CONFIRMED, ValidationReport.passed(List.of("minor warning")));
@@ -59,6 +69,9 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
     assertThat(restarted.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
     assertThat(restarted.severity()).isEqualTo(Severity.HIGH);
     assertThat(restarted.confidence()).isEqualTo(0.87);
+    assertThat(restarted.summary())
+        .isEqualTo("OTP başarısı düştü ve Operatör B üzerinde yoğunlaştı.");
+    assertThat(restarted.knowledgeCitations()).containsExactly(citation);
     assertThat(restarted.evidence()).containsExactlyElementsOf(investigation.evidence());
     assertThat(restarted.hypotheses()).containsExactly(hypothesis);
     assertThat(restarted.validationReport()).isEqualTo(investigation.validationReport());

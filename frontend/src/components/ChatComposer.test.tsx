@@ -55,4 +55,40 @@ describe('ChatComposer', () => {
       endAt: '2026-07-30T11:30:00Z',
     })
   })
+
+  it('keeps verified model selection next to the composer', () => {
+    const onModelChange = vi.fn()
+    render(
+      <ChatComposer
+        disabled={false}
+        onSubmit={vi.fn()}
+        models={[
+          {
+            id: 'meta/llama-3.1-8b-instruct',
+            label: 'Llama 3.1 8B',
+            provider: 'Meta / NVIDIA NIM',
+            profile: 'FAST',
+            description: 'Hızlı',
+            verified: true,
+          },
+          {
+            id: 'meta/llama-3.3-70b-instruct',
+            label: 'Llama 3.3 70B',
+            provider: 'Meta / NVIDIA NIM',
+            profile: 'BALANCED',
+            description: 'Dengeli',
+            verified: true,
+          },
+        ]}
+        modelId="meta/llama-3.1-8b-instruct"
+        onModelChange={onModelChange}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Analiz modeli'), {
+      target: { value: 'meta/llama-3.3-70b-instruct' },
+    })
+
+    expect(onModelChange).toHaveBeenCalledWith('meta/llama-3.3-70b-instruct')
+  })
 })

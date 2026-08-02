@@ -4,7 +4,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-public record KnowledgeDocumentSummary(
+/** Safe, sanitized knowledge document projection for the read-only explorer. */
+public record KnowledgeDocumentDetail(
     String documentId,
     String version,
     String title,
@@ -14,6 +15,10 @@ public record KnowledgeDocumentSummary(
     LocalDate effectiveFrom,
     LocalDate effectiveTo,
     String language,
-    int chunkCount,
-    String embeddingModel,
-    Instant createdAt) {}
+    Instant createdAt,
+    String sanitizedContent,
+    List<ChunkDetail> chunks) {
+
+  public record ChunkDetail(
+      String chunkId, String sectionTitle, String content, int tokenCount, String embeddingModel) {}
+}

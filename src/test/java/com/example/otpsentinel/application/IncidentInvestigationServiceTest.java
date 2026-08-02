@@ -145,6 +145,17 @@ class IncidentInvestigationServiceTest {
 
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.knowledgeReferences()).containsExactly("KB-1");
+    assertThat(outcome.summary()).isEqualTo("queue is healthy");
+    assertThat(outcome.knowledgeCitations())
+        .singleElement()
+        .satisfies(
+            citation -> {
+              assertThat(citation.documentId()).isEqualTo("KB-1");
+              assertThat(citation.version()).isEqualTo("1");
+              assertThat(citation.title()).isEqualTo("Pool runbook");
+              assertThat(citation.chunkId()).isEqualTo("KB-1#v1#c0");
+              assertThat(citation.similarityScore()).isEqualTo(0.82);
+            });
   }
 
   @Test

@@ -89,14 +89,15 @@ Spike başarısızsa sürüm kombinasyonu ana geliştirme başlamadan değiştir
 
 Bu makinede Windows tarafında yerel JDK21/Maven/Docker kurulu değil. Tüm `mvn`, `docker`, `docker compose` komutları **WSL2 içindeki Docker Engine** üzerinden çalıştırılır, Windows Docker Desktop üzerinden değil.
 
-```bash
-wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker run --rm -v \$(pwd):/build -v maven-repo:/root/.m2 -w /build maven:3.9-eclipse-temurin-21 mvn -B verify"
-wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d"
+```powershell
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && mvn -B verify"
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d"
 ```
 
 Kurallar:
 
-- Maven build/test: `maven:3.9-eclipse-temurin-21` image'ı ile `docker run` içinden.
+- Maven build/test: WSL2 içindeki Java 21 + Maven ile doğrudan; Maven yoksa
+  `maven:3.9-eclipse-temurin-21` image'ı güvenli fallback'tir.
 - Compose/health doğrulama: `wsl -e bash -lc "cd /mnt/c/... && docker compose ..."`.
 - Windows tarafında doğrudan `mvn`/`docker` komutu çalıştırmaya çalışma — kurulu değil, başarısız olur.
 - Port çakışması olursa (`POSTGRES_PORT` gibi) `.env`/ortam değişkeniyle çöz, sabit port'a güvenme.
@@ -138,5 +139,11 @@ M11 re-verified a second chat model for the console's model picker: `meta/llama-
 `NvidiaNimAlternateModelLiveTest` with a real tool-call round trip against the NVIDIA NIM endpoint.
 Both models are listed in `ModelCatalog`; `GET /api/v1/models` only ever returns ids that have a
 passing `@Tag("local-live")` spike backing them — no unverified model id is exposed.
+
+M12.1 genişletmesinde aynı gerçek tool-call round trip kabul kapısından iki NVIDIA modeli daha
+geçti: `nvidia/llama-3.3-nemotron-super-49b-v1.5` ve `nvidia/nemotron-3-nano-30b-a3b`.
+`mistralai/mistral-nemotron` araç sonucunu güvenilir biçimde aktarmadığı için reddedildi ve
+`ModelCatalog` allowlist'ine eklenmedi. Konsol bu nedenle yalnızca dört doğrulanmış modeli sunar;
+varsayılan model geriye dönük uyumluluk için `meta/llama-3.1-8b-instruct` olarak kalır.
 
 `NVIDIA_EMBEDDING_MODEL` M4'te compatibility spike ile doğrulandı: `nvidia/nv-embedqa-e5-v5`, dimension 1024, OpenAI-uyumlu `/v1/embeddings` şemasına ek `input_type` (`query`/`passage`) parametresi kabul ediyor. LangChain4j 1.18+'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u bu alanı ayrı bir HTTP interceptor yazmadan taşıyor (bkz. `NvidiaNimEmbeddingService`).

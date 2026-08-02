@@ -169,3 +169,37 @@ Feature: Validate time windows
     Then API should return 400
     And error code should be "INVALID_TIME_WINDOW"
 ```
+
+## Feature: Institutional agent console
+
+```gherkin
+Feature: Converse with the investigation agent
+
+  Scenario: Preserve the validated natural language answer
+    When I submit an investigation from the console
+    Then the assistant message should show the validated natural language summary
+    And fetching the investigation again should return the same summary
+
+  Scenario: Select a verified model next to the composer
+    Given the model catalog is loaded
+    When I choose a verified model and send a question
+    Then the request should contain that model id
+    And an unknown model id should be rejected
+```
+
+## Feature: Inspect and verify RAG knowledge
+
+```gherkin
+Feature: Explore the knowledge base safely
+
+  Scenario: Inspect an ingested document
+    Given a knowledge document was ingested
+    When I open its detail
+    Then I should see its metadata, sanitized content and chunks
+    But I should not receive unsanitized source content
+
+  Scenario: Preview retrieval for a newly uploaded document
+    Given I uploaded an allowed knowledge document
+    When I run a relevant retrieval preview with topK 5
+    Then the document should appear with version, chunk id and similarity score
+```
