@@ -1,0 +1,28 @@
+import '@testing-library/jest-dom'
+import { configure } from '@testing-library/dom'
+
+// Exclude recharts' hidden off-screen text-measurement span from query
+// matches — it duplicates every tick label's text into the DOM.
+configure({ defaultIgnore: 'script, style, #recharts_measurement_span' })
+
+// jsdom has no ResizeObserver; recharts' ResponsiveContainer needs one to mount.
+// ponytail: no-op stub, not a real observer — fine since jsdom never actually resizes.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver
+
+// jsdom elements report a zero-size box, so recharts' ResponsiveContainer
+// (which sizes off getBoundingClientRect) never renders its children. Give
+// every element a fixed non-zero box — except recharts' own off-screen text
+// measurement span, which needs a size proportional to its text so recharts
+// doesn't think every tick label is 600px wide and force-wrap it word by word.
+Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, value: 600 })
+Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 400 })
+HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+  const width = this.id === 'recharts_measurement_span' ? (this.textContent?.length ?? 0) * 7 : 600
+  const height = this.id === 'recharts_measurement_span' ? 14 : 400
+  return { width, height, top: 0, left: 0, right: width, bottom: height, x: 0, y: 0, toJSON() {} } as DOMRect
+}
