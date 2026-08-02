@@ -21,6 +21,7 @@ interface Props {
 export function SettingsPanel({ modelId, onModelChange, mode, onModeChange, onClose }: Props) {
   const [models, setModels] = useState<string[]>([])
   const [documents, setDocuments] = useState<KnowledgeDocumentSummary[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadOk, setUploadOk] = useState(false)
   const [title, setTitle] = useState('')
@@ -29,12 +30,22 @@ export function SettingsPanel({ modelId, onModelChange, mode, onModeChange, onCl
   const [content, setContent] = useState('')
 
   useEffect(() => {
-    listModels().then(setModels).catch(() => setModels([]))
+    listModels()
+      .then(setModels)
+      .catch((err) => {
+        setModels([])
+        setLoadError(toUserMessage(err))
+      })
     refreshDocuments()
   }, [])
 
   function refreshDocuments() {
-    listKnowledgeDocuments().then(setDocuments).catch(() => setDocuments([]))
+    listKnowledgeDocuments()
+      .then(setDocuments)
+      .catch((err) => {
+        setDocuments([])
+        setLoadError(toUserMessage(err))
+      })
   }
 
   async function handleUpload(e: React.FormEvent) {
@@ -61,6 +72,8 @@ export function SettingsPanel({ modelId, onModelChange, mode, onModeChange, onCl
             {UI_TEXT.closeSettings}
           </button>
         </div>
+
+        {loadError && <p className="text-xs text-danger mb-4">{loadError}</p>}
 
         <section className="mb-6">
           <label htmlFor="model" className="block font-display text-sm mb-2">
