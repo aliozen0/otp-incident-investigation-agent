@@ -98,10 +98,15 @@
 - **Status:** Accepted
 - **Decision:** LangChain4j `MessageWindowChatMemory` scoped by a client-supplied `sessionId`
   (`@MemoryId`) is now permitted within a single chat thread, so a follow-up question ("peki ya
-  X?") can refer to earlier turns in the same thread. Memory is held in-process
-  (`ConcurrentHashMap<String, ChatMemory>`), capped to the last 10 messages per session
-  (`otp-sentinel.ai.chat-memory-max-messages`), and is never persisted to a database or shared
-  across sessions.
+  X?") can refer to earlier turns in the same thread. Memory is held in-process (an LRU-bounded
+  synchronized `LinkedHashMap<String, ChatMemory>`), capped to the last 40 messages per session
+  (`otp-sentinel.ai.chat-memory-max-messages`) and to 1000 concurrent sessions
+  (`otp-sentinel.ai.chat-memory-max-sessions`, least-recently-used evicted first), and is never
+  persisted to a database or shared across sessions. The 40-message window is sized from one
+  thorough turn's actual traffic — 1 system + 1 user + 6 AI tool-call messages + 6 tool results +
+  1 final answer ≈ 15 messages — so ~2.5 turns fit and a turn can never evict its own opening
+  question. The session cap is needed because an anonymous investigation (no client `sessionId`)
+  uses its own investigation id as memory id and is never revisited.
 - **Reason:** M12's chat console needs multi-turn conversations inside one thread. ADR-012's actual
   concern — context leaking across unrelated investigations and flaky tests from shared mutable
   state — is preserved: memory is strictly scoped to one `sessionId`, never shared cross-session,

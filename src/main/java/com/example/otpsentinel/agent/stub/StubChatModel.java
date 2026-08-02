@@ -23,13 +23,23 @@ public final class StubChatModel implements ChatModel {
 
   private final StubScript script;
   private int stepIndex = 0;
+  private volatile ChatRequest lastRequest;
 
   public StubChatModel(StubScript script) {
     this.script = Objects.requireNonNull(script, "script must not be null");
   }
 
+  /**
+   * The most recent {@link ChatRequest} this model was handed, so a test can assert what the
+   * framework actually sent — notably whether chat memory replayed an earlier turn's messages.
+   */
+  public ChatRequest lastRequest() {
+    return lastRequest;
+  }
+
   @Override
   public ChatResponse chat(ChatRequest chatRequest) {
+    this.lastRequest = chatRequest;
     if (stepIndex >= script.steps().size()) {
       throw new IllegalStateException("StubScript exhausted after " + stepIndex + " steps");
     }

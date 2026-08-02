@@ -32,6 +32,22 @@ class SessionChatMemoryStoreTest {
   }
 
   @Test
+  void evictsTheLeastRecentlyUsedSessionWhenTheSessionCapIsExceeded() {
+    SessionChatMemoryStore store = new SessionChatMemoryStore(10, 2);
+
+    store.get("session-1").add(UserMessage.from("one"));
+    store.get("session-2").add(UserMessage.from("two"));
+    store.get("session-1"); // makes session-2 the least recently used
+    store.get("session-3").add(UserMessage.from("three"));
+
+    assertThat(store.sessionCount()).isEqualTo(2);
+    assertThat(store.hasSession("session-2")).isFalse();
+    assertThat(store.hasSession("session-1")).isTrue();
+    assertThat(store.hasSession("session-3")).isTrue();
+    assertThat(store.get("session-2").messages()).isEmpty();
+  }
+
+  @Test
   void windowCapsAtMaxMessages() {
     SessionChatMemoryStore store = new SessionChatMemoryStore(2);
     ChatMemory memory = store.get("session-C");
