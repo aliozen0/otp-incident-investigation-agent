@@ -22,10 +22,14 @@ function writeSessions(sessions: SessionMeta[]): void {
 }
 
 export function listSessions(): SessionMeta[] {
-  return readSessions().sort((a, b) => {
-    const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    return timeDiff !== 0 ? timeDiff : b.sessionId.localeCompare(a.sessionId)
-  })
+  const sessions = readSessions()
+  const indexed = sessions.map((s, i) => ({ session: s, index: i }))
+  return indexed
+    .sort((a, b) => {
+      const timeDiff = new Date(b.session.createdAt).getTime() - new Date(a.session.createdAt).getTime()
+      return timeDiff !== 0 ? timeDiff : b.index - a.index
+    })
+    .map(x => x.session)
 }
 
 export function createSession(): SessionMeta {
