@@ -12,6 +12,9 @@ import com.example.otpsentinel.domain.KnowledgeCitation;
 import com.example.otpsentinel.domain.Severity;
 import com.example.otpsentinel.domain.TimeWindow;
 import com.example.otpsentinel.domain.ValidationReport;
+import com.example.otpsentinel.domain.VisualizationSpec;
+import com.example.otpsentinel.domain.VisualizationType;
+import com.example.otpsentinel.domain.VisualizationUnit;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -46,13 +49,26 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
     KnowledgeCitation citation =
         new KnowledgeCitation(
             "INC-2026-041", "1", "Connection pool incident", "INC-2026-041#v1#c0", 0.85);
+    VisualizationSpec visualization =
+        new VisualizationSpec(
+            "success-comparison",
+            VisualizationType.BAR,
+            "Başarı karşılaştırması",
+            "Dönem",
+            "Başarı",
+            VisualizationUnit.PERCENT,
+            List.of(new VisualizationSpec.Series("success", "Başarı")),
+            List.of(
+                new VisualizationSpec.Point("Mevcut", "success", 72.1, "ev-1"),
+                new VisualizationSpec.Point("Önceki", "success", 72.1, "ev-2")));
     investigation.proposeAnalysis(
         "OTP başarısı düştü ve Operatör B üzerinde yoğunlaştı.",
         Severity.HIGH,
         List.of(hypothesis),
         List.of(),
         List.of(citation),
-        0.87);
+        0.87,
+        List.of(visualization));
     investigation.startValidating();
     investigation.complete(
         InvestigationStatus.ANOMALY_CONFIRMED, ValidationReport.passed(List.of("minor warning")));
@@ -75,6 +91,7 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
     assertThat(restarted.evidence()).containsExactlyElementsOf(investigation.evidence());
     assertThat(restarted.hypotheses()).containsExactly(hypothesis);
     assertThat(restarted.validationReport()).isEqualTo(investigation.validationReport());
+    assertThat(restarted.visualizations()).containsExactly(visualization);
   }
 
   @Test

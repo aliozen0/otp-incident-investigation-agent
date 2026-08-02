@@ -32,9 +32,9 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
         id, session_id, question, time_window_start, time_window_end, prompt_version, schema_version,
         phase, result_status, severity, confidence, validation_report,
         evidence, hypotheses, recommended_actions, knowledge_references, knowledge_citations,
-        analysis_summary, tool_executions,
+        analysis_summary, visualizations, tool_executions,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       ON CONFLICT (id) DO UPDATE SET
         phase = EXCLUDED.phase,
         result_status = EXCLUDED.result_status,
@@ -47,6 +47,7 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
         knowledge_references = EXCLUDED.knowledge_references,
         knowledge_citations = EXCLUDED.knowledge_citations,
         analysis_summary = EXCLUDED.analysis_summary,
+        visualizations = EXCLUDED.visualizations,
         tool_executions = EXCLUDED.tool_executions,
         updated_at = now()
       """;
@@ -84,6 +85,7 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
         JsonColumnMapper.toJsonb(investigation.knowledgeReferences()),
         JsonColumnMapper.toJsonb(investigation.knowledgeCitations()),
         investigation.summary(),
+        JsonColumnMapper.toJsonb(investigation.visualizations()),
         JsonColumnMapper.toJsonb(investigation.toolExecutions()));
   }
 
@@ -118,6 +120,10 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
             rs,
             "knowledge_citations",
             new TypeReference<List<com.example.otpsentinel.domain.KnowledgeCitation>>() {}),
+        readList(
+            rs,
+            "visualizations",
+            new TypeReference<List<com.example.otpsentinel.domain.VisualizationSpec>>() {}),
         rs.getString("analysis_summary"),
         (Double) rs.getObject("confidence"),
         readNullable(rs, "validation_report", new TypeReference<ValidationReport>() {}),

@@ -30,6 +30,7 @@ public final class IncidentInvestigationService {
 
   private final int maxRepairAttempts;
   private final ClaimValidator claimValidator = new ClaimValidator();
+  private final VisualizationValidator visualizationValidator = new VisualizationValidator();
 
   public IncidentInvestigationService(int maxRepairAttempts) {
     if (maxRepairAttempts < 0 || maxRepairAttempts > 1) {
@@ -120,6 +121,12 @@ public final class IncidentInvestigationService {
       return investigation;
     }
 
+    VisualizationValidationResult visualizationReport =
+        visualizationValidator.validate(analysis.visualizations(), investigation.evidence());
+    List<String> validationWarnings =
+        Stream.concat(claimReport.warnings().stream(), visualizationReport.warnings().stream())
+            .toList();
+
     try {
       investigation.proposeAnalysis(
           analysis.summary(),
@@ -127,9 +134,10 @@ public final class IncidentInvestigationService {
           analysis.hypotheses(),
           analysis.recommendedActions(),
           collector.canonicalKnowledgeCitations(analysis.knowledgeReferences()),
-          analysis.confidence());
+          analysis.confidence(),
+          visualizationReport.accepted());
       investigation.startValidating();
-      finish(investigation, analysis, claimReport.warnings());
+      finish(investigation, analysis, validationWarnings);
       audit(
           auditEventRepository,
           AuditEventType.VALIDATION_PASSED,

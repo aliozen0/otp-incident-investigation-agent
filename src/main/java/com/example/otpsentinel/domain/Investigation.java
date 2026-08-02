@@ -28,6 +28,7 @@ public final class Investigation {
   private List<RecommendedAction> recommendedActions = List.of();
   private List<String> knowledgeReferences = List.of();
   private List<KnowledgeCitation> knowledgeCitations = List.of();
+  private List<VisualizationSpec> visualizations = List.of();
   private String summary;
   private Double confidence;
   private ValidationReport validationReport;
@@ -97,6 +98,7 @@ public final class Investigation {
       List<RecommendedAction> recommendedActions,
       List<String> knowledgeReferences,
       List<KnowledgeCitation> knowledgeCitations,
+      List<VisualizationSpec> visualizations,
       String summary,
       Double confidence,
       ValidationReport validationReport,
@@ -112,6 +114,7 @@ public final class Investigation {
     investigation.recommendedActions = List.copyOf(recommendedActions);
     investigation.knowledgeReferences = List.copyOf(knowledgeReferences);
     investigation.knowledgeCitations = List.copyOf(knowledgeCitations);
+    investigation.visualizations = List.copyOf(visualizations);
     investigation.summary = summary;
     investigation.confidence = confidence;
     investigation.validationReport = validationReport;
@@ -164,6 +167,25 @@ public final class Investigation {
       List<RecommendedAction> recommendedActions,
       List<KnowledgeCitation> knowledgeCitations,
       double confidence) {
+    proposeAnalysis(
+        summary,
+        severity,
+        hypotheses,
+        recommendedActions,
+        knowledgeCitations,
+        confidence,
+        List.of());
+  }
+
+  /** Stores validated visualizations; every point was already checked against canonical evidence. */
+  public void proposeAnalysis(
+      String summary,
+      Severity severity,
+      List<Hypothesis> hypotheses,
+      List<RecommendedAction> recommendedActions,
+      List<KnowledgeCitation> knowledgeCitations,
+      double confidence,
+      List<VisualizationSpec> visualizations) {
     requirePhase(InvestigationPhase.GENERATING_ANALYSIS);
     if (summary == null || summary.isBlank()) {
       throw new IllegalArgumentException("summary must not be blank");
@@ -194,6 +216,7 @@ public final class Investigation {
     this.knowledgeReferences =
         knowledgeCitations.stream().map(KnowledgeCitation::documentId).distinct().toList();
     this.confidence = confidence;
+    this.visualizations = List.copyOf(visualizations);
   }
 
   public void startValidating() {
@@ -301,6 +324,10 @@ public final class Investigation {
 
   public List<KnowledgeCitation> knowledgeCitations() {
     return knowledgeCitations;
+  }
+
+  public List<VisualizationSpec> visualizations() {
+    return visualizations;
   }
 
   public String summary() {

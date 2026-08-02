@@ -26,7 +26,8 @@ public final class InvestigationDtoMapper {
         i.validationReport() == null
             ? null
             : new InvestigationResponseDto.ValidationDto(
-                i.validationReport().status().name(), i.validationReport().warnings()));
+                i.validationReport().status().name(), i.validationReport().warnings()),
+        i.visualizations().stream().map(InvestigationDtoMapper::toVisualizationDto).toList());
   }
 
   private static String summary(Investigation i) {
@@ -59,7 +60,14 @@ public final class InvestigationDtoMapper {
 
   private static InvestigationResponseDto.EvidenceDto toEvidenceDto(Evidence e) {
     return new InvestigationResponseDto.EvidenceDto(
-        e.id(), e.sourceType(), e.sourceReference(), e.observation(), e.observedAt().toString());
+        e.id(),
+        e.sourceType(),
+        e.sourceReference(),
+        e.observation(),
+        e.observedAt().toString(),
+        e.metricName(),
+        e.metricValue(),
+        e.metricUnit());
   }
 
   private static InvestigationResponseDto.HypothesisDto toHypothesisDto(Hypothesis h) {
@@ -74,5 +82,28 @@ public final class InvestigationDtoMapper {
   private static InvestigationResponseDto.RecommendedActionDto toActionDto(RecommendedAction a) {
     return new InvestigationResponseDto.RecommendedActionDto(
         a.actionType().name(), a.description(), a.risk().name(), a.requiresApproval());
+  }
+
+  private static InvestigationResponseDto.VisualizationDto toVisualizationDto(
+      com.example.otpsentinel.domain.VisualizationSpec visualization) {
+    return new InvestigationResponseDto.VisualizationDto(
+        visualization.id(),
+        visualization.type().name(),
+        visualization.title(),
+        visualization.xAxisLabel(),
+        visualization.yAxisLabel(),
+        visualization.unit().name(),
+        visualization.series().stream()
+            .map(
+                item ->
+                    new InvestigationResponseDto.VisualizationSeriesDto(
+                        item.key(), item.label()))
+            .toList(),
+        visualization.points().stream()
+            .map(
+                item ->
+                    new InvestigationResponseDto.VisualizationPointDto(
+                        item.label(), item.seriesKey(), item.value(), item.evidenceId()))
+            .toList());
   }
 }

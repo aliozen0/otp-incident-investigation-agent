@@ -78,7 +78,14 @@ public final class OtpDropOneOhOneScript {
                    "description":"Inspect OPERATOR_B connection pool sizing","risk":"MEDIUM",
                    "requiresApproval":false,"executionMode":"MANUAL_CHECK"}],
                  "knowledgeReferences":[{"documentId":"INC-2026-041","chunkId":"INC-2026-041#v1#c0"}],
-                 "confidence":0.85}
+                 "confidence":0.85,
+                 "visualizations":[{"id":"success-comparison","type":"BAR",
+                   "title":"Current and previous OTP success","xAxisLabel":"Period",
+                   "yAxisLabel":"Success rate","unit":"PERCENT",
+                   "series":[{"key":"success","label":"Success"}],
+                   "points":[
+                    {"label":"Current","seriesKey":"success","value":72.1,"evidenceId":"ev-otp-success-rate-current"},
+                    {"label":"Previous","seriesKey":"success","value":98.1,"evidenceId":"ev-otp-success-rate-previous"}]}]}
                 """)));
   }
 
