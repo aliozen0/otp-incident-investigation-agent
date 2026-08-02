@@ -5,6 +5,8 @@ import {
   renameSession,
   recordQuestion,
   getRecordedQuestion,
+  saveTurns,
+  loadTurns,
 } from './sessionStore'
 
 describe('sessionStore', () => {
@@ -71,5 +73,18 @@ describe('sessionStore', () => {
 
     // After recording, the question should be retrievable
     expect(getRecordedQuestion(sessionId, 'inv-1')).toBe('new question')
+  })
+
+  it('stores versioned mixed chat turns and falls back safely from old data', () => {
+    const session = createSession()
+    const turns = [
+      { kind: 'chat' as const, id: 'm-1', question: 'Merhaba', assistantMessage: 'Merhaba!' },
+      { kind: 'clarification' as const, id: 'm-2', question: 'Operatör?', assistantMessage: 'Hangisi?' },
+    ]
+    saveTurns(session.sessionId, turns)
+
+    expect(loadTurns(session.sessionId)).toEqual(turns)
+    localStorage.setItem(`otp-sentinel:turns:${session.sessionId}`, JSON.stringify({ version: 1, turns: 'bad' }))
+    expect(loadTurns(session.sessionId)).toEqual([])
   })
 })

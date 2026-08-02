@@ -9,6 +9,7 @@ import { HypothesisChart } from './charts/HypothesisChart'
 import { ConfidenceGauge } from './charts/ConfidenceGauge'
 import { synthesizeSummary } from '../lib/summarize'
 import { formatDateTime, UI_TEXT } from '../lib/labels'
+import { VisualizationRenderer } from './charts/VisualizationRenderer'
 
 function DetailSection({
   title,
@@ -32,10 +33,10 @@ function DetailSection({
   )
 }
 
-export function ResultCard({ investigation }: { investigation: Investigation }) {
+export function ResultCard({ investigation, assistantMessage }: { investigation: Investigation; assistantMessage?: string }) {
   const inv = investigation
   const naturalSummary =
-    inv.summary && inv.summary !== inv.status ? inv.summary : synthesizeSummary(inv)
+    assistantMessage || (inv.summary && inv.summary !== inv.status ? inv.summary : synthesizeSummary(inv))
 
   return (
     <article className="assistant-result">
@@ -82,6 +83,17 @@ export function ResultCard({ investigation }: { investigation: Investigation }) 
             ))}
           </ul>
         </div>
+      )}
+
+      {(inv.visualizations ?? []).length > 0 && (
+        <section className="mt-5" aria-label="Analiz görselleri">
+          <h3 className="mb-3 font-display text-xs font-semibold uppercase tracking-wide text-ink-muted">Analiz görselleri</h3>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {(inv.visualizations ?? []).map((visualization) => (
+              <VisualizationRenderer key={visualization.id} visualization={visualization} />
+            ))}
+          </div>
+        </section>
       )}
 
       <div className="mt-5 overflow-hidden rounded-lg border border-line">

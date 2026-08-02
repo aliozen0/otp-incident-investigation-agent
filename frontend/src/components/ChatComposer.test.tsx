@@ -37,7 +37,7 @@ describe('ChatComposer', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('guides a short message without submitting an investigation request', () => {
+  it('submits a short but non-empty chat message', () => {
     const onSubmit = vi.fn()
     render(<ChatComposer disabled={false} onSubmit={onSubmit} />)
 
@@ -45,9 +45,9 @@ describe('ChatComposer', () => {
     fireEvent.change(textarea, { target: { value: 'Merhaba' } })
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
 
-    expect(onSubmit).not.toHaveBeenCalled()
-    expect(screen.getByRole('alert')).toHaveTextContent(/daha açıklayıcı bir inceleme sorusu/i)
-    expect((textarea as HTMLTextAreaElement).value).toBe('Merhaba')
+    expect(onSubmit).toHaveBeenCalledWith('Merhaba', undefined)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect((textarea as HTMLTextAreaElement).value).toBe('')
   })
 
   it('includes the time window when the toggle is checked', () => {
@@ -118,5 +118,20 @@ describe('ChatComposer', () => {
     })
 
     expect(onModelChange).toHaveBeenCalledWith('meta/llama-3.3-70b-instruct')
+  })
+
+  it('hides investigation depth and time controls in explicit chat mode', () => {
+    render(
+      <ChatComposer
+        disabled={false}
+        onSubmit={vi.fn()}
+        interactionMode="CHAT"
+        onInteractionModeChange={vi.fn()}
+      />
+    )
+
+    expect(screen.getByLabelText('Etkileşim modu')).toHaveValue('CHAT')
+    expect(screen.queryByLabelText('Analiz modu')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Zaman aralığı belirt/)).not.toBeInTheDocument()
   })
 })

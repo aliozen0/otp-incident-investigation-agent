@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
-import type { ModelOption } from '../api/types'
-import { MODE_LABEL_TR, UI_TEXT } from '../lib/labels'
+import type { InteractionMode, ModelOption } from '../api/types'
+import { INTERACTION_MODE_LABEL_TR, MODE_LABEL_TR, UI_TEXT } from '../lib/labels'
 
 interface Props {
   disabled: boolean
@@ -10,6 +10,8 @@ interface Props {
   onModelChange?: (modelId: string) => void
   mode?: 'quick' | 'thorough'
   onModeChange?: (mode: 'quick' | 'thorough') => void
+  interactionMode?: InteractionMode
+  onInteractionModeChange?: (mode: InteractionMode) => void
 }
 
 export function ChatComposer({
@@ -20,6 +22,8 @@ export function ChatComposer({
   onModelChange,
   mode = 'thorough',
   onModeChange,
+  interactionMode = 'AUTO',
+  onInteractionModeChange,
 }: Props) {
   const [question, setQuestion] = useState('')
   const [useTimeWindow, setUseTimeWindow] = useState(false)
@@ -30,16 +34,12 @@ export function ChatComposer({
   function submit() {
     const trimmed = question.trim()
     if (trimmed.length === 0 || disabled) return
-    if (trimmed.length < 10) {
-      setValidationMessage(UI_TEXT.shortQuestionGuidance)
-      return
-    }
-    if (useTimeWindow && (!startAt || !endAt)) {
+    if (interactionMode !== 'CHAT' && useTimeWindow && (!startAt || !endAt)) {
       setValidationMessage(UI_TEXT.incompleteTimeWindow)
       return
     }
     const timeWindow =
-      useTimeWindow && startAt && endAt
+      interactionMode !== 'CHAT' && useTimeWindow && startAt && endAt
         ? { startAt: new Date(startAt).toISOString(), endAt: new Date(endAt).toISOString() }
         : undefined
     setValidationMessage(null)
@@ -56,7 +56,7 @@ export function ChatComposer({
 
   return (
     <div className="composer-shell">
-      {useTimeWindow && (
+      {interactionMode !== 'CHAT' && useTimeWindow && (
         <div className="grid grid-cols-1 gap-3 border-b border-line bg-surface-muted px-4 py-3 sm:grid-cols-2">
           <div>
             <label htmlFor="startAt" className="field-label">
@@ -128,6 +128,23 @@ export function ChatComposer({
         )}
 
         <div className="composer-select-wrap">
+          <label htmlFor="composer-interaction-mode" className="sr-only">
+            Etkileşim modu
+          </label>
+          <select
+            id="composer-interaction-mode"
+            aria-label="Etkileşim modu"
+            value={interactionMode}
+            onChange={(e) => onInteractionModeChange?.(e.target.value as InteractionMode)}
+            className="composer-select"
+          >
+            {(Object.keys(INTERACTION_MODE_LABEL_TR) as InteractionMode[]).map((value) => (
+              <option key={value} value={value}>{INTERACTION_MODE_LABEL_TR[value]}</option>
+            ))}
+          </select>
+        </div>
+
+        {interactionMode !== 'CHAT' && <div className="composer-select-wrap">
           <label htmlFor="composer-mode" className="sr-only">
             Analiz modu
           </label>
@@ -141,9 +158,9 @@ export function ChatComposer({
             <option value="quick">{MODE_LABEL_TR.quick}</option>
             <option value="thorough">{MODE_LABEL_TR.thorough}</option>
           </select>
-        </div>
+        </div>}
 
-        <label className="composer-tool" title={UI_TEXT.timeWindowToggle}>
+        {interactionMode !== 'CHAT' && <label className="composer-tool" title={UI_TEXT.timeWindowToggle}>
           <input
             id="useTimeWindow"
             type="checkbox"
@@ -153,7 +170,7 @@ export function ChatComposer({
           />
           <span aria-hidden="true">◷</span>
           <span>{UI_TEXT.timeWindowToggle}</span>
-        </label>
+        </label>}
 
         <div className="ml-auto flex items-center gap-3">
           <span className="hidden text-[11px] text-ink-subtle sm:inline">Enter gönderir</span>

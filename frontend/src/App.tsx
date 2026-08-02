@@ -5,17 +5,19 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { ChatMessage, type ChatTurn } from './components/ChatMessage'
 import { ChatComposer } from './components/ChatComposer'
 import { EmptyState } from './components/EmptyState'
-import { createInvestigation, getModelCatalog, listSessionInvestigations } from './api/client'
+import { getModelCatalog, listSessionInvestigations, sendChatMessage } from './api/client'
 import {
   listSessions,
   createSession,
   renameSession,
   recordQuestion,
   getRecordedQuestion,
+  loadTurns,
+  saveTurns,
   type SessionMeta,
 } from './lib/sessionStore'
 import { toUserMessage } from './lib/errors'
-import type { InvestigationRequest, ModelOption } from './api/types'
+import type { ChatMessageRequest, InteractionMode, ModelOption } from './api/types'
 
 export default function App() {
   const [sessions, setSessions] = useState<SessionMeta[]>([])
@@ -24,6 +26,7 @@ export default function App() {
   const [models, setModels] = useState<ModelOption[]>([])
   const [modelId, setModelId] = useState<string | null>(null)
   const [mode, setMode] = useState<'quick' | 'thorough'>('thorough')
+  const [interactionMode, setInteractionMode] = useState<InteractionMode>('AUTO')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -66,16 +69,22 @@ export default function App() {
 
   async function selectSession(sessionId: string) {
     setActiveSessionId(sessionId)
+    const localTurns = loadTurns(sessionId)
+    if (localTurns.length > 0) {
+      setTurns(localTurns)
+      return
+    }
     try {
       const investigations = await listSessionInvestigations(sessionId)
-      setTurns(
-        investigations.map((investigation) => ({
+      const restored: ChatTurn[] = investigations.map((investigation) => ({
           id: investigation.investigationId,
           question: getRecordedQuestion(sessionId, investigation.investigationId) ?? 'Önceki inceleme',
-          status: 'done' as const,
+          kind: 'investigation' as const,
+          assistantMessage: investigation.summary,
           investigation,
         }))
-      )
+      setTurns(restored)
+      saveTurns(sessionId, restored)
     } catch {
       setTurns([])
     }
@@ -85,7 +94,7 @@ export default function App() {
     if (!activeSessionId) return
     const turnId = crypto.randomUUID()
     const isFirstTurn = turns.length === 0
-    setTurns((previous) => [...previous, { id: turnId, question, status: 'pending' }])
+    setTurns((previous) => [...previous, { id: turnId, question, kind: 'pending' }])
     setBusy(true)
 
     if (isFirstTurn) {
@@ -93,32 +102,55 @@ export default function App() {
       setSessions(listSessions())
     }
 
-    const request: InvestigationRequest = {
-      question,
+    if (!modelId) {
+      setTurns((previous) => previous.map((turn) => turn.id === turnId
+        ? { kind: 'error', id: turnId, question, errorMessage: 'Doğrulanmış model yüklenemedi.' }
+        : turn))
+      setBusy(false)
+      return
+    }
+
+    const request: ChatMessageRequest = {
+      message: question,
       timeWindow,
       sessionId: activeSessionId,
-      modelId: modelId ?? undefined,
-      mode,
+      modelId,
+      interactionMode,
+      investigationMode: mode === 'quick' ? 'QUICK' : 'THOROUGH',
       locale: 'tr-TR',
     }
 
     try {
-      const investigation = await createInvestigation(request)
-      recordQuestion(activeSessionId, investigation.investigationId, question)
+      const response = await sendChatMessage(request)
+      if (response.investigation) {
+        recordQuestion(activeSessionId, response.investigation.investigationId, question)
+      }
       setTurns((previous) =>
-        previous.map((turn) =>
-          turn.id === turnId
-            ? { ...turn, id: investigation.investigationId, status: 'done', investigation }
-            : turn
-        )
+        {
+          const next = previous.map((turn): ChatTurn => {
+            if (turn.id !== turnId) return turn
+            if (response.responseType === 'INVESTIGATION' && response.investigation) {
+              return { kind: 'investigation', id: response.investigation.investigationId, question,
+                assistantMessage: response.assistantMessage, suggestions: response.suggestions,
+                investigation: response.investigation }
+            }
+            return { kind: response.responseType === 'CLARIFICATION' ? 'clarification' : 'chat',
+              id: response.messageId, question, assistantMessage: response.assistantMessage,
+              suggestions: response.suggestions }
+          })
+          saveTurns(activeSessionId, next)
+          return next
+        }
       )
     } catch (error) {
       setTurns((previous) =>
-        previous.map((turn) =>
-          turn.id === turnId
-            ? { ...turn, status: 'error', errorMessage: toUserMessage(error) }
-            : turn
-        )
+        {
+          const next = previous.map((turn): ChatTurn => turn.id === turnId
+            ? { kind: 'error', id: turnId, question, errorMessage: toUserMessage(error) }
+            : turn)
+          saveTurns(activeSessionId, next)
+          return next
+        }
       )
     } finally {
       setBusy(false)
@@ -141,6 +173,7 @@ export default function App() {
           onNewChat={handleNewChat}
           activeModel={activeModel?.label}
           mode={mode}
+          interactionMode={interactionMode}
           sessionTitle={activeSession?.title}
         />
 
@@ -151,7 +184,7 @@ export default function App() {
             ) : (
               <div className="space-y-10 pb-8">
                 {turns.map((turn) => (
-                  <ChatMessage key={turn.id} turn={turn} />
+                  <ChatMessage key={turn.id} turn={turn} onSuggestion={(text) => handleSubmit(text)} />
                 ))}
               </div>
             )}
@@ -161,13 +194,15 @@ export default function App() {
         <div className="composer-dock">
           <div className="mx-auto w-full max-w-[940px] px-4 pb-4 sm:px-8 lg:px-10">
             <ChatComposer
-              disabled={busy}
+              disabled={busy || !modelId}
               onSubmit={handleSubmit}
               models={models}
               modelId={modelId}
               onModelChange={setModelId}
               mode={mode}
               onModeChange={setMode}
+              interactionMode={interactionMode}
+              onInteractionModeChange={setInteractionMode}
             />
             <p className="mt-2 text-center text-[10px] tracking-wide text-ink-subtle">
               Çıktılar operasyonel kanıtlara dayanır. Değişiklik ve incident işlemleri açık onay gerektirir.
@@ -183,6 +218,7 @@ export default function App() {
         onModeChange={setMode}
         onClose={() => setSettingsOpen(false)}
         embedded
+        interactionMode={interactionMode}
       />
 
       {settingsOpen && (
@@ -192,6 +228,7 @@ export default function App() {
           mode={mode}
           onModeChange={setMode}
           onClose={() => setSettingsOpen(false)}
+          interactionMode={interactionMode}
         />
       )}
     </div>

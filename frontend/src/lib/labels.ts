@@ -25,6 +25,12 @@ export const MODE_LABEL_TR: Record<'quick' | 'thorough', string> = {
   thorough: 'Detaylı',
 }
 
+export const INTERACTION_MODE_LABEL_TR = {
+  AUTO: 'Otomatik',
+  CHAT: 'Sohbet',
+  INVESTIGATION: 'İnceleme',
+} as const
+
 export const DOCUMENT_TYPE_LABEL_TR: Record<string, string> = {
   INCIDENT_POSTMORTEM: 'Olay sonrası analiz (postmortem)',
   RUNBOOK: 'Runbook',
@@ -61,6 +67,9 @@ export const ERROR_MESSAGE_TR: Record<string, string> = {
     'Bu inceleme doğrulamadan geçemedi, bu yüzden henüz üzerinde bir olay aksiyonu alınamaz.',
   INVESTIGATION_NOT_FOUND:
     'Bu inceleme bulunamadı. Süresi dolmuş veya bağlantı hatalı olabilir.',
+  INVALID_CHAT_REQUEST: 'Mesaj, oturum, model veya mod bilgisi geçersiz. Seçimleri kontrol edin.',
+  INTENT_ROUTING_FAILED:
+    'Model mesajın niyetini güvenli biçimde sınıflandıramadı. Mesajı netleştirip tekrar deneyin.',
 }
 
 export const UI_TEXT = {
@@ -70,7 +79,7 @@ export const UI_TEXT = {
   emptyThreadList: 'Henüz sohbet yok',
   composerPlaceholder: 'Ne araştırmak istersiniz? (Enter ile gönder, Shift+Enter yeni satır)',
   send: 'Gönder',
-  investigating: 'İnceleniyor…',
+  investigating: 'Niyet değerlendiriliyor…',
   investigatingDetail:
     'Canlı metrik, hata, kuyruk ve operatör verileri toplanıyor, ardından geçmiş olaylarla karşılaştırılıyor. Gerçek bir analiz bir dakikaya kadar sürebilir — bu önbelleğe alınmış bir sonuç değildir.',
   settings: 'Ayarlar',
@@ -94,8 +103,6 @@ export const UI_TEXT = {
   timeWindowStart: 'Başlangıç',
   timeWindowEnd: 'Bitiş',
   localTime: 'yerel saat',
-  shortQuestionGuidance:
-    'Lütfen OTP metriği, operatör veya zaman bağlamı içeren daha açıklayıcı bir inceleme sorusu yazın.',
   incompleteTimeWindow: 'Başlangıç ve bitiş zamanını birlikte belirtin veya zaman aralığını kapatın.',
   evidenceSection: 'Kanıtlar',
   hypothesesSection: 'Hipotezler',

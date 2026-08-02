@@ -24,6 +24,7 @@ interface Props {
   onModeChange: (mode: 'quick' | 'thorough') => void
   onClose: () => void
   embedded?: boolean
+  interactionMode?: 'AUTO' | 'CHAT' | 'INVESTIGATION'
 }
 
 export function SettingsPanel({
@@ -33,6 +34,7 @@ export function SettingsPanel({
   onModeChange,
   onClose,
   embedded = false,
+  interactionMode = 'AUTO',
 }: Props) {
   const [models, setModels] = useState<ModelOption[]>([])
   const [documents, setDocuments] = useState<KnowledgeDocumentSummary[]>([])
@@ -149,7 +151,7 @@ export function SettingsPanel({
             <option key={model.id} value={model.id}>{model.id}</option>
           ))}
         </select>
-        <div className="mt-3 flex gap-2">
+        {interactionMode !== 'CHAT' && <div className="mt-3 flex gap-2">
           {(['quick', 'thorough'] as const).map((value) => (
             <label key={value} className={`mode-option ${mode === value ? 'mode-option-active' : ''}`}>
               <input
@@ -162,7 +164,7 @@ export function SettingsPanel({
               {MODE_LABEL_TR[value]}
             </label>
           ))}
-        </div>
+        </div>}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-5">

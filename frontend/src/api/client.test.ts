@@ -6,6 +6,7 @@ import {
   listModels,
   listKnowledgeDocuments,
   uploadKnowledgeDocument,
+  sendChatMessage,
 } from './client'
 
 describe('createInvestigation', () => {
@@ -34,7 +35,7 @@ describe('createInvestigation', () => {
 
     const result = await createInvestigation({ question: 'Why did OTP delivery drop?' })
 
-    expect(result).toEqual(body)
+    expect(result).toEqual({ ...body, visualizations: [] })
     expect(fetch).toHaveBeenCalledWith(
       '/api/v1/investigations',
       expect.objectContaining({ method: 'POST' })
@@ -107,6 +108,35 @@ describe('createInvestigation', () => {
       expect((err as ApiError).problemDetails.status).toBe(502)
       expect((err as ApiError).problemDetails.title).toBe('Bad Gateway')
     }
+  })
+})
+
+describe('sendChatMessage', () => {
+  beforeEach(() => vi.stubGlobal('fetch', vi.fn()))
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('posts interaction and investigation modes to the adaptive endpoint', async () => {
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        messageId: 'm-1', sessionId: 's-1', responseType: 'CHAT',
+        assistantMessage: 'Merhaba',
+        route: { intent: 'CHAT', confidence: 0.9, modelId: 'model' },
+        suggestions: [], investigation: null,
+      }),
+    })
+
+    const result = await sendChatMessage({
+      message: 'Merhaba', sessionId: 's-1', modelId: 'model',
+      interactionMode: 'CHAT', investigationMode: 'THOROUGH', locale: 'tr-TR',
+    })
+
+    expect(result.responseType).toBe('CHAT')
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/chat/messages',
+      expect.objectContaining({ method: 'POST', body: expect.stringContaining('"interactionMode":"CHAT"') })
+    )
   })
 })
 

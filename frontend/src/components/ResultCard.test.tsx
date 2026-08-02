@@ -24,6 +24,7 @@ const INVESTIGATION: Investigation = {
   confidence: 0.87,
   approvalRequired: false,
   validation: { status: 'PASSED', warnings: [] },
+  visualizations: [],
 }
 
 describe('ResultCard', () => {

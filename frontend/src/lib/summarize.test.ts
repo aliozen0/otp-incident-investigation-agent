@@ -30,6 +30,7 @@ const BASE: Investigation = {
   confidence: 0.87,
   approvalRequired: true,
   validation: { status: 'PASSED', warnings: [] },
+  visualizations: [],
 }
 
 describe('synthesizeSummary', () => {

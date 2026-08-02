@@ -12,6 +12,8 @@ import type {
   KnowledgeSearchResponse,
   KnowledgeDocumentUploadRequest,
   KnowledgeDocumentUploadResponse,
+  ChatMessageRequest,
+  ChatMessageResponse,
 } from './types'
 
 const BASE = '/api/v1'
@@ -68,6 +70,19 @@ export function normalizeInvestigation(raw: Investigation): Investigation {
     hypotheses: raw.hypotheses ?? [],
     recommendedActions: raw.recommendedActions ?? [],
     knowledgeReferences: raw.knowledgeReferences ?? [],
+    visualizations: raw.visualizations ?? [],
+  }
+}
+
+export async function sendChatMessage(req: ChatMessageRequest): Promise<ChatMessageResponse> {
+  const raw = await request<ChatMessageResponse>('/chat/messages', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  })
+  return {
+    ...raw,
+    suggestions: raw.suggestions ?? [],
+    investigation: raw.investigation ? normalizeInvestigation(raw.investigation) : null,
   }
 }
 

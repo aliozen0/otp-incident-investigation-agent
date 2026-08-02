@@ -4,8 +4,12 @@ export interface SessionMeta {
   createdAt: string
 }
 
+import type { ChatTurn } from '../api/types'
+
 const SESSIONS_KEY = 'otp-sentinel:sessions'
 const questionKey = (sessionId: string) => `otp-sentinel:questions:${sessionId}`
+const turnsKey = (sessionId: string) => `otp-sentinel:turns:${sessionId}`
+const TURN_SCHEMA_VERSION = 2
 
 function readSessions(): SessionMeta[] {
   const raw = localStorage.getItem(SESSIONS_KEY)
@@ -73,4 +77,38 @@ export function getRecordedQuestion(sessionId: string, investigationId: string):
   } catch {
     return undefined
   }
+}
+
+export function saveTurns(sessionId: string, turns: ChatTurn[]): void {
+  const stableTurns = turns.filter((turn) => turn.kind !== 'pending')
+  localStorage.setItem(
+    turnsKey(sessionId),
+    JSON.stringify({ version: TURN_SCHEMA_VERSION, turns: stableTurns })
+  )
+}
+
+export function loadTurns(sessionId: string): ChatTurn[] {
+  const raw = localStorage.getItem(turnsKey(sessionId))
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as { version?: unknown; turns?: unknown }
+    if (parsed.version !== TURN_SCHEMA_VERSION || !Array.isArray(parsed.turns)) return []
+    return parsed.turns.filter(isStoredTurn)
+  } catch {
+    return []
+  }
+}
+
+function isStoredTurn(value: unknown): value is ChatTurn {
+  if (!value || typeof value !== 'object') return false
+  const turn = value as Record<string, unknown>
+  if (typeof turn.id !== 'string' || typeof turn.question !== 'string') return false
+  if (turn.kind === 'chat' || turn.kind === 'clarification') {
+    return typeof turn.assistantMessage === 'string'
+  }
+  if (turn.kind === 'investigation') {
+    return typeof turn.assistantMessage === 'string' && !!turn.investigation
+  }
+  if (turn.kind === 'error') return typeof turn.errorMessage === 'string'
+  return false
 }

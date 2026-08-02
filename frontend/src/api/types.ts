@@ -30,6 +30,9 @@ export interface Evidence {
   sourceReference: string
   observation: string
   observedAt: string
+  metricName?: string | null
+  metricValue?: number | null
+  metricUnit?: string | null
 }
 
 export interface Hypothesis {
@@ -73,7 +76,54 @@ export interface Investigation {
   confidence: number | null
   approvalRequired: boolean
   validation: Validation
+  visualizations: VisualizationSpec[]
 }
+
+export type InteractionMode = 'AUTO' | 'CHAT' | 'INVESTIGATION'
+export type InvestigationMode = 'QUICK' | 'THOROUGH'
+export type ResponseType = 'CHAT' | 'CLARIFICATION' | 'INVESTIGATION'
+
+export type VisualizationType = 'LINE' | 'BAR' | 'GROUPED_BAR' | 'GAUGE' | 'TABLE'
+export type VisualizationUnit =
+  | 'PERCENT' | 'RATIO' | 'COUNT' | 'MILLISECONDS' | 'CONNECTIONS' | 'NONE'
+
+export interface VisualizationSpec {
+  id: string
+  type: VisualizationType
+  title: string
+  xAxisLabel?: string | null
+  yAxisLabel?: string | null
+  unit: VisualizationUnit
+  series: { key: string; label: string }[]
+  points: { label: string; seriesKey: string; value: number; evidenceId: string }[]
+}
+
+export interface ChatMessageRequest {
+  message: string
+  sessionId: string
+  modelId: string
+  interactionMode: InteractionMode
+  investigationMode: InvestigationMode
+  timeWindow?: { startAt: string; endAt: string }
+  locale: string
+}
+
+export interface ChatMessageResponse {
+  messageId: string
+  sessionId: string
+  responseType: ResponseType
+  assistantMessage: string
+  route: { intent: ResponseType; confidence: number; modelId: string }
+  suggestions: string[]
+  investigation: Investigation | null
+}
+
+export type ChatTurn =
+  | { kind: 'pending'; id: string; question: string }
+  | { kind: 'chat'; id: string; question: string; assistantMessage: string; suggestions?: string[] }
+  | { kind: 'clarification'; id: string; question: string; assistantMessage: string; suggestions?: string[] }
+  | { kind: 'investigation'; id: string; question: string; assistantMessage: string; investigation: Investigation; suggestions?: string[] }
+  | { kind: 'error'; id: string; question: string; errorMessage: string }
 
 export interface IncidentDraftPreview {
   title: string

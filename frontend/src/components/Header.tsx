@@ -4,9 +4,10 @@ interface Props {
   mode?: 'quick' | 'thorough'
   sessionTitle?: string
   onNewChat?: () => void
+  interactionMode?: 'AUTO' | 'CHAT' | 'INVESTIGATION'
 }
 
-export function Header({ onOpenSettings, activeModel, mode = 'thorough', sessionTitle, onNewChat }: Props) {
+export function Header({ onOpenSettings, activeModel, mode = 'thorough', sessionTitle, onNewChat, interactionMode = 'AUTO' }: Props) {
   return (
     <header className="app-header">
       <div className="min-w-0">
@@ -28,7 +29,7 @@ export function Header({ onOpenSettings, activeModel, mode = 'thorough', session
             <span className="status-dot bg-confirm" /> {activeModel}
           </span>
         )}
-        <span className="header-chip">{mode === 'quick' ? 'Hızlı' : 'Detaylı'}</span>
+        <span className="header-chip">{interactionMode === 'CHAT' ? 'Sohbet' : interactionMode === 'INVESTIGATION' ? 'İnceleme' : 'Otomatik'} · {mode === 'quick' ? 'Hızlı' : 'Detaylı'}</span>
         <button type="button" onClick={onOpenSettings} className="header-action" aria-label="Bilgi tabanı ve ayarlar">
           <span aria-hidden="true">☰</span>
           <span className="hidden sm:inline">Bilgi tabanı</span>
