@@ -17,6 +17,7 @@ public final class Investigation {
   private final TimeWindow resolvedTimeWindow;
   private final String promptVersion;
   private final String schemaVersion;
+  private final String sessionId;
   private final List<Evidence> evidence = new ArrayList<>();
   private final List<String> toolExecutions = new ArrayList<>();
 
@@ -34,17 +35,29 @@ public final class Investigation {
       String question,
       TimeWindow resolvedTimeWindow,
       String promptVersion,
-      String schemaVersion) {
+      String schemaVersion,
+      String sessionId) {
     this.id = id;
     this.question = question;
     this.resolvedTimeWindow = resolvedTimeWindow;
     this.promptVersion = promptVersion;
     this.schemaVersion = schemaVersion;
+    this.sessionId = sessionId;
     this.phase = InvestigationPhase.RECEIVED;
   }
 
   public static Investigation receive(
       String question, TimeWindow resolvedTimeWindow, String promptVersion, String schemaVersion) {
+    return receive(question, resolvedTimeWindow, promptVersion, schemaVersion, null);
+  }
+
+  /** {@code sessionId} is a client-generated UUID string identifying a chat thread; nullable, no invariant (ADR-017). */
+  public static Investigation receive(
+      String question,
+      TimeWindow resolvedTimeWindow,
+      String promptVersion,
+      String schemaVersion,
+      String sessionId) {
     if (question == null || question.isBlank()) {
       throw new IllegalArgumentException("question must not be blank");
     }
@@ -52,7 +65,12 @@ public final class Investigation {
       throw new IllegalArgumentException("resolvedTimeWindow must not be null");
     }
     return new Investigation(
-        InvestigationId.generate(), question, resolvedTimeWindow, promptVersion, schemaVersion);
+        InvestigationId.generate(),
+        question,
+        resolvedTimeWindow,
+        promptVersion,
+        schemaVersion,
+        sessionId);
   }
 
   /**
@@ -65,6 +83,7 @@ public final class Investigation {
       TimeWindow resolvedTimeWindow,
       String promptVersion,
       String schemaVersion,
+      String sessionId,
       InvestigationPhase phase,
       InvestigationStatus resultStatus,
       Severity severity,
@@ -76,7 +95,7 @@ public final class Investigation {
       ValidationReport validationReport,
       List<String> toolExecutions) {
     Investigation investigation =
-        new Investigation(id, question, resolvedTimeWindow, promptVersion, schemaVersion);
+        new Investigation(id, question, resolvedTimeWindow, promptVersion, schemaVersion, sessionId);
     investigation.phase = phase;
     investigation.resultStatus = resultStatus;
     investigation.severity = severity;
@@ -264,5 +283,9 @@ public final class Investigation {
 
   public String schemaVersion() {
     return schemaVersion;
+  }
+
+  public String sessionId() {
+    return sessionId;
   }
 }

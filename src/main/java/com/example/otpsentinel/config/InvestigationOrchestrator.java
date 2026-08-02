@@ -97,9 +97,10 @@ public class InvestigationOrchestrator {
   }
 
   public Investigation runInvestigation(
-      String question, TimeWindow resolvedTimeWindow, String correlationId) {
+      String question, TimeWindow resolvedTimeWindow, String correlationId, String sessionId) {
     Investigation investigation =
-        Investigation.receive(question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION);
+        Investigation.receive(
+            question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION, sessionId);
     audit(
         AuditEventType.REQUEST_ACCEPTED,
         investigation.id(),
@@ -150,6 +151,10 @@ public class InvestigationOrchestrator {
 
   public Optional<Investigation> findInvestigation(InvestigationId id) {
     return investigationRepository.findById(id);
+  }
+
+  public List<Investigation> findBySessionId(String sessionId) {
+    return investigationRepository.findBySessionId(sessionId);
   }
 
   public record IncidentDraftPreview(

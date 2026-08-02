@@ -65,6 +65,23 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void findBySessionIdReturnsOnlyThatSessionsInvestigationsInChronologicalOrder() {
+    JdbcInvestigationRepository repository = newInvestigationRepository();
+    Investigation first = Investigation.receive("first question", WINDOW, "v1", "v1", "thread-A");
+    Investigation second =
+        Investigation.receive("second question", WINDOW, "v1", "v1", "thread-A");
+    Investigation other =
+        Investigation.receive("unrelated question", WINDOW, "v1", "v1", "thread-B");
+    repository.save(first);
+    repository.save(second);
+    repository.save(other);
+
+    List<Investigation> threadA = repository.findBySessionId("thread-A");
+
+    assertThat(threadA).extracting(Investigation::id).containsExactly(first.id(), second.id());
+  }
+
+  @Test
   void findByIdReturnsEmptyForUnknownId() {
     Optional<Investigation> reloaded =
         newInvestigationRepository().findById(InvestigationId.generate());

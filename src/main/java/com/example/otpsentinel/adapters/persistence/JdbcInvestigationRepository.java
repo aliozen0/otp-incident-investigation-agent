@@ -29,11 +29,11 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
   private static final String UPSERT =
       """
       INSERT INTO investigation (
-        id, question, time_window_start, time_window_end, prompt_version, schema_version,
+        id, session_id, question, time_window_start, time_window_end, prompt_version, schema_version,
         phase, result_status, severity, confidence, validation_report,
         evidence, hypotheses, recommended_actions, knowledge_references, tool_executions,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
       ON CONFLICT (id) DO UPDATE SET
         phase = EXCLUDED.phase,
         result_status = EXCLUDED.result_status,
@@ -50,6 +50,9 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
 
   private static final String FIND_BY_ID = "SELECT * FROM investigation WHERE id = ?";
 
+  private static final String FIND_BY_SESSION_ID =
+      "SELECT * FROM investigation WHERE session_id = ? ORDER BY created_at ASC";
+
   private final JdbcTemplate jdbcTemplate;
 
   public JdbcInvestigationRepository(JdbcTemplate jdbcTemplate) {
@@ -61,6 +64,7 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
     jdbcTemplate.update(
         UPSERT,
         investigation.id().value(),
+        investigation.sessionId(),
         investigation.question(),
         Timestamp.from(investigation.resolvedTimeWindow().startAt()),
         Timestamp.from(investigation.resolvedTimeWindow().endAt()),
@@ -83,6 +87,11 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
     return jdbcTemplate.query(FIND_BY_ID, this::mapRow, id.value()).stream().findFirst();
   }
 
+  @Override
+  public List<Investigation> findBySessionId(String sessionId) {
+    return jdbcTemplate.query(FIND_BY_SESSION_ID, this::mapRow, sessionId);
+  }
+
   private Investigation mapRow(ResultSet rs, int rowNum) throws SQLException {
     return Investigation.reconstitute(
         new InvestigationId(rs.getObject("id", UUID.class)),
@@ -92,6 +101,7 @@ public final class JdbcInvestigationRepository implements InvestigationRepositor
             rs.getTimestamp("time_window_end").toInstant()),
         rs.getString("prompt_version"),
         rs.getString("schema_version"),
+        rs.getString("session_id"),
         InvestigationPhase.valueOf(rs.getString("phase")),
         nullableEnum(rs.getString("result_status"), InvestigationStatus::valueOf),
         nullableEnum(rs.getString("severity"), Severity::valueOf),

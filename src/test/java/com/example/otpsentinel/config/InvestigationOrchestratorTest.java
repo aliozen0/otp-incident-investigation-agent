@@ -47,7 +47,8 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
         new TimeWindow(
             Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
     Investigation outcome =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-1");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop", window, "corr-orch-1", null);
 
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
@@ -93,9 +94,11 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
 
     Investigation first =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2a");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop", window, "corr-orch-2a", null);
     Investigation second =
-        orchestrator.runInvestigation("why did OTP success rate drop", window, "corr-orch-2b");
+        orchestrator.runInvestigation(
+            "why did OTP success rate drop", window, "corr-orch-2b", null);
 
     assertThat(first.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(second.phase()).isEqualTo(InvestigationPhase.COMPLETED);
