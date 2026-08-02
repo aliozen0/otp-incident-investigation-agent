@@ -32,6 +32,27 @@ class LangChain4jToolFreeConversationTest {
   }
 
   @Test
+  void routerPromptDistinguishesFreshAmbiguityFromContextualFollowUp() {
+    StubChatModel model =
+        new StubChatModel(
+            new StubScript(
+                List.of(
+                    StubScriptStep.finalAnswer(
+                        """
+                        {"intent":"CLARIFICATION","confidence":0.82,
+                         "normalizedRequest":"provider status","clarificationQuestion":"Which signal and time range?"}
+                        """))));
+
+    new LangChain4jIntentRouter(id -> model).route("Operatör B nasıl?", "no prior turns", "m");
+
+    assertThat(model.lastRequest().messages().toString())
+        .contains("A vague OTP operational status request is not CHAT")
+        .contains("With prior semantic turns exactly")
+        .contains("Operatör B nasıl?")
+        .contains("With prior concrete investigation context");
+  }
+
+  @Test
   void conversationResponderRequestContainsNoToolSpecificationsAndKnowsSelectedModel() {
     StubChatModel model =
         new StubChatModel(
@@ -48,5 +69,8 @@ class LangChain4jToolFreeConversationTest {
 
     assertThat(reply.message()).contains("m");
     assertThat(model.lastRequest().toolSpecifications()).isEmpty();
+    assertThat(model.lastRequest().messages().toString())
+        .contains("selected catalog model string verbatim")
+        .contains("do not paraphrase or translate it");
   }
 }
