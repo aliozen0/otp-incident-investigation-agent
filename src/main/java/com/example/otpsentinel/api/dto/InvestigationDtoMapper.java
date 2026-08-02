@@ -19,7 +19,9 @@ public final class InvestigationDtoMapper {
         i.evidence().stream().map(InvestigationDtoMapper::toEvidenceDto).toList(),
         i.hypotheses().stream().map(InvestigationDtoMapper::toHypothesisDto).toList(),
         i.recommendedActions().stream().map(InvestigationDtoMapper::toActionDto).toList(),
-        i.knowledgeReferences().stream().map(InvestigationResponseDto.KnowledgeReferenceDto::new).toList(),
+        i.knowledgeReferences().stream()
+            .map(InvestigationResponseDto.KnowledgeReferenceDto::new)
+            .toList(),
         i.confidence() == null ? 0.0 : i.confidence(),
         !i.recommendedActions().isEmpty()
             && i.recommendedActions().stream().anyMatch(RecommendedAction::requiresApproval),

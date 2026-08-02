@@ -20,7 +20,10 @@ class InvestigationRequestValidatorTest {
             new InvestigationRequestDto.TimeWindowRangeDto(
                 Instant.now().minus(10, ChronoUnit.MINUTES),
                 Instant.now().plus(5, ChronoUnit.MINUTES)),
-            "tr-TR", null, null, null);
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -35,7 +38,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(end.minus(25, ChronoUnit.HOURS), end),
-            "tr-TR", null, null, null);
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -50,7 +56,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(end.minus(15, ChronoUnit.MINUTES), end),
-            "tr-TR", null, null, null);
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThat(validator.validate(request)).isNotNull();
   }
@@ -62,7 +71,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(null, end),
-            "tr-TR", null, null, null);
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)
@@ -77,7 +89,10 @@ class InvestigationRequestValidatorTest {
         new InvestigationRequestDto(
             "why did OTP success rate drop suddenly",
             new InvestigationRequestDto.TimeWindowRangeDto(start, null),
-            "tr-TR", null, null, null);
+            "tr-TR",
+            null,
+            null,
+            null);
 
     assertThatThrownBy(() -> validator.validate(request))
         .isInstanceOf(ApiException.class)

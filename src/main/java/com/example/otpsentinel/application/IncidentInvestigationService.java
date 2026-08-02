@@ -48,7 +48,13 @@ public final class IncidentInvestigationService {
       ToolBudgetGuard guard,
       EvidenceCollector collector) {
     return investigate(
-        request, investigation, aiService, guard, collector, null, null,
+        request,
+        investigation,
+        aiService,
+        guard,
+        collector,
+        null,
+        null,
         investigation.id().toString());
   }
 
@@ -61,7 +67,13 @@ public final class IncidentInvestigationService {
       AuditEventRepository auditEventRepository,
       String correlationId) {
     return investigate(
-        request, investigation, aiService, guard, collector, auditEventRepository, correlationId,
+        request,
+        investigation,
+        aiService,
+        guard,
+        collector,
+        auditEventRepository,
+        correlationId,
         investigation.id().toString());
   }
 

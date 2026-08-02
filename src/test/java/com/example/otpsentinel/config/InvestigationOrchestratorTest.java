@@ -39,6 +39,7 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
+            3,
             2000,
             1,
             1,
@@ -49,7 +50,12 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             Instant.parse("2026-07-30T11:15:00Z"), Instant.parse("2026-07-30T11:30:00Z"));
     Investigation outcome =
         orchestrator.runInvestigation(
-            "why did OTP success rate drop", window, "corr-orch-1", null);
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-1",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
 
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.ANOMALY_CONFIRMED);
@@ -86,6 +92,7 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
+            3,
             2000,
             1,
             1,
@@ -97,10 +104,20 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
 
     Investigation first =
         orchestrator.runInvestigation(
-            "why did OTP success rate drop", window, "corr-orch-2a", null);
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-2a",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
     Investigation second =
         orchestrator.runInvestigation(
-            "why did OTP success rate drop", window, "corr-orch-2b", null);
+            "why did OTP success rate drop",
+            window,
+            "corr-orch-2b",
+            null,
+            null,
+            com.example.otpsentinel.agent.InvestigationMode.THOROUGH);
 
     assertThat(first.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(second.phase()).isEqualTo(InvestigationPhase.COMPLETED);

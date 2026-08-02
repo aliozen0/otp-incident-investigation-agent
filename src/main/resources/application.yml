@@ -32,6 +32,7 @@ otp-sentinel:
   ai:
     mode: ${AI_MODE:stub}
     max-tool-calls: ${AI_MAX_TOOL_CALLS:8}
+    quick-mode-max-tool-calls: ${AI_QUICK_MODE_MAX_TOOL_CALLS:3}
     max-repair-attempts: ${AI_MAX_REPAIR_ATTEMPTS:1}
     timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
     chat-memory-max-messages: ${AI_CHAT_MEMORY_MAX_MESSAGES:10}

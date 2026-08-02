@@ -131,10 +131,16 @@ public class InvestigationController {
       @org.springframework.web.bind.annotation.RequestBody InvestigationRequestDto request,
       HttpServletRequest httpRequest) {
     TimeWindow window = validator.validate(request);
+    com.example.otpsentinel.agent.InvestigationMode mode = validator.resolveMode(request.mode());
     String correlationId = (String) httpRequest.getAttribute("correlationId");
     Investigation outcome =
         orchestrator.runInvestigation(
-            request.question(), window, correlationId, request.sessionId());
+            request.question(),
+            window,
+            correlationId,
+            request.sessionId(),
+            request.modelId(),
+            mode);
     return ResponseEntity.ok(InvestigationDtoMapper.toDto(outcome));
   }
 

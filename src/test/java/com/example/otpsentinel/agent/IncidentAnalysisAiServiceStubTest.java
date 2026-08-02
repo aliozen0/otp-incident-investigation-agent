@@ -64,7 +64,9 @@ class IncidentAnalysisAiServiceStubTest {
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(stubChatModel)
             .tools(tools)
-            .chatMemoryProvider(sessionId -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
+            .chatMemoryProvider(
+                sessionId ->
+                    dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
             .build();
 
     IncidentAnalysisResult result =

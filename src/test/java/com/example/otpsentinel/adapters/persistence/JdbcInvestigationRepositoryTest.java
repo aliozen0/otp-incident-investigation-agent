@@ -68,8 +68,7 @@ class JdbcInvestigationRepositoryTest extends AbstractPostgresIntegrationTest {
   void findBySessionIdReturnsOnlyThatSessionsInvestigationsInChronologicalOrder() {
     JdbcInvestigationRepository repository = newInvestigationRepository();
     Investigation first = Investigation.receive("first question", WINDOW, "v1", "v1", "thread-A");
-    Investigation second =
-        Investigation.receive("second question", WINDOW, "v1", "v1", "thread-A");
+    Investigation second = Investigation.receive("second question", WINDOW, "v1", "v1", "thread-A");
     Investigation other =
         Investigation.receive("unrelated question", WINDOW, "v1", "v1", "thread-B");
     repository.save(first);

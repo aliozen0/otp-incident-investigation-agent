@@ -51,7 +51,10 @@ public final class Investigation {
     return receive(question, resolvedTimeWindow, promptVersion, schemaVersion, null);
   }
 
-  /** {@code sessionId} is a client-generated UUID string identifying a chat thread; nullable, no invariant (ADR-017). */
+  /**
+   * {@code sessionId} is a client-generated UUID string identifying a chat thread; nullable, no
+   * invariant (ADR-017).
+   */
   public static Investigation receive(
       String question,
       TimeWindow resolvedTimeWindow,
@@ -95,7 +98,8 @@ public final class Investigation {
       ValidationReport validationReport,
       List<String> toolExecutions) {
     Investigation investigation =
-        new Investigation(id, question, resolvedTimeWindow, promptVersion, schemaVersion, sessionId);
+        new Investigation(
+            id, question, resolvedTimeWindow, promptVersion, schemaVersion, sessionId);
     investigation.phase = phase;
     investigation.resultStatus = resultStatus;
     investigation.severity = severity;

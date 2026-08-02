@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * M11 compatibility spike for the second model in {@link com.example.otpsentinel.api.ModelCatalog}
- * (prompts/handoff/M11-prompt.md step 4, docs/19). Same shape as {@link NvidiaNimChatServiceLiveTest}
- * but pins the alternate model id explicitly instead of reading it from env, so both verified models
- * have a permanent regression spike.
+ * (prompts/handoff/M11-prompt.md step 4, docs/19). Same shape as {@link
+ * NvidiaNimChatServiceLiveTest} but pins the alternate model id explicitly instead of reading it
+ * from env, so both verified models have a permanent regression spike.
  */
 @Tag("local-live")
 class NvidiaNimAlternateModelLiveTest {

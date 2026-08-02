@@ -17,8 +17,7 @@ class ModelsControllerTest extends AbstractPostgresIntegrationTest {
 
   @Test
   void listsOnlyVerifiedModels() {
-    ResponseEntity<String> response =
-        restTemplate.getForEntity("/api/v1/models", String.class);
+    ResponseEntity<String> response = restTemplate.getForEntity("/api/v1/models", String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody()).contains("meta/llama-3.1-8b-instruct");

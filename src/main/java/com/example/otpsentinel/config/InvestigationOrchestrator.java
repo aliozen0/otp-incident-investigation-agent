@@ -61,6 +61,7 @@ public class InvestigationOrchestrator {
   private final FixtureProviderHealthTool providerHealthTool;
   private final FixtureRecentChangesTool recentChangesTool;
   private final int maxToolCalls;
+  private final int quickModeMaxToolCalls;
   private final Duration toolTimeout;
   private final int toolRetryCount;
   private final int maxRepairAttempts;
@@ -78,6 +79,7 @@ public class InvestigationOrchestrator {
       FixtureProviderHealthTool providerHealthTool,
       FixtureRecentChangesTool recentChangesTool,
       @Value("${otp-sentinel.ai.max-tool-calls:8}") int maxToolCalls,
+      @Value("${otp-sentinel.ai.quick-mode-max-tool-calls:3}") int quickModeMaxToolCalls,
       @Value("${otp-sentinel.tool.timeout-millis:2000}") long toolTimeoutMillis,
       @Value("${otp-sentinel.tool.retry-count:1}") int toolRetryCount,
       @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
@@ -93,6 +95,7 @@ public class InvestigationOrchestrator {
     this.providerHealthTool = providerHealthTool;
     this.recentChangesTool = recentChangesTool;
     this.maxToolCalls = maxToolCalls;
+    this.quickModeMaxToolCalls = quickModeMaxToolCalls;
     this.toolTimeout = Duration.ofMillis(toolTimeoutMillis);
     this.toolRetryCount = toolRetryCount;
     this.maxRepairAttempts = maxRepairAttempts;
@@ -100,7 +103,12 @@ public class InvestigationOrchestrator {
   }
 
   public Investigation runInvestigation(
-      String question, TimeWindow resolvedTimeWindow, String correlationId, String sessionId) {
+      String question,
+      TimeWindow resolvedTimeWindow,
+      String correlationId,
+      String sessionId,
+      String modelId,
+      com.example.otpsentinel.agent.InvestigationMode mode) {
     Investigation investigation =
         Investigation.receive(
             question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION, sessionId);
@@ -117,7 +125,11 @@ public class InvestigationOrchestrator {
         correlationId,
         resolvedTimeWindow.startAt() + "/" + resolvedTimeWindow.endAt());
 
-    ToolBudgetGuard guard = new ToolBudgetGuard(maxToolCalls, toolTimeout, toolRetryCount);
+    int effectiveMaxToolCalls =
+        mode == com.example.otpsentinel.agent.InvestigationMode.QUICK
+            ? quickModeMaxToolCalls
+            : maxToolCalls;
+    ToolBudgetGuard guard = new ToolBudgetGuard(effectiveMaxToolCalls, toolTimeout, toolRetryCount);
     EvidenceCollector collector =
         new EvidenceCollector(investigation, auditEventRepository, correlationId);
     AgentTools tools =
@@ -130,10 +142,9 @@ public class InvestigationOrchestrator {
             knowledgeSearchPort,
             guard,
             collector);
-    ChatModel chatModel = chatModelFactory.apply(null);
-    String memoryId = (sessionId == null || sessionId.isBlank())
-        ? investigation.id().toString()
-        : sessionId;
+    ChatModel chatModel = chatModelFactory.apply(modelId);
+    String memoryId =
+        (sessionId == null || sessionId.isBlank()) ? investigation.id().toString() : sessionId;
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(chatModel)

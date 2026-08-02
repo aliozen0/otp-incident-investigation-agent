@@ -210,7 +210,8 @@ class IncidentInvestigationServiceTest {
                             StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
                             StubScriptStep.finalAnswer(noAnomalyJson())))))
             .tools(tools)
-            .chatMemoryProvider(id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
+            .chatMemoryProvider(
+                id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
             .build();
 
     Investigation outcome =
@@ -282,7 +283,8 @@ class IncidentInvestigationServiceTest {
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(new StubChatModel(new StubScript(List.of(steps))))
             .tools(tools)
-            .chatMemoryProvider(id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
+            .chatMemoryProvider(
+                id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
             .build();
     return new TestContext(investigation, guard, collector, aiService);
   }

@@ -25,6 +25,7 @@ public final class SessionChatMemoryStore {
 
   public ChatMemory get(String memoryId) {
     Objects.requireNonNull(memoryId, "memoryId must not be null");
-    return memories.computeIfAbsent(memoryId, id -> MessageWindowChatMemory.withMaxMessages(maxMessages));
+    return memories.computeIfAbsent(
+        memoryId, id -> MessageWindowChatMemory.withMaxMessages(maxMessages));
   }
 }

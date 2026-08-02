@@ -93,7 +93,8 @@ class PromptInjectionSignalTest {
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(new StubChatModel(script))
             .tools(tools)
-            .chatMemoryProvider(id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
+            .chatMemoryProvider(
+                id -> dev.langchain4j.memory.chat.MessageWindowChatMemory.withMaxMessages(10))
             .build();
 
     Investigation outcome =
