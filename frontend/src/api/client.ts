@@ -5,6 +5,10 @@ import type {
   IncidentDecisionRequest,
   IncidentDecisionResponse,
   ProblemDetails,
+  ModelsResponse,
+  KnowledgeDocumentSummary,
+  KnowledgeDocumentUploadRequest,
+  KnowledgeDocumentUploadResponse,
 } from './types'
 
 const BASE = '/api/v1'
@@ -97,4 +101,29 @@ export function submitIncidentDecision(
       body: JSON.stringify(req),
     }
   )
+}
+
+export async function listSessionInvestigations(sessionId: string): Promise<Investigation[]> {
+  const raw = await request<Investigation[]>(`/sessions/${sessionId}/investigations`, {
+    method: 'GET',
+  })
+  return raw.map(normalizeInvestigation)
+}
+
+export async function listModels(): Promise<string[]> {
+  const raw = await request<ModelsResponse>('/models', { method: 'GET' })
+  return raw.models
+}
+
+export function listKnowledgeDocuments(): Promise<KnowledgeDocumentSummary[]> {
+  return request<KnowledgeDocumentSummary[]>('/knowledge/documents', { method: 'GET' })
+}
+
+export function uploadKnowledgeDocument(
+  req: KnowledgeDocumentUploadRequest
+): Promise<KnowledgeDocumentUploadResponse> {
+  return request<KnowledgeDocumentUploadResponse>('/knowledge/documents', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  })
 }

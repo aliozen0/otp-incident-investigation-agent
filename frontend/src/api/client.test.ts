@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createInvestigation, ApiError } from './client'
+import {
+  createInvestigation,
+  ApiError,
+  listSessionInvestigations,
+  listModels,
+  listKnowledgeDocuments,
+  uploadKnowledgeDocument,
+} from './client'
 
 describe('createInvestigation', () => {
   beforeEach(() => {
@@ -100,5 +107,114 @@ describe('createInvestigation', () => {
       expect((err as ApiError).problemDetails.status).toBe(502)
       expect((err as ApiError).problemDetails.title).toBe('Bad Gateway')
     }
+  })
+})
+
+describe('listSessionInvestigations', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('GETs the session thread and normalizes each investigation', async () => {
+    const body = [
+      {
+        investigationId: 'inv-1',
+        status: 'ANOMALY_CONFIRMED',
+        validation: null,
+      },
+    ]
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    })
+
+    const result = await listSessionInvestigations('sess-1')
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/sessions/sess-1/investigations',
+      expect.objectContaining({ method: 'GET' })
+    )
+    expect(result[0].validation).toEqual({ status: 'PASSED', warnings: [] })
+  })
+})
+
+describe('listModels', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('GETs /models and returns the model id list', async () => {
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ models: ['meta/llama-3.1-8b-instruct', 'meta/llama-3.3-70b-instruct'] }),
+    })
+
+    const result = await listModels()
+
+    expect(fetch).toHaveBeenCalledWith('/api/v1/models', expect.objectContaining({ method: 'GET' }))
+    expect(result).toEqual(['meta/llama-3.1-8b-instruct', 'meta/llama-3.3-70b-instruct'])
+  })
+})
+
+describe('knowledge documents', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('lists documents', async () => {
+    const body = [
+      {
+        documentId: 'UPLOAD-ABC123',
+        version: '1',
+        title: 'Operatör B runbook',
+        documentType: 'RUNBOOK',
+        effectiveFrom: '2026-01-01',
+      },
+    ]
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => body,
+    })
+
+    const result = await listKnowledgeDocuments()
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/knowledge/documents',
+      expect.objectContaining({ method: 'GET' })
+    )
+    expect(result).toEqual(body)
+  })
+
+  it('uploads a document', async () => {
+    ;(fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({ documentId: 'UPLOAD-XYZ', version: '1' }),
+    })
+
+    const result = await uploadKnowledgeDocument({
+      title: 'Yeni runbook',
+      documentType: 'RUNBOOK',
+      effectiveFrom: '2026-08-02',
+      content: 'İçerik',
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/v1/knowledge/documents',
+      expect.objectContaining({ method: 'POST' })
+    )
+    expect(result).toEqual({ documentId: 'UPLOAD-XYZ', version: '1' })
   })
 })

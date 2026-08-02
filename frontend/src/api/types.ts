@@ -19,6 +19,9 @@ export interface InvestigationRequest {
     endAt: string
   }
   locale?: string
+  sessionId?: string
+  modelId?: string
+  mode?: 'quick' | 'thorough'
 }
 
 export interface Evidence {
@@ -101,4 +104,32 @@ export interface ProblemDetails {
   instance: string
   correlationId: string
   errorCode: string
+}
+
+export interface ModelsResponse {
+  models: string[]
+}
+
+export interface KnowledgeDocumentSummary {
+  documentId: string
+  version: string
+  title: string
+  documentType: string
+  effectiveFrom: string
+}
+
+export interface KnowledgeDocumentUploadRequest {
+  title: string
+  documentType: string
+  provider?: string
+  tags?: string[]
+  effectiveFrom: string
+  effectiveTo?: string
+  language?: string
+  content: string
+}
+
+export interface KnowledgeDocumentUploadResponse {
+  documentId: string
+  version: string
 }
