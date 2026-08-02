@@ -37,7 +37,14 @@ export function SettingsPanel({ modelId, onModelChange, mode, onModeChange, onCl
         setLoadError(toUserMessage(err))
       })
     refreshDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (modelId === null && models.length > 0) {
+      onModelChange(models[0])
+    }
+  }, [models, modelId, onModelChange])
 
   function refreshDocuments() {
     listKnowledgeDocuments()

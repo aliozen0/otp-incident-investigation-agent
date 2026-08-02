@@ -17,12 +17,12 @@ function problem(errorCode: string, detail = 'x') {
 describe('toUserMessage', () => {
   it('maps INVESTIGATION_TIMEOUT to an honest, non-alarming message', () => {
     const msg = toUserMessage(new ApiError(problem('INVESTIGATION_TIMEOUT')))
-    expect(msg).toMatch(/took too long|timed out/i)
+    expect(msg).toMatch(/zaman aşımı/i)
   })
 
   it('maps QUESTION_NOT_ACTIONABLE to a guidance message', () => {
     const msg = toUserMessage(new ApiError(problem('QUESTION_NOT_ACTIONABLE')))
-    expect(msg).toMatch(/rephrase|specific/i)
+    expect(msg).toMatch(/spesifik/i)
   })
 
   it('falls back to the problem detail for unknown error codes', () => {
@@ -41,6 +41,6 @@ describe('toUserMessage', () => {
 
   it('handles non-ApiError unknowns with a generic message', () => {
     const msg = toUserMessage(new Error('network down'))
-    expect(msg).toMatch(/unexpected|failed/i)
+    expect(msg).toMatch(/beklenmedik|başarısız/i)
   })
 })

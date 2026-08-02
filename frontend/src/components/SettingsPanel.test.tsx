@@ -178,7 +178,24 @@ describe('SettingsPanel', () => {
     fireEvent.click(screen.getByText('Yükle'))
 
     await waitFor(() =>
-      expect(screen.getByText('The request could not be processed. Check the question and try again.')).toBeInTheDocument()
+      expect(screen.getByText('İstek işlenemedi. Soruyu kontrol edip tekrar deneyin.')).toBeInTheDocument()
+    )
+  })
+
+  it('defaults to the first verified model once models load, if none is selected', async () => {
+    const onModelChange = vi.fn()
+    render(
+      <SettingsPanel
+        modelId={null}
+        onModelChange={onModelChange}
+        mode="thorough"
+        onModeChange={vi.fn()}
+        onClose={vi.fn()}
+      />
+    )
+
+    await waitFor(() =>
+      expect(onModelChange).toHaveBeenCalledWith('meta/llama-3.1-8b-instruct')
     )
   })
 })

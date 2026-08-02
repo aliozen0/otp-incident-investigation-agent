@@ -1,5 +1,5 @@
 import type { RecommendedAction } from '../api/types'
-import { UI_TEXT, SEVERITY_LABEL_TR } from '../lib/labels'
+import { UI_TEXT, SEVERITY_LABEL_TR, ACTION_TYPE_LABEL_TR } from '../lib/labels'
 
 export function ActionsList({ actions }: { actions: RecommendedAction[] }) {
   if (actions.length === 0) {
@@ -16,7 +16,9 @@ export function ActionsList({ actions }: { actions: RecommendedAction[] }) {
           }`}
         >
           <div>
-            <span className="font-mono text-xs uppercase text-ink-muted">{a.actionType}</span>
+            <span className="font-mono text-xs uppercase text-ink-muted">
+              {ACTION_TYPE_LABEL_TR[a.actionType] ?? a.actionType}
+            </span>
             <p className="text-sm text-ink mt-0.5">{a.description}</p>
           </div>
           <div className="text-right shrink-0">

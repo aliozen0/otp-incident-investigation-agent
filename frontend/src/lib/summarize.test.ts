@@ -5,7 +5,7 @@ import type { Investigation } from '../api/types'
 const BASE: Investigation = {
   investigationId: 'inv-1',
   status: 'ANOMALY_CONFIRMED',
-  severity: 'HIGH',
+  severity: 'CRITICAL',
   summary: 'ANOMALY_CONFIRMED',
   timeWindow: { startAt: '2026-07-30T11:15:00Z', endAt: '2026-07-30T11:30:00Z' },
   evidence: [],
@@ -36,7 +36,7 @@ describe('synthesizeSummary', () => {
   it('combines Turkish status, severity and the top-ranked hypothesis', () => {
     const result = synthesizeSummary(BASE)
     expect(result).toContain('Anomali doğrulandı')
-    expect(result).toContain('Kritik önem') // HIGH severity label — see labels.ts
+    expect(result).toContain('Kritik önem') // CRITICAL severity label — see labels.ts
     expect(result).toContain('Gateway bağlantı havuzunda kapasite problemi')
     expect(result).not.toContain('İkinci olası neden')
   })

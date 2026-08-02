@@ -10,8 +10,8 @@ export const STATUS_LABEL_TR: Record<InvestigationStatus, string> = {
 export const SEVERITY_LABEL_TR: Record<Severity, string> = {
   LOW: 'Düşük önem',
   MEDIUM: 'Orta önem',
-  HIGH: 'Kritik önem',
-  CRITICAL: 'Acil önem',
+  HIGH: 'Yüksek önem',
+  CRITICAL: 'Kritik önem',
 }
 
 export const PROBABILITY_LABEL_TR: Record<Hypothesis['probability'], string> = {
@@ -31,6 +31,36 @@ export const DOCUMENT_TYPE_LABEL_TR: Record<string, string> = {
   ERROR_REFERENCE: 'Hata referansı',
   PROVIDER_PLAYBOOK: 'Operatör oyun kitabı',
   CHANGE_POLICY: 'Değişiklik politikası',
+}
+
+export const SOURCE_TYPE_LABEL_TR: Record<string, string> = {
+  TOOL_RESULT: 'Araç sonucu',
+  PROVIDER_HEALTH: 'Operatör sağlığı',
+}
+
+export const ACTION_TYPE_LABEL_TR: Record<string, string> = {
+  MANUAL_CHECK: 'Manuel kontrol',
+  CHANGE_PROPOSAL: 'Değişiklik önerisi',
+  RESTART: 'Yeniden başlatma',
+  ROLLBACK: 'Geri alma',
+  CONFIG_CHANGE: 'Yapılandırma değişikliği',
+}
+
+export const ERROR_MESSAGE_TR: Record<string, string> = {
+  INVALID_TIME_WINDOW:
+    'Bu zaman aralığı geçerli değil — 1 dakika ile 24 saat arasında olmalı ve gelecekte olamaz.',
+  INVALID_REQUEST: 'İstek işlenemedi. Soruyu kontrol edip tekrar deneyin.',
+  QUESTION_NOT_ACTIONABLE:
+    'Bu soru inceleme için yeterli bilgi içermiyor. Metrik ve zaman aralığı konusunda daha spesifik olmayı deneyin.',
+  INVESTIGATION_RATE_LIMITED:
+    'Kısa sürede çok fazla inceleme başlatıldı. Biraz bekleyip tekrar deneyin.',
+  MODEL_PROVIDER_ERROR:
+    'Analiz modeli şu anda kullanılamıyor. Bu canlı bir bağımlılık sorunu, hata değil — kısa süre sonra tekrar deneyin.',
+  INVESTIGATION_TIMEOUT: 'İnceleme çok uzun sürdü ve zaman aşımına uğradı.',
+  INVESTIGATION_NOT_ACTIONABLE:
+    'Bu inceleme doğrulamadan geçemedi, bu yüzden henüz üzerinde bir olay aksiyonu alınamaz.',
+  INVESTIGATION_NOT_FOUND:
+    'Bu inceleme bulunamadı. Süresi dolmuş veya bağlantı hatalı olabilir.',
 }
 
 export const UI_TEXT = {
