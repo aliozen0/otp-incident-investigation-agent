@@ -96,8 +96,7 @@ public final class InvestigationDtoMapper {
         visualization.series().stream()
             .map(
                 item ->
-                    new InvestigationResponseDto.VisualizationSeriesDto(
-                        item.key(), item.label()))
+                    new InvestigationResponseDto.VisualizationSeriesDto(item.key(), item.label()))
             .toList(),
         visualization.points().stream()
             .map(

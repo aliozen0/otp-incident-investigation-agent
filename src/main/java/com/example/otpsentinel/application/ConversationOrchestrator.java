@@ -96,14 +96,15 @@ public final class ConversationOrchestrator {
       throw new IllegalArgumentException("assistant message length is invalid");
     }
     String lower = value.toLowerCase(java.util.Locale.ROOT);
-    if (value.indexOf('<') >= 0
-        || value.indexOf('>') >= 0
-        || lower.contains("javascript:")) {
+    if (value.indexOf('<') >= 0 || value.indexOf('>') >= 0 || lower.contains("javascript:")) {
       throw new IllegalArgumentException("assistant message must be safe plain text");
     }
     piiScanner
         .scan(value)
-        .ifPresent(hit -> { throw new IllegalArgumentException("PII detected in assistant message"); });
+        .ifPresent(
+            hit -> {
+              throw new IllegalArgumentException("PII detected in assistant message");
+            });
     return value.trim();
   }
 }

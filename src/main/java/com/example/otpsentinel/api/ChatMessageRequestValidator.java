@@ -22,7 +22,12 @@ public final class ChatMessageRequestValidator {
     if (message.isEmpty() || message.length() > 2000) {
       throw invalid("message must be between 1 and 2000 characters");
     }
-    piiScanner.scan(message).ifPresent(hit -> { throw invalid("message contains prohibited PII"); });
+    piiScanner
+        .scan(message)
+        .ifPresent(
+            hit -> {
+              throw invalid("message contains prohibited PII");
+            });
     String sessionId = requireUuid(request.sessionId());
     if (request.modelId() == null || !ModelCatalog.VERIFIED_MODELS.contains(request.modelId())) {
       throw invalid("modelId is not in the verified allowlist");
@@ -32,7 +37,11 @@ public final class ChatMessageRequestValidator {
       throw invalid("locale is not in the allowlist");
     }
     InteractionMode interactionMode =
-        parseEnum(request.interactionMode(), InteractionMode.AUTO, InteractionMode.class, "interactionMode");
+        parseEnum(
+            request.interactionMode(),
+            InteractionMode.AUTO,
+            InteractionMode.class,
+            "interactionMode");
     InvestigationMode investigationMode =
         parseEnum(
             request.investigationMode(),

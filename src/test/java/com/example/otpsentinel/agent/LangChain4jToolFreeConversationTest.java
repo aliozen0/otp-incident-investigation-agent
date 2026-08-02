@@ -43,7 +43,8 @@ class LangChain4jToolFreeConversationTest {
                         """))));
 
     ConversationReply reply =
-        new LangChain4jConversationResponder(id -> model).respond("Hangi modelisin?", "", "m", "tr-TR");
+        new LangChain4jConversationResponder(id -> model)
+            .respond("Hangi modelisin?", "", "m", "tr-TR");
 
     assertThat(reply.message()).contains("m");
     assertThat(model.lastRequest().toolSpecifications()).isEmpty();

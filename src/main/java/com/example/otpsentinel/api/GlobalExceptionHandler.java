@@ -1,9 +1,9 @@
 package com.example.otpsentinel.api;
 
 import com.example.otpsentinel.api.dto.ProblemDetailsDto;
+import com.example.otpsentinel.application.IntentRoutingFailedException;
 import com.example.otpsentinel.config.InvestigationNotActionableException;
 import com.example.otpsentinel.config.InvestigationNotFoundException;
-import com.example.otpsentinel.application.IntentRoutingFailedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

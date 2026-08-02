@@ -186,6 +186,33 @@ class IncidentInvestigationServiceTest {
   }
 
   @Test
+  void dropsFabricatedVisualizationButKeepsValidAnalysisWithWarning() {
+    String answer =
+        """
+        {"status":"NO_ANOMALY","severity":"LOW","summary":"queue is healthy",
+         "evidence":[{"evidenceId":"ev-queue-health"}],"hypotheses":[],
+         "recommendedActions":[],"knowledgeReferences":[],"confidence":0.9,
+         "visualizations":[{"id":"fabricated","type":"BAR","title":"Fake metric",
+           "unit":"PERCENT","series":[{"key":"rate","label":"Rate"}],
+           "points":[{"label":"Now","seriesKey":"rate","value":85.0,
+             "evidenceId":"ev-queue-health"}]}]}
+        """;
+    TestContext context =
+        context(
+            8,
+            (query, provider, topK) -> List.of(),
+            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+            StubScriptStep.finalAnswer(answer));
+
+    Investigation outcome = investigate(context);
+
+    assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
+    assertThat(outcome.visualizations()).isEmpty();
+    assertThat(outcome.validationReport().warnings())
+        .anyMatch(warning -> warning.startsWith("VISUALIZATION_REJECTED"));
+  }
+
+  @Test
   void auditsLlmCompletedAndValidationPassedOnSuccessfulCompletion() {
     List<AuditEvent> captured = new ArrayList<>();
     AuditEventRepository auditRepo =

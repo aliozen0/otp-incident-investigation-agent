@@ -36,7 +36,5 @@ interface IntentRoutingAiService {
       {{message}}
       """)
   IntentDecision route(
-      @V("message") String message,
-      @V("context") String context,
-      @V("modelId") String modelId);
+      @V("message") String message, @V("context") String context, @V("modelId") String modelId);
 }

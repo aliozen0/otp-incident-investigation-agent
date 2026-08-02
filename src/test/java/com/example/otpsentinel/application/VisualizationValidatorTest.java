@@ -67,13 +67,18 @@ class VisualizationValidatorTest {
   private static VisualizationProposal proposal(
       String type, String unit, List<VisualizationProposal.Point> points) {
     return new VisualizationProposal(
-        "chart", type, "Comparison", null, null, unit,
-        List.of(new VisualizationProposal.Series("rate", "Rate")), points);
+        "chart",
+        type,
+        "Comparison",
+        null,
+        null,
+        unit,
+        List.of(new VisualizationProposal.Series("rate", "Rate")),
+        points);
   }
 
   private static Evidence metric(String id, double value, String unit) {
-    return new Evidence(
-        id, "TOOL_RESULT", "tool", "metric", Instant.EPOCH, "metric", value, unit);
+    return new Evidence(id, "TOOL_RESULT", "tool", "metric", Instant.EPOCH, "metric", value, unit);
   }
 
   private static Evidence prose(String id) {

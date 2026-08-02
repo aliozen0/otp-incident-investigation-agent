@@ -73,8 +73,7 @@ public final class VisualizationValidator {
                   if (!seriesKeys.add(key)) {
                     throw new IllegalArgumentException("duplicate series key");
                   }
-                  return new VisualizationSpec.Series(
-                      key, plain(item.label(), "series label", 80));
+                  return new VisualizationSpec.Series(key, plain(item.label(), "series label", 80));
                 })
             .toList();
     List<VisualizationSpec.Point> points = new ArrayList<>();

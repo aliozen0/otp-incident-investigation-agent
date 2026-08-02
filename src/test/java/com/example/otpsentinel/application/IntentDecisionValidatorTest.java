@@ -22,8 +22,7 @@ class IntentDecisionValidatorTest {
     assertThatThrownBy(
             () ->
                 validator.validate(
-                    new IntentDecision(
-                        IntentType.CLARIFICATION, 0.65, "operator health", null)))
+                    new IntentDecision(IntentType.CLARIFICATION, 0.65, "operator health", null)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("clarificationQuestion");
 
@@ -31,10 +30,7 @@ class IntentDecisionValidatorTest {
             () ->
                 validator.validate(
                     new IntentDecision(
-                        IntentType.INVESTIGATION,
-                        0.9,
-                        "investigate drop",
-                        "Which provider?")))
+                        IntentType.INVESTIGATION, 0.9, "investigate drop", "Which provider?")))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("only");
   }
@@ -42,15 +38,12 @@ class IntentDecisionValidatorTest {
   @Test
   void rejectsOutOfRangeConfidenceAndPii() {
     assertThatThrownBy(
-            () ->
-                validator.validate(
-                    new IntentDecision(IntentType.CHAT, 1.01, "hello", null)))
+            () -> validator.validate(new IntentDecision(IntentType.CHAT, 1.01, "hello", null)))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(
             () ->
                 validator.validate(
-                    new IntentDecision(
-                        IntentType.CHAT, 0.8, "call +90 555 123 45 67", null)))
+                    new IntentDecision(IntentType.CHAT, 0.8, "call +90 555 123 45 67", null)))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("PII");
   }

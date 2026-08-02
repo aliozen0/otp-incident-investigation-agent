@@ -19,6 +19,13 @@ public final class DeterministicIntentRouter implements IntentRouter {
           "Operatör B durumunu inceleme isteği",
           "Operatör B için hangi zaman aralığını ve başarı, timeout veya gecikme metriklerinden hangisini inceleyeyim?");
     }
+    if (normalized.contains("operatör b nasıl")) {
+      return new IntentDecision(
+          IntentType.INVESTIGATION,
+          0.88,
+          "Önceki OTP bağlamında Operatör B sinyallerini yeniden incele",
+          null);
+    }
     if (normalized.contains("neden")
         || normalized.contains("karşılaştır")
         || normalized.contains("analiz")

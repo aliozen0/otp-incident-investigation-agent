@@ -18,19 +18,14 @@ public final class IntentDecisionValidator {
         || decision.confidence() > 1) {
       throw new IllegalArgumentException("confidence must be within 0..1");
     }
-    requirePlainText(
-        decision.normalizedRequest(), "normalizedRequest", 1, MAX_NORMALIZED_REQUEST);
+    requirePlainText(decision.normalizedRequest(), "normalizedRequest", 1, MAX_NORMALIZED_REQUEST);
     boolean clarification = decision.intent() == IntentType.CLARIFICATION;
     if (clarification) {
       requirePlainText(
-          decision.clarificationQuestion(),
-          "clarificationQuestion",
-          1,
-          MAX_CLARIFICATION);
+          decision.clarificationQuestion(), "clarificationQuestion", 1, MAX_CLARIFICATION);
     } else if (decision.clarificationQuestion() != null
         && !decision.clarificationQuestion().isBlank()) {
-      throw new IllegalArgumentException(
-          "clarificationQuestion is allowed only for CLARIFICATION");
+      throw new IllegalArgumentException("clarificationQuestion is allowed only for CLARIFICATION");
     }
     return new IntentDecision(
         decision.intent(),
@@ -70,6 +65,9 @@ public final class IntentDecisionValidator {
     }
     piiScanner
         .scan(trimmed)
-        .ifPresent(hit -> { throw new IllegalArgumentException("PII detected in " + field); });
+        .ifPresent(
+            hit -> {
+              throw new IllegalArgumentException("PII detected in " + field);
+            });
   }
 }

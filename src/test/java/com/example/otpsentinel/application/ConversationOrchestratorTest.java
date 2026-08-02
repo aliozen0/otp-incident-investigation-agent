@@ -67,13 +67,11 @@ class ConversationOrchestratorTest {
               routes.incrementAndGet();
               throw new AssertionError("router must be bypassed");
             },
-            (message, context, model, locale) ->
-                new ConversationReply("Toolsuz sohbet", List.of()),
+            (message, context, model, locale) -> new ConversationReply("Toolsuz sohbet", List.of()),
             investigations);
 
     ConversationResult chat = orchestrator.handle(command(InteractionMode.CHAT));
-    ConversationResult investigation =
-        orchestrator.handle(command(InteractionMode.INVESTIGATION));
+    ConversationResult investigation = orchestrator.handle(command(InteractionMode.INVESTIGATION));
 
     assertThat(chat.responseType()).isEqualTo(IntentType.CHAT);
     assertThat(investigation.responseType()).isEqualTo(IntentType.INVESTIGATION);
@@ -106,10 +104,8 @@ class ConversationOrchestratorTest {
           investigations.incrementAndGet();
           TimeWindow window =
               new TimeWindow(
-                  Instant.parse("2026-08-02T18:00:00Z"),
-                  Instant.parse("2026-08-02T18:15:00Z"));
-          return Investigation.receive(
-              command.message(), window, "v1", "v1", command.sessionId());
+                  Instant.parse("2026-08-02T18:00:00Z"), Instant.parse("2026-08-02T18:15:00Z"));
+          return Investigation.receive(command.message(), window, "v1", "v1", command.sessionId());
         };
     return new ConversationOrchestrator(
         router, responder, executor, new SemanticSessionContextStore(4, 10), 1);

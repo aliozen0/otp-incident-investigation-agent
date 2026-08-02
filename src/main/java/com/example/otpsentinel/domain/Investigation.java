@@ -177,7 +177,9 @@ public final class Investigation {
         List.of());
   }
 
-  /** Stores validated visualizations; every point was already checked against canonical evidence. */
+  /**
+   * Stores validated visualizations; every point was already checked against canonical evidence.
+   */
   public void proposeAnalysis(
       String summary,
       Severity severity,
