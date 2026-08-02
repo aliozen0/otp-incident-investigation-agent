@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   listSessions,
   createSession,
@@ -21,6 +21,22 @@ describe('sessionStore', () => {
     expect(sessions[0].sessionId).toBe(second.sessionId)
     expect(sessions[1].sessionId).toBe(first.sessionId)
     expect(sessions[0].title).toBe('Yeni sohbet')
+  })
+
+  it('listSessions breaks a tied createdAt by insertion order (later-created first)', () => {
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(new Date('2026-08-02T12:00:00.000Z'))
+      const first = createSession()
+      const second = createSession() // same timestamp as `first` — no clock advance
+
+      const sessions = listSessions()
+
+      expect(sessions[0].sessionId).toBe(second.sessionId)
+      expect(sessions[1].sessionId).toBe(first.sessionId)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('renameSession updates the title and truncates to 60 chars', () => {

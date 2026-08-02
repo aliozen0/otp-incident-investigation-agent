@@ -19,6 +19,12 @@ globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObse
 // every element a fixed non-zero box — except recharts' own off-screen text
 // measurement span, which needs a size proportional to its text so recharts
 // doesn't think every tick label is 600px wide and force-wrap it word by word.
+// ponytail: this is a GLOBAL fixed-size stub (600x400 for every element, in
+// every test file, present and future) needed only for recharts' ResponsiveContainer
+// under jsdom. Ceiling: no test in this suite can rely on real element geometry
+// to catch a collapsed/hidden-element bug. If that's ever needed, scope this to
+// chart test files only — e.g. a per-file `beforeEach` import instead of global
+// `setupFiles`, or vitest's `environmentMatchGlobs` — rather than leaving it global.
 Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, value: 600 })
 Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, value: 400 })
 HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
