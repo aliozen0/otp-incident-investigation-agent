@@ -23,7 +23,6 @@ import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureScenario;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,27 +38,36 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class AgentConfig {
 
   @Bean
-  public Supplier<ChatModel> chatModelFactory(
+  public java.util.function.Function<String, ChatModel> chatModelFactory(
       @Value("${AI_MODE:stub}") String aiMode,
       @Value("${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}") String baseUrl,
       @Value("${NVIDIA_API_KEY:}") String apiKey,
-      @Value("${NVIDIA_CHAT_MODEL:}") String modelId) {
+      @Value("${NVIDIA_CHAT_MODEL:}") String defaultModelId) {
     if ("live".equalsIgnoreCase(aiMode)) {
-      // Stateless HTTP client: build once and share across investigations. logResponses (not
-      // logRequests, which would include the Authorization header) proves real NVIDIA calls
-      // happened without ever logging NVIDIA_API_KEY (docs/09-security-governance.md).
-      ChatModel live =
-          OpenAiChatModel.builder()
-              .baseUrl(baseUrl)
-              .apiKey(apiKey)
-              .modelName(modelId)
-              .logResponses(true)
-              .build();
-      return () -> live;
+      java.util.concurrent.ConcurrentMap<String, ChatModel> cache =
+          new java.util.concurrent.ConcurrentHashMap<>();
+      return requestedModelId -> {
+        String modelId =
+            (requestedModelId == null || requestedModelId.isBlank())
+                ? defaultModelId
+                : requestedModelId;
+        // Lazily cached per model id: the first request for a given model builds one stateless
+        // HTTP client and shares it across subsequent investigations, same rationale as before
+        // (logResponses, never logRequests — NVIDIA_API_KEY never gets logged).
+        return cache.computeIfAbsent(
+            modelId,
+            id ->
+                OpenAiChatModel.builder()
+                    .baseUrl(baseUrl)
+                    .apiKey(apiKey)
+                    .modelName(id)
+                    .logResponses(true)
+                    .build());
+      };
     }
     // StubScript's stepIndex is mutable and monotonic, so each investigation needs its own
     // instance — do NOT collapse this to a cached instance like the live branch above.
-    return () -> new StubChatModel(OtpDropOneOhOneScript.build());
+    return requestedModelId -> new StubChatModel(OtpDropOneOhOneScript.build());
   }
 
   @Bean

@@ -12,14 +12,14 @@ class AgentConfigTest {
 
   @Test
   void selectsOfflineStubModelByDefaultMode() {
-    assertThat(config.chatModelFactory("stub", "https://example.invalid/v1", "", "").get())
+    assertThat(config.chatModelFactory("stub", "https://example.invalid/v1", "", "").apply(null))
         .isInstanceOf(StubChatModel.class);
   }
 
   @Test
-  void stubSupplierReturnsFreshInstanceOnEachCall() {
-    var supplier = config.chatModelFactory("stub", "https://example.invalid/v1", "", "");
-    assertThat(supplier.get()).isNotSameAs(supplier.get());
+  void stubFactoryReturnsFreshInstanceOnEachCall() {
+    var factory = config.chatModelFactory("stub", "https://example.invalid/v1", "", "");
+    assertThat(factory.apply(null)).isNotSameAs(factory.apply(null));
   }
 
   @Test
@@ -28,7 +28,25 @@ class AgentConfigTest {
             config
                 .chatModelFactory(
                     "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
-                .get())
+                .apply(null))
         .isInstanceOf(OpenAiChatModel.class);
+  }
+
+  @Test
+  void liveModeCachesTheSameChatModelInstancePerModelId() {
+    var factory =
+        config.chatModelFactory(
+            "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model");
+
+    assertThat(factory.apply("some/model")).isSameAs(factory.apply("some/model"));
+  }
+
+  @Test
+  void liveModeFallsBackToDefaultModelIdWhenRequestedIdIsBlank() {
+    var factory =
+        config.chatModelFactory(
+            "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model");
+
+    assertThat(factory.apply(null)).isSameAs(factory.apply(""));
   }
 }

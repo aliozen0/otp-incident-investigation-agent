@@ -33,7 +33,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -54,7 +53,7 @@ public class InvestigationOrchestrator {
   private final JdbcInvestigationRepository investigationRepository;
   private final JdbcIncidentDraftRepository incidentDraftRepository;
   private final JdbcAuditEventRepository auditEventRepository;
-  private final Supplier<ChatModel> chatModelFactory;
+  private final java.util.function.Function<String, ChatModel> chatModelFactory;
   private final KnowledgeSearchPort knowledgeSearchPort;
   private final FixtureOtpMetricsTool otpMetricsTool;
   private final FixtureErrorDistributionTool errorDistributionTool;
@@ -71,7 +70,7 @@ public class InvestigationOrchestrator {
       JdbcInvestigationRepository investigationRepository,
       JdbcIncidentDraftRepository incidentDraftRepository,
       JdbcAuditEventRepository auditEventRepository,
-      Supplier<ChatModel> chatModelFactory,
+      java.util.function.Function<String, ChatModel> chatModelFactory,
       KnowledgeSearchPort knowledgeSearchPort,
       FixtureOtpMetricsTool otpMetricsTool,
       FixtureErrorDistributionTool errorDistributionTool,
@@ -131,7 +130,7 @@ public class InvestigationOrchestrator {
             knowledgeSearchPort,
             guard,
             collector);
-    ChatModel chatModel = chatModelFactory.get();
+    ChatModel chatModel = chatModelFactory.apply(null);
     String memoryId = (sessionId == null || sessionId.isBlank())
         ? investigation.id().toString()
         : sessionId;
