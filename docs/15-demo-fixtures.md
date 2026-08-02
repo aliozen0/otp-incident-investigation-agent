@@ -118,6 +118,21 @@ Başarısızlıkların yaklaşık %96'sı B üzerindedir.
 
 ## Knowledge fixture
 
+Live demo başlangıcında aşağıdaki 16 sentetik/anonim belge idempotent olarak pgvector'a ingest
+edilir. İlk dört belge `OTP-DROP-001` canonical senaryosunun çekirdeğidir; ek paket rate-limit,
+queue, delivery receipt, kapasite, gözlemlenebilirlik, güvenlik ve incident governance alanlarını
+kapsar:
+
+| Grup | Belgeler |
+|---|---|
+| Incident postmortem | `INC-2026-041`, `INC-2026-052`, `INC-2026-063`, `INC-2026-077` |
+| Runbook/capacity/observability | `RB-OTP-001`, `RB-OTP-002`, `RB-OTP-003`, `CAP-OTP-001`, `OBS-OTP-001` |
+| Provider playbook | `PB-OPERATOR-A-001`, `PB-OPERATOR-B-001` |
+| Error reference | `ERR-OTP-001`, `ERR-OTP-002` |
+| Policy | `POL-CHANGE-001`, `SEC-OTP-001`, `POL-INCIDENT-001` |
+
+Tüm ek içerik demo amaçlıdır; gerçek iç sistem topolojisi veya özel kurum verisi değildir.
+
 ### `INC-2026-041`, version 1
 
 ```markdown

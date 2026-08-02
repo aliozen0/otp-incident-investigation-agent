@@ -175,3 +175,9 @@ yerel saat ham olarak `Z` ekiyle gönderilmemelidir.
 
 10 karakterden kısa soru API'ye gönderilmemeli; composer kullanıcıya OTP metriği, operatör ve
 zaman bağlamı içeren daha açıklayıcı bir soru yazması için inline yönlendirme göstermelidir.
+
+### AC-040
+
+Live demo auto-ingest kataloğu en az 16 benzersiz sentetik OTP belgesi içermeli; incident,
+runbook, provider playbook, error reference ve change policy türlerinin tamamını kapsamalı ve
+ikinci başlangıçta duplicate üretmemelidir.
