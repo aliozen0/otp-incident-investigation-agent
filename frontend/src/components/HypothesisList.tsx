@@ -1,5 +1,5 @@
 import type { Hypothesis } from '../api/types'
-import { PROBABILITY_LABEL_TR } from '../lib/labels'
+import { PROBABILITY_LABEL_TR, UI_TEXT } from '../lib/labels'
 
 const PROBABILITY_STYLE: Record<Hypothesis['probability'], string> = {
   HIGH: 'text-alert',
@@ -9,7 +9,7 @@ const PROBABILITY_STYLE: Record<Hypothesis['probability'], string> = {
 
 export function HypothesisList({ hypotheses }: { hypotheses: Hypothesis[] }) {
   if (hypotheses.length === 0) {
-    return <p className="text-sm text-ink-muted">No hypotheses were produced.</p>
+    return <p className="text-sm text-ink-muted">{UI_TEXT.noHypotheses}</p>
   }
 
   return (

@@ -3,6 +3,7 @@ import { previewIncidentDraft, submitIncidentDecision } from '../api/client'
 import { generateIdempotencyKey } from '../lib/idempotency'
 import { toUserMessage } from '../lib/errors'
 import type { IncidentDraftPreview, IncidentDecisionResponse } from '../api/types'
+import { SEVERITY_LABEL_TR } from '../lib/labels'
 
 type Stage = 'none' | 'previewing' | 'previewed' | 'deciding' | 'decided'
 
@@ -87,7 +88,7 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
           <p className="font-display text-sm text-ink">{preview.title}</p>
           <p className="text-sm text-ink mt-1">{preview.summary}</p>
           <p className="text-xs text-ink-muted mt-1 font-mono">
-            {preview.evidenceCount} evidence item(s) &middot; severity {preview.severity}
+            {preview.evidenceCount} kanıt öğesi &middot; önem: {SEVERITY_LABEL_TR[preview.severity]}
           </p>
           {preview.recommendedChecks.length > 0 && (
             <ul className="list-disc list-inside text-sm text-ink-muted mt-2">

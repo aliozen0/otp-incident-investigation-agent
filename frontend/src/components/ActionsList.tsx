@@ -1,5 +1,5 @@
 import type { RecommendedAction } from '../api/types'
-import { UI_TEXT } from '../lib/labels'
+import { UI_TEXT, SEVERITY_LABEL_TR } from '../lib/labels'
 
 export function ActionsList({ actions }: { actions: RecommendedAction[] }) {
   if (actions.length === 0) {
@@ -20,7 +20,7 @@ export function ActionsList({ actions }: { actions: RecommendedAction[] }) {
             <p className="text-sm text-ink mt-0.5">{a.description}</p>
           </div>
           <div className="text-right shrink-0">
-            <span className="block font-mono text-xs text-ink-muted">{`${UI_TEXT.riskLabel}: ${a.risk}`}</span>
+            <span className="block font-mono text-xs text-ink-muted">{`${UI_TEXT.riskLabel}: ${SEVERITY_LABEL_TR[a.risk]}`}</span>
             {a.requiresApproval && (
               <span className="block font-display text-xs text-alert mt-0.5">{UI_TEXT.approvalRequired}</span>
             )}
