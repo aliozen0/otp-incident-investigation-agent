@@ -143,7 +143,20 @@ passing `@Tag("local-live")` spike backing them — no unverified model id is ex
 M12.1 genişletmesinde aynı gerçek tool-call round trip kabul kapısından iki NVIDIA modeli daha
 geçti: `nvidia/llama-3.3-nemotron-super-49b-v1.5` ve `nvidia/nemotron-3-nano-30b-a3b`.
 `mistralai/mistral-nemotron` araç sonucunu güvenilir biçimde aktarmadığı için reddedildi ve
-`ModelCatalog` allowlist'ine eklenmedi. Konsol bu nedenle yalnızca dört doğrulanmış modeli sunar;
+`ModelCatalog` allowlist'ine eklenmedi. Konsol bu aşamada dört doğrulanmış modeli sunuyordu;
 varsayılan model geriye dönük uyumluluk için `meta/llama-3.1-8b-instruct` olarak kalır.
+
+M12.3 canlı uyumluluk düzeltmesinde NVIDIA'nın tek-tool-call kabul eden chat template'leri için
+`parallel_tool_calls=false` ve assistant turunu ilk tool request'e indirgeyen sıralı çağrı adaptörü
+eklendi. Gerçek endpoint'te iki ayrı tool sonucu ve typed structured output isteyen kabul testi;
+`meta/llama-3.1-8b-instruct`, `nvidia/nemotron-3-super-120b-a12b` ve
+`nvidia/nemotron-3-ultra-550b-a55b` için geçti. Yeni iki Nemotron modeli kataloğa eklendi;
+`nvidia/llama-3.1-nemotron-nano-8b-v1` sağlayıcı timeout'u nedeniyle reddedildi. Konsol böylece altı
+doğrulanmış model sunar. Ana test paketi bu `local-live` kabul testini key/internet gerektirmemesi
+için çalıştırmaz.
+
+Resmî NVIDIA referansları: [function-calling ve `parallel_tool_calls` davranışı](https://docs.nvidia.com/nim/large-language-models/1.7.0/function-calling.html),
+[Nemotron 3 Super 120B](https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b) ve
+[Nemotron 3 Ultra 550B](https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b).
 
 `NVIDIA_EMBEDDING_MODEL` M4'te compatibility spike ile doğrulandı: `nvidia/nv-embedqa-e5-v5`, dimension 1024, OpenAI-uyumlu `/v1/embeddings` şemasına ek `input_type` (`query`/`passage`) parametresi kabul ediyor. LangChain4j 1.18+'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u bu alanı ayrı bir HTTP interceptor yazmadan taşıyor (bkz. `NvidiaNimEmbeddingService`).

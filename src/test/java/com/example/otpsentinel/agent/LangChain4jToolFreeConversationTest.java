@@ -73,4 +73,27 @@ class LangChain4jToolFreeConversationTest {
         .contains("selected catalog model string verbatim")
         .contains("do not paraphrase or translate it");
   }
+
+  @Test
+  void conversationResponderAllowsStableGeneralKnowledgeWithoutClaimingFreshness() {
+    StubChatModel model =
+        new StubChatModel(
+            new StubScript(
+                List.of(
+                    StubScriptStep.finalAnswer(
+                        """
+                        {"message":"Ankara, Türkiye'nin başkentidir.","suggestions":[]}
+                        """))));
+
+    ConversationReply reply =
+        new LangChain4jConversationResponder(id -> model)
+            .respond("Türkiye'nin başkenti neresi?", "", "m", "tr-TR");
+
+    assertThat(reply.message()).contains("Ankara");
+    assertThat(model.lastRequest().toolSpecifications()).isEmpty();
+    assertThat(model.lastRequest().messages().toString())
+        .contains("stable general-knowledge")
+        .contains("Never imply that general-knowledge answers are current")
+        .contains("or externally verified");
+  }
 }

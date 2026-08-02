@@ -1,5 +1,6 @@
 package com.example.otpsentinel.config;
 
+import com.example.otpsentinel.agent.SequentialToolCallChatModel;
 import com.example.otpsentinel.agent.stub.OtpDropOneOhOneScript;
 import com.example.otpsentinel.agent.stub.StubChatModel;
 import com.example.otpsentinel.rag.Chunker;
@@ -66,13 +67,14 @@ public class AgentConfig {
         return cache.computeIfAbsent(
             modelId,
             id ->
-                OpenAiChatModel.builder()
-                    .baseUrl(baseUrl)
-                    .apiKey(apiKey)
-                    .modelName(id)
-                    .parallelToolCalls(false)
-                    .logResponses(true)
-                    .build());
+                new SequentialToolCallChatModel(
+                    OpenAiChatModel.builder()
+                        .baseUrl(baseUrl)
+                        .apiKey(apiKey)
+                        .modelName(id)
+                        .parallelToolCalls(false)
+                        .logResponses(true)
+                        .build()));
       };
     }
     // StubScript's stepIndex is mutable and monotonic, so each investigation needs its own

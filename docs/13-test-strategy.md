@@ -27,6 +27,7 @@ LLM sisteminin yalnız cevap üretmesini değil; güvenli, kaynaklı, tekrar ür
 - incident adapter
 - model stub
 - purpose-specific router and tool-free chat stubs
+- stable general-knowledge chat prompt boundary (zero tool, zero freshness claim)
 - typed visualization renderer for every allowlisted type
 
 ### Integration
@@ -41,6 +42,12 @@ Testcontainers ile:
 - idempotency constraint
 - `/chat/messages` route branches with zero-tool/zero-save assertions
 - visualization POST/GET canonical round trip and old-row empty-list migration
+
+### Local-live compatibility
+
+- NVIDIA model admission requires a real sequential two-tool round trip plus typed structured output.
+- Single-tool-call provider compatibility is covered with the Llama 3.1 8B candidate in the same gate.
+- `local-live` tests require an explicit API key and are excluded from the offline main suite.
 
 ### Contract
 

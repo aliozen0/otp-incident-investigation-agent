@@ -46,6 +46,20 @@ public final class ModelCatalog {
               "NVIDIA NIM",
               "EFFICIENT",
               "Hız ve analiz kalitesi arasında dengeli, verimli inceleme",
+              true),
+          new ModelOption(
+              "nvidia/nemotron-3-super-120b-a12b",
+              "Nemotron 3 Super 120B",
+              "NVIDIA NIM",
+              "ADVANCED",
+              "Sıralı çoklu araç ve structured output doğrulanmış gelişmiş analiz modeli",
+              true),
+          new ModelOption(
+              "nvidia/nemotron-3-ultra-550b-a55b",
+              "Nemotron 3 Ultra 550B",
+              "NVIDIA NIM",
+              "FRONTIER",
+              "Karmaşık agentic incelemeler için doğrulanmış frontier model",
               true));
 
   public static final List<String> VERIFIED_MODELS =

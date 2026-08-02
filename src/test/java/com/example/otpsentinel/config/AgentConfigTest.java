@@ -2,8 +2,10 @@ package com.example.otpsentinel.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.otpsentinel.agent.SequentialToolCallChatModel;
 import com.example.otpsentinel.agent.stub.StubChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import org.junit.jupiter.api.Test;
 
 class AgentConfigTest {
@@ -29,19 +31,19 @@ class AgentConfigTest {
                 .chatModelFactory(
                     "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
                 .apply(null))
-        .isInstanceOf(OpenAiChatModel.class);
+        .isInstanceOf(SequentialToolCallChatModel.class);
   }
 
   @Test
   void liveModelsForceSequentialToolCallsForSingleCallProviders() {
-    OpenAiChatModel model =
-        (OpenAiChatModel)
-            config
-                .chatModelFactory(
-                    "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
-                .apply("meta/llama-3.1-8b-instruct");
+    ChatModel model =
+        config
+            .chatModelFactory(
+                "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
+            .apply("meta/llama-3.1-8b-instruct");
 
-    assertThat(model.defaultRequestParameters().parallelToolCalls()).isFalse();
+    assertThat(((OpenAiChatRequestParameters) model.defaultRequestParameters()).parallelToolCalls())
+        .isFalse();
   }
 
   @Test

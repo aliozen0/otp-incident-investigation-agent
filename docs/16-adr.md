@@ -144,8 +144,10 @@
 - **Reason:** Her mesajı investigation'a çevirmek doğal sohbeti bozar; keyword/regex routing ise
   semantik takip taleplerini güvenilir anlayamaz. LLM semantik beyin, Java deterministik emniyet
   kemeri olmalıdır.
-- **Boundaries:** Bu karar açık alan chatbot, internet araması, CRM, monitoring veya autonomous
-  remediation yetkisi vermez. CHAT/CLARIFICATION sıfır tool ve sıfır investigation save üretir.
+- **Boundaries:** CHAT zararsız, zamana dayanıklı genel bilgiyi modelin yerleşik bilgisiyle
+  yanıtlayabilir; güncel veri veya dış doğrulama iddiasında bulunamaz. Bu karar internet araması,
+  CRM, monitoring veya autonomous remediation yetkisi vermez. CHAT/CLARIFICATION sıfır tool ve
+  sıfır investigation save üretir.
   Router/chat semantic context'i tool-call memory'den ayrı, session-scoped, LRU/message-bounded ve
   restart ile silinendir; ADR-017 izolasyonu korunur.
 - **Visualization:** Model yalnız canonical evidence ID/değerleri içinden dar chart type/unit
@@ -154,3 +156,17 @@
 - **Consequence:** Yeni `/api/v1/chat/messages` discriminated response döndürür; eski investigation
   ve approval endpointleri geriye uyumludur. Offline purpose-specific stubs CI'ın internet/key
   gerektirmemesini korur.
+
+## ADR-020 — NVIDIA single-tool-call normalization
+
+- **Status:** Accepted
+- **Decision:** NVIDIA NIM istemcilerinde `parallel_tool_calls=false` gönderilir ve bir assistant
+  turu birden fazla tool request üretirse yalnız ilk request yürütme hattına alınır. Model kalan
+  aracı ilk sonucun ardından yeni bir turda seçebilir. Model picker'a yalnız gerçek, sıralı iki-tool
+  ve typed structured-output kabul testinden geçen adaylar eklenir.
+- **Reason:** `meta/llama-3.1-8b-instruct` bir assistant mesajında birden fazla tool call içeren
+  geçmişi reddeder. İstemci parametresi tek başına modelin birden fazla çağrı üretmesini her zaman
+  engellemez; geçmişi uygulama sınırında normalize etmek gerekir.
+- **Consequence:** Llama 3.1 8B incelemeleri paralel değil sıralı ilerler. `nvidia/nemotron-3-super-
+  120b-a12b` ve `nvidia/nemotron-3-ultra-550b-a55b` aynı canlı kabul kapısını geçerek statik kataloğa
+  eklenmiştir; timeout olan aday allowlist'e alınmamıştır.

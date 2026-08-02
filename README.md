@@ -198,8 +198,12 @@ gerektirmez.
   dahil tüm REST API'yi kapsar. PoC kapsamı için kabul edilebilir bir
   boşluktur, ancak bilerek ve proaktif olarak burada belirtilmiştir.
 - Model listesi NVIDIA kataloğunun tamamını dinamik olarak yansıtmaz. Yalnızca
-  gerçek endpoint'e karşı tool-call kabul testini geçen dört model sunulur;
-  böylece seçim kutusunda uyumsuz veya doğrulanmamış bir model görünmez.
+  gerçek endpoint'e karşı tool-call kabul testini geçen altı model sunulur;
+  böylece seçim kutusunda uyumsuz veya doğrulanmamış bir model görünmez. NVIDIA'nın
+  tek-tool-call şablonları için çağrılar uygulama tarafında sıraya alınır.
+- Araçsız sohbet, selamlaşma ve Ankara'nın başkent olması gibi zamana dayanıklı genel
+  bilgileri doğal biçimde yanıtlayabilir. Güncel haber/hava, internet doğrulaması veya
+  investigation çalışmış gibi operasyonel iddialarda bulunamaz.
 
 ## Sabit teknoloji tabanı
 

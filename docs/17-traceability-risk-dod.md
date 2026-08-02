@@ -57,6 +57,7 @@
 | R-17 | Chat tool sızıntısı | Düşük | Kritik | Ayrı tool-free adapter + request-level tool specification tests |
 | R-18 | Grafik halüsinasyonu | Orta | Yüksek | Canonical evidence/value/unit binding + bounded schema |
 | R-19 | Session context sızıntısı | Düşük | Yüksek | Separate bounded LRU contexts + isolation tests |
+| R-20 | NVIDIA çoklu tool geçmişi uyumsuzluğu | Orta | Yüksek | Sequential tool-call adapter + live two-tool admission gate |
 
 ## Backlog item Definition of Done
 

@@ -120,7 +120,8 @@ Tamamlanan investigation ID ile tekrar görüntülenebilmelidir.
 `AUTO` mesajları seçili allowlist LLM ile, hiçbir tool bağlanmadan, `CHAT | CLARIFICATION |
 INVESTIGATION` structured sonucuna yönlendirilmelidir. İlk bozuk output için en fazla bir repair;
 ikinci bozuk output için `502 INTENT_ROUTING_FAILED` dönmelidir. Production kararı keyword/regex
-tabanlı olmamalıdır.
+tabanlı olmamalıdır. `CHAT`, araçsız ve tazelik iddiası olmadan zararsız, zamana dayanıklı genel
+bilgiyi yanıtlayabilir; güncel dış veri, browsing veya operasyonel kanıt iddiası üretemez.
 
 ### FR-021 — Interaction override ve analysis depth
 
