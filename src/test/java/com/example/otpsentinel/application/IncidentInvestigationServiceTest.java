@@ -28,12 +28,14 @@ import com.example.otpsentinel.tools.fixtures.FixtureProviderHealthTool;
 import com.example.otpsentinel.tools.fixtures.FixtureQueueHealthTool;
 import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureScenario;
+import dev.langchain4j.exception.InternalServerException;
 import dev.langchain4j.service.AiServices;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class IncidentInvestigationServiceTest {
@@ -70,6 +72,32 @@ class IncidentInvestigationServiceTest {
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.FAILED);
     assertThat(outcome.validationReport().warnings().getFirst())
         .contains("invalid after 1 repair attempt");
+  }
+
+  @Test
+  void propagatesProviderFailureInsteadOfMislabelingItAsStructuredOutput() {
+    Investigation investigation = Investigation.receive("q", window(), "v1", "v1");
+    ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofSeconds(2), 1);
+    EvidenceCollector collector = new EvidenceCollector(investigation);
+    AtomicInteger calls = new AtomicInteger();
+    IncidentAnalysisAiService unavailableProvider =
+        (question, timeWindow, memoryId) -> {
+          calls.incrementAndGet();
+          throw new InternalServerException("provider rejected tool-call history");
+        };
+
+    assertThatThrownBy(
+            () ->
+                new IncidentInvestigationService(1)
+                    .investigate(
+                        new InvestigationRequest("q", window(), "v1", "v1"),
+                        investigation,
+                        unavailableProvider,
+                        guard,
+                        collector))
+        .isInstanceOf(InternalServerException.class)
+        .hasMessageContaining("provider rejected");
+    assertThat(calls).hasValue(1);
   }
 
   @Test

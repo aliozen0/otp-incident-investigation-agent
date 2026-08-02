@@ -70,6 +70,7 @@ public class AgentConfig {
                     .baseUrl(baseUrl)
                     .apiKey(apiKey)
                     .modelName(id)
+                    .parallelToolCalls(false)
                     .logResponses(true)
                     .build());
       };

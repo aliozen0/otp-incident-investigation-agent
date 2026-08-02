@@ -33,6 +33,18 @@ class AgentConfigTest {
   }
 
   @Test
+  void liveModelsForceSequentialToolCallsForSingleCallProviders() {
+    OpenAiChatModel model =
+        (OpenAiChatModel)
+            config
+                .chatModelFactory(
+                    "live", "https://integrate.api.nvidia.com/v1", "test-key", "test-model")
+                .apply("meta/llama-3.1-8b-instruct");
+
+    assertThat(model.defaultRequestParameters().parallelToolCalls()).isFalse();
+  }
+
+  @Test
   void liveModeCachesTheSameChatModelInstancePerModelId() {
     var factory =
         config.chatModelFactory(

@@ -189,6 +189,9 @@ public final class IncidentInvestigationService {
         // Truncated: a structured-output parse failure can embed raw, unbounded model output
         // derived from user input.
         LOG.warn("aiService.analyze attempt {} failed: {}", attempt, describe(failure));
+        if (causedByProviderFailure(failure)) {
+          throw failure;
+        }
         if (causedByPolicyLimit(failure)) {
           return AnalysisAttempt.policyLimit();
         }
@@ -212,6 +215,16 @@ public final class IncidentInvestigationService {
     for (Throwable current = failure; current != null; current = current.getCause()) {
       if (current instanceof ToolBudgetExceededException
           || current instanceof DuplicateToolCallException) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean causedByProviderFailure(Throwable failure) {
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current instanceof dev.langchain4j.exception.HttpException
+          || current instanceof dev.langchain4j.exception.RetriableException) {
         return true;
       }
     }

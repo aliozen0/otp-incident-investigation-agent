@@ -48,6 +48,12 @@ public class GlobalExceptionHandler {
     return problem(502, "Model provider error", e.getMessage(), "MODEL_PROVIDER_ERROR", request);
   }
 
+  @ExceptionHandler(dev.langchain4j.exception.RetriableException.class)
+  public ResponseEntity<ProblemDetailsDto> handleRetriableProviderError(
+      dev.langchain4j.exception.RetriableException e, HttpServletRequest request) {
+    return problem(502, "Model provider error", e.getMessage(), "MODEL_PROVIDER_ERROR", request);
+  }
+
   @ExceptionHandler(IntentRoutingFailedException.class)
   public ResponseEntity<ProblemDetailsDto> handleIntentRoutingFailed(
       IntentRoutingFailedException e, HttpServletRequest request) {
