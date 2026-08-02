@@ -44,6 +44,7 @@ otp-sentinel:
     # LRU cap on how many concurrent sessions keep a ChatMemory in process; anonymous
     # investigations use their own id as memory id, so this must be bounded.
     chat-memory-max-sessions: ${AI_CHAT_MEMORY_MAX_SESSIONS:1000}
+    semantic-context-max-turns: ${AI_SEMANTIC_CONTEXT_MAX_TURNS:12}
   rag:
     top-k: ${RAG_TOP_K:5}
     min-score: ${RAG_MIN_SCORE:0.70}
