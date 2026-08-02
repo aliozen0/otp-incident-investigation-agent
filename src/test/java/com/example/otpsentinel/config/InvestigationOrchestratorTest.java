@@ -41,7 +41,8 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             8,
             2000,
             1,
-            1);
+            1,
+            10);
 
     TimeWindow window =
         new TimeWindow(
@@ -87,7 +88,8 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             8,
             2000,
             1,
-            1);
+            1,
+            10);
 
     TimeWindow window =
         new TimeWindow(

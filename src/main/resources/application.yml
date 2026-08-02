@@ -34,6 +34,7 @@ otp-sentinel:
     max-tool-calls: ${AI_MAX_TOOL_CALLS:8}
     max-repair-attempts: ${AI_MAX_REPAIR_ATTEMPTS:1}
     timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
+    chat-memory-max-messages: ${AI_CHAT_MEMORY_MAX_MESSAGES:10}
   rag:
     top-k: ${RAG_TOP_K:5}
     min-score: ${RAG_MIN_SCORE:0.70}

@@ -47,7 +47,9 @@ public final class IncidentInvestigationService {
       IncidentAnalysisAiService aiService,
       ToolBudgetGuard guard,
       EvidenceCollector collector) {
-    return investigate(request, investigation, aiService, guard, collector, null, null);
+    return investigate(
+        request, investigation, aiService, guard, collector, null, null,
+        investigation.id().toString());
   }
 
   public Investigation investigate(
@@ -58,15 +60,30 @@ public final class IncidentInvestigationService {
       EvidenceCollector collector,
       AuditEventRepository auditEventRepository,
       String correlationId) {
+    return investigate(
+        request, investigation, aiService, guard, collector, auditEventRepository, correlationId,
+        investigation.id().toString());
+  }
+
+  public Investigation investigate(
+      InvestigationRequest request,
+      Investigation investigation,
+      IncidentAnalysisAiService aiService,
+      ToolBudgetGuard guard,
+      EvidenceCollector collector,
+      AuditEventRepository auditEventRepository,
+      String correlationId,
+      String memoryId) {
     Objects.requireNonNull(request, "request must not be null");
     Objects.requireNonNull(investigation, "investigation must not be null");
     Objects.requireNonNull(aiService, "aiService must not be null");
     Objects.requireNonNull(guard, "guard must not be null");
     Objects.requireNonNull(collector, "collector must not be null");
+    Objects.requireNonNull(memoryId, "memoryId must not be null");
     requireMatchingRequest(request, investigation);
 
     investigation.startCollectingEvidence();
-    AnalysisAttempt attempt = callWithRepair(aiService, request);
+    AnalysisAttempt attempt = callWithRepair(aiService, request, memoryId);
     if (attempt.policyLimitReached() || guard.policyLimitReached()) {
       investigation.partial(
           InvestigationStatus.PARTIAL_ANALYSIS,
@@ -144,12 +161,12 @@ public final class IncidentInvestigationService {
   }
 
   private AnalysisAttempt callWithRepair(
-      IncidentAnalysisAiService aiService, InvestigationRequest request) {
+      IncidentAnalysisAiService aiService, InvestigationRequest request, String memoryId) {
     String timeWindow =
         request.resolvedTimeWindow().startAt() + "/" + request.resolvedTimeWindow().endAt();
     for (int attempt = 0; attempt <= maxRepairAttempts; attempt++) {
       try {
-        return AnalysisAttempt.success(aiService.analyze(request.question(), timeWindow));
+        return AnalysisAttempt.success(aiService.analyze(request.question(), timeWindow, memoryId));
       } catch (RuntimeException failure) {
         // Never logged before this fix: a live-model structured-output/tool-argument failure was
         // silently swallowed, making it impossible to diagnose (docs/superpowers M9 live e2e).

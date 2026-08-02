@@ -6,6 +6,7 @@ import com.example.otpsentinel.adapters.persistence.JdbcInvestigationRepository;
 import com.example.otpsentinel.agent.AgentTools;
 import com.example.otpsentinel.agent.EvidenceCollector;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
+import com.example.otpsentinel.agent.SessionChatMemoryStore;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.application.IncidentInvestigationService;
 import com.example.otpsentinel.application.InvestigationRequest;
@@ -64,6 +65,7 @@ public class InvestigationOrchestrator {
   private final Duration toolTimeout;
   private final int toolRetryCount;
   private final int maxRepairAttempts;
+  private final SessionChatMemoryStore sessionChatMemoryStore;
 
   public InvestigationOrchestrator(
       JdbcInvestigationRepository investigationRepository,
@@ -79,7 +81,8 @@ public class InvestigationOrchestrator {
       @Value("${otp-sentinel.ai.max-tool-calls:8}") int maxToolCalls,
       @Value("${otp-sentinel.tool.timeout-millis:2000}") long toolTimeoutMillis,
       @Value("${otp-sentinel.tool.retry-count:1}") int toolRetryCount,
-      @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts) {
+      @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
+      @Value("${otp-sentinel.ai.chat-memory-max-messages:10}") int chatMemoryMaxMessages) {
     this.investigationRepository = investigationRepository;
     this.incidentDraftRepository = incidentDraftRepository;
     this.auditEventRepository = auditEventRepository;
@@ -94,6 +97,7 @@ public class InvestigationOrchestrator {
     this.toolTimeout = Duration.ofMillis(toolTimeoutMillis);
     this.toolRetryCount = toolRetryCount;
     this.maxRepairAttempts = maxRepairAttempts;
+    this.sessionChatMemoryStore = new SessionChatMemoryStore(chatMemoryMaxMessages);
   }
 
   public Investigation runInvestigation(
@@ -128,10 +132,14 @@ public class InvestigationOrchestrator {
             guard,
             collector);
     ChatModel chatModel = chatModelFactory.get();
+    String memoryId = (sessionId == null || sessionId.isBlank())
+        ? investigation.id().toString()
+        : sessionId;
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(chatModel)
             .tools(tools)
+            .chatMemoryProvider(id -> sessionChatMemoryStore.get((String) id))
             .build();
 
     Investigation outcome =
@@ -144,7 +152,8 @@ public class InvestigationOrchestrator {
                 guard,
                 collector,
                 auditEventRepository,
-                correlationId);
+                correlationId,
+                memoryId);
     investigationRepository.save(outcome);
     return outcome;
   }
