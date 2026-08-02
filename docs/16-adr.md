@@ -92,3 +92,22 @@
 - **Reason:** Kullanıcı bu projeyi iş görüşmelerinde/portföyde göstermek istiyor; yalnızca Swagger/curl ile "gerçekten çalışıyor" hissi verilemiyor. Amaç, sistemin gerçek NVIDIA NIM canlı model + gerçek pgvector RAG + gerçek agentic tool-calling ile uçtan uca çalıştığını (stub değil) görsel olarak kanıtlamak.
 - **Tech stack:** React + TypeScript + Vite + Tailwind CSS (SPA, backend'in REST API'sini doğrudan tüketir). Açık/beyaz tema; koyu tema yok. "Yapay zeka ile üretilmiş şablon" görünümünden kaçınılır (bkz. `frontend-design` skill rehberliği) — kasıtlı tipografi/renk/layout kararları olan, sıradan olmayan bir tasarım hedeflenir.
 - **Consequence:** M9, canlı modun (gerçek NVIDIA chat + gerçek pgvector RAG + gerçek tool-calling) uçtan uca çalıştığını kanıtlar (önceden yalnızca izole spike'larla doğrulanmıştı). M10 bu kanıtlanmış canlı API'nin üzerine UI'ı kurar. Mock veri (`OTP-DROP-001` fixture) küçük ve gerçekçi kalır; UI bunu "gerçek bir sistem" gibi sunar ama README/ADR'de mock olduğu açık kalır (docs/18 "Gösterilmemesi gerekenler" ihlal edilmez).
+
+## ADR-017 — Session-scoped chat memory (M11)
+
+- **Status:** Accepted
+- **Decision:** LangChain4j `MessageWindowChatMemory` scoped by a client-supplied `sessionId`
+  (`@MemoryId`) is now permitted within a single chat thread, so a follow-up question ("peki ya
+  X?") can refer to earlier turns in the same thread. Memory is held in-process
+  (`ConcurrentHashMap<String, ChatMemory>`), capped to the last 10 messages per session
+  (`otp-sentinel.ai.chat-memory-max-messages`), and is never persisted to a database or shared
+  across sessions.
+- **Reason:** M12's chat console needs multi-turn conversations inside one thread. ADR-012's actual
+  concern — context leaking across unrelated investigations and flaky tests from shared mutable
+  state — is preserved: memory is strictly scoped to one `sessionId`, never shared cross-session,
+  and lost on restart (no persistence, no leakage between demo runs or test runs).
+- **Consequence:** ADR-012's "no persistent chat memory" still holds *across* sessions and *across*
+  restarts; it no longer holds *within* one session's lifetime. Every investigation turn still
+  collects its own fresh evidence via the M5/M6 tool-budget and validation pipeline — chat memory
+  only carries the model's own prior turns for conversational continuity, never past evidence ids
+  as if they were newly collected (docs/16 ADR-008 evidence-id provenance is unaffected).
