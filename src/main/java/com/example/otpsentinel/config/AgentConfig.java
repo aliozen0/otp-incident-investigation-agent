@@ -4,12 +4,13 @@ import com.example.otpsentinel.agent.stub.OtpDropOneOhOneScript;
 import com.example.otpsentinel.agent.stub.StubChatModel;
 import com.example.otpsentinel.rag.Chunker;
 import com.example.otpsentinel.rag.ContentSanitizer;
-import com.example.otpsentinel.rag.EmbeddingInputType;
 import com.example.otpsentinel.rag.EmbeddingService;
+import com.example.otpsentinel.rag.HashEmbeddingService;
 import com.example.otpsentinel.rag.JdbcKnowledgeRepository;
 import com.example.otpsentinel.rag.JdbcKnowledgeSearchAdapter;
 import com.example.otpsentinel.rag.KnowledgeAutoIngestRunner;
 import com.example.otpsentinel.rag.KnowledgeIngestionService;
+import com.example.otpsentinel.rag.KnowledgeRepository;
 import com.example.otpsentinel.rag.KnowledgeSearchPort;
 import com.example.otpsentinel.rag.NvidiaNimEmbeddingService;
 import com.example.otpsentinel.rag.fixtures.FixtureKnowledgeSearchPort;
@@ -90,22 +91,32 @@ public class AgentConfig {
   }
 
   @Bean
-  public KnowledgeAutoIngestRunner knowledgeAutoIngestRunner(
+  public KnowledgeRepository knowledgeRepository(JdbcTemplate jdbcTemplate) {
+    return new JdbcKnowledgeRepository(jdbcTemplate);
+  }
+
+  @Bean
+  public KnowledgeIngestionService knowledgeIngestionService(
       @Value("${AI_MODE:stub}") String aiMode,
-      JdbcTemplate jdbcTemplate,
+      KnowledgeRepository knowledgeRepository,
       @Value("${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}") String baseUrl,
       @Value("${NVIDIA_API_KEY:}") String apiKey,
       @Value("${NVIDIA_EMBEDDING_MODEL:}") String embeddingModel) {
-    boolean live = "live".equalsIgnoreCase(aiMode);
-    JdbcKnowledgeRepository repository = new JdbcKnowledgeRepository(jdbcTemplate);
     EmbeddingService embeddingService =
-        live
+        "live".equalsIgnoreCase(aiMode)
             ? new NvidiaNimEmbeddingService(baseUrl, apiKey, embeddingModel, 1024)
-            : new DisabledEmbeddingService();
-    KnowledgeIngestionService ingestionService =
-        new KnowledgeIngestionService(
-            new ContentSanitizer(), new Chunker(), embeddingService, repository);
-    return new KnowledgeAutoIngestRunner(ingestionService, repository, live);
+            : new HashEmbeddingService(1024);
+    return new KnowledgeIngestionService(
+        new ContentSanitizer(), new Chunker(), embeddingService, knowledgeRepository);
+  }
+
+  @Bean
+  public KnowledgeAutoIngestRunner knowledgeAutoIngestRunner(
+      @Value("${AI_MODE:stub}") String aiMode,
+      KnowledgeRepository knowledgeRepository,
+      KnowledgeIngestionService knowledgeIngestionService) {
+    boolean live = "live".equalsIgnoreCase(aiMode);
+    return new KnowledgeAutoIngestRunner(knowledgeIngestionService, knowledgeRepository, live);
   }
 
   @Bean
@@ -138,25 +149,5 @@ public class AgentConfig {
   @Bean
   public FixtureRecentChangesTool fixtureRecentChangesTool(FixtureScenario demoFixtureScenario) {
     return new FixtureRecentChangesTool(demoFixtureScenario);
-  }
-
-  /**
-   * Never invoked — {@link KnowledgeAutoIngestRunner#run} short-circuits when disabled (stub mode).
-   */
-  private static final class DisabledEmbeddingService implements EmbeddingService {
-    @Override
-    public java.util.List<Float> embed(String text, EmbeddingInputType inputType) {
-      throw new UnsupportedOperationException("stub mode never ingests knowledge documents");
-    }
-
-    @Override
-    public int dimension() {
-      throw new UnsupportedOperationException("stub mode never ingests knowledge documents");
-    }
-
-    @Override
-    public String modelId() {
-      return "disabled";
-    }
   }
 }

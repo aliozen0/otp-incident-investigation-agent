@@ -25,13 +25,15 @@ class KnowledgeIngestionServiceTest {
         public boolean existsDocument(String documentId, String version) {
           return false;
         }
+
+        @Override
+        public List<KnowledgeDocumentSummary> listDocuments() {
+          return List.of();
+        }
       };
   private final KnowledgeIngestionService service =
       new KnowledgeIngestionService(
-          new ContentSanitizer(),
-          new Chunker(),
-          new DeterministicHashEmbeddingService(64),
-          fakeRepository);
+          new ContentSanitizer(), new Chunker(), new HashEmbeddingService(64), fakeRepository);
 
   @Test
   void validDocumentIsSanitizedChunkedEmbeddedAndSaved() {
@@ -44,7 +46,7 @@ class KnowledgeIngestionServiceTest {
         .allSatisfy(
             c -> {
               assertThat(c.embedding()).hasSize(64);
-              assertThat(c.embeddingModel()).isEqualTo("test-deterministic-hash-v1");
+              assertThat(c.embeddingModel()).isEqualTo("hash-embedding-v1");
             });
   }
 

@@ -74,6 +74,20 @@ public final class JdbcKnowledgeRepository implements KnowledgeRepository {
     return count != null && count > 0;
   }
 
+  @Override
+  public List<KnowledgeDocumentSummary> listDocuments() {
+    return jdbcTemplate.query(
+        "SELECT document_id, version, title, document_type, effective_from FROM knowledge_document"
+            + " ORDER BY created_at DESC",
+        (rs, rowNum) ->
+            new KnowledgeDocumentSummary(
+                rs.getString("document_id"),
+                rs.getString("version"),
+                rs.getString("title"),
+                KnowledgeDocumentType.valueOf(rs.getString("document_type")),
+                rs.getDate("effective_from").toLocalDate()));
+  }
+
   /** Tags are plain strings only, so a hand-rolled JSON array avoids pulling in Jackson here. */
   private String toJsonArray(List<String> tags) {
     return tags.stream()

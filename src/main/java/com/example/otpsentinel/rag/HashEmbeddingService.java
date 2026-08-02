@@ -5,17 +5,18 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * {@link EmbeddingService} test double for the main suite (prompts/handoff/M4-prompt.md "Kısıtlar":
- * no NVIDIA key needed). A hashing-trick bag-of-words vectorizer: every token increments a
- * fixed-size bucket, then the vector is L2-normalized, so cosine similarity tracks vocabulary
- * overlap — deterministic and good enough to rank docs/08's evaluation-set queries correctly
- * against the fixture documents, without calling anything live.
+ * Deterministic hashing-trick bag-of-words embedding — no NVIDIA call, so knowledge-document
+ * ingestion works even without {@code NVIDIA_API_KEY} (docs/09 constraint carried into M11's
+ * document-upload endpoint). Every token increments a fixed-size bucket, then the vector is
+ * L2-normalized, so cosine similarity tracks vocabulary overlap. Deterministic and good enough for
+ * offline/demo search; {@code AI_MODE=live} uses {@link NvidiaNimEmbeddingService} instead for real
+ * embedding quality.
  */
-final class DeterministicHashEmbeddingService implements EmbeddingService {
+public final class HashEmbeddingService implements EmbeddingService {
 
   private final int dimension;
 
-  DeterministicHashEmbeddingService(int dimension) {
+  public HashEmbeddingService(int dimension) {
     this.dimension = dimension;
   }
 
@@ -48,6 +49,6 @@ final class DeterministicHashEmbeddingService implements EmbeddingService {
 
   @Override
   public String modelId() {
-    return "test-deterministic-hash-v1";
+    return "hash-embedding-v1";
   }
 }

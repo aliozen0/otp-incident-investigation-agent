@@ -21,10 +21,7 @@ class KnowledgeAutoIngestRunnerTest extends AbstractPostgresIntegrationTest {
     JdbcKnowledgeRepository repository = new JdbcKnowledgeRepository(jdbcTemplate);
     KnowledgeIngestionService ingestionService =
         new KnowledgeIngestionService(
-            new ContentSanitizer(),
-            new Chunker(),
-            new DeterministicHashEmbeddingService(DIMENSION),
-            repository);
+            new ContentSanitizer(), new Chunker(), new HashEmbeddingService(DIMENSION), repository);
     return new KnowledgeAutoIngestRunner(ingestionService, repository, true);
   }
 
@@ -53,10 +50,7 @@ class KnowledgeAutoIngestRunnerTest extends AbstractPostgresIntegrationTest {
     JdbcKnowledgeRepository repository = new JdbcKnowledgeRepository(jdbcTemplate);
     KnowledgeIngestionService ingestionService =
         new KnowledgeIngestionService(
-            new ContentSanitizer(),
-            new Chunker(),
-            new DeterministicHashEmbeddingService(DIMENSION),
-            repository);
+            new ContentSanitizer(), new Chunker(), new HashEmbeddingService(DIMENSION), repository);
     KnowledgeAutoIngestRunner disabled =
         new KnowledgeAutoIngestRunner(ingestionService, repository, false);
 
