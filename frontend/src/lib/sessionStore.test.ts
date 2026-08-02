@@ -40,4 +40,20 @@ describe('sessionStore', () => {
     expect(getRecordedQuestion(session.sessionId, 'inv-does-not-exist')).toBeUndefined()
     expect(getRecordedQuestion('other-session', 'inv-1')).toBeUndefined()
   })
+
+  it('handles corrupt JSON in localStorage gracefully', () => {
+    const sessionId = 'test-session-id'
+
+    // Seed corrupt data directly into localStorage
+    localStorage.setItem(`otp-sentinel:questions:${sessionId}`, 'not valid json {')
+
+    // getRecordedQuestion should return undefined instead of throwing
+    expect(getRecordedQuestion(sessionId, 'inv-1')).toBeUndefined()
+
+    // recordQuestion should not throw and should overwrite the corrupt data
+    expect(() => recordQuestion(sessionId, 'inv-1', 'new question')).not.toThrow()
+
+    // After recording, the question should be retrievable
+    expect(getRecordedQuestion(sessionId, 'inv-1')).toBe('new question')
+  })
 })

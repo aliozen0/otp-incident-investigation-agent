@@ -22,7 +22,10 @@ function writeSessions(sessions: SessionMeta[]): void {
 }
 
 export function listSessions(): SessionMeta[] {
-  return readSessions().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  return readSessions().sort((a, b) => {
+    const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return timeDiff !== 0 ? timeDiff : b.sessionId.localeCompare(a.sessionId)
+  })
 }
 
 export function createSession(): SessionMeta {
@@ -45,7 +48,14 @@ export function renameSession(sessionId: string, title: string): void {
 export function recordQuestion(sessionId: string, investigationId: string, question: string): void {
   const key = questionKey(sessionId)
   const raw = localStorage.getItem(key)
-  const map: Record<string, string> = raw ? JSON.parse(raw) : {}
+  let map: Record<string, string> = {}
+  if (raw) {
+    try {
+      map = JSON.parse(raw) as Record<string, string>
+    } catch {
+      map = {}
+    }
+  }
   map[investigationId] = question
   localStorage.setItem(key, JSON.stringify(map))
 }
@@ -53,6 +63,10 @@ export function recordQuestion(sessionId: string, investigationId: string, quest
 export function getRecordedQuestion(sessionId: string, investigationId: string): string | undefined {
   const raw = localStorage.getItem(questionKey(sessionId))
   if (!raw) return undefined
-  const map: Record<string, string> = JSON.parse(raw)
-  return map[investigationId]
+  try {
+    const map: Record<string, string> = JSON.parse(raw) as Record<string, string>
+    return map[investigationId]
+  } catch {
+    return undefined
+  }
 }
