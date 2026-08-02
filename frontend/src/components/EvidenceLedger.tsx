@@ -1,8 +1,9 @@
 import type { Evidence } from '../api/types'
+import { UI_TEXT, formatDateTime } from '../lib/labels'
 
 export function EvidenceLedger({ evidence }: { evidence: Evidence[] }) {
   if (evidence.length === 0) {
-    return <p className="text-sm text-ink-muted">No evidence was collected.</p>
+    return <p className="text-sm text-ink-muted">{UI_TEXT.noEvidence}</p>
   }
 
   return (
@@ -17,7 +18,7 @@ export function EvidenceLedger({ evidence }: { evidence: Evidence[] }) {
             <span className="text-xs text-ink-muted font-mono">{item.sourceReference}</span>
           </div>
           <p className="mt-1.5 text-sm text-ink">{item.observation}</p>
-          <p className="mt-1 text-xs text-ink-muted font-mono">{item.observedAt}</p>
+          <p className="mt-1 text-xs text-ink-muted font-mono">{formatDateTime(item.observedAt)}</p>
         </li>
       ))}
     </ul>

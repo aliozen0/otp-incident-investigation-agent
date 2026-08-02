@@ -5,6 +5,10 @@ import { HypothesisList } from './HypothesisList'
 import { ActionsList } from './ActionsList'
 import { KnowledgeReferences } from './KnowledgeReferences'
 import { IncidentDecisionPanel } from './IncidentDecisionPanel'
+import { HypothesisChart } from './charts/HypothesisChart'
+import { ConfidenceGauge } from './charts/ConfidenceGauge'
+import { synthesizeSummary } from '../lib/summarize'
+import { UI_TEXT } from '../lib/labels'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -20,11 +24,11 @@ export function ResultCard({ investigation }: { investigation: Investigation }) 
   return (
     <div className="border border-line rounded-lg p-6">
       <StatusBadge status={inv.status} severity={inv.severity} />
-      <p className="mt-3 text-ink">{inv.summary}</p>
+      <p className="mt-3 text-ink">{synthesizeSummary(inv)}</p>
 
       {inv.validation.warnings.length > 0 && (
         <div className="mt-3 border border-alert bg-alert-soft rounded-md p-3">
-          <p className="font-display text-xs uppercase text-alert mb-1">Validation warnings</p>
+          <p className="font-display text-xs uppercase text-alert mb-1">Doğrulama uyarıları</p>
           <ul className="list-disc list-inside text-sm text-ink">
             {inv.validation.warnings.map((w, i) => (
               <li key={i}>{w}</li>
@@ -34,24 +38,28 @@ export function ResultCard({ investigation }: { investigation: Investigation }) 
       )}
 
       {inv.confidence !== null && (
-        <p className="mt-3 font-mono text-xs text-ink-muted">
-          confidence: {inv.confidence.toFixed(2)}
-        </p>
+        <div className="mt-3">
+          <p className="font-display text-xs uppercase text-ink-muted mb-1">{UI_TEXT.confidenceLabel}</p>
+          <ConfidenceGauge confidence={inv.confidence} />
+        </div>
       )}
 
-      <Section title="Evidence">
+      <Section title={UI_TEXT.evidenceSection}>
         <EvidenceLedger evidence={inv.evidence} />
       </Section>
 
-      <Section title="Hypotheses">
-        <HypothesisList hypotheses={inv.hypotheses} />
+      <Section title={UI_TEXT.hypothesesSection}>
+        <HypothesisChart hypotheses={inv.hypotheses} />
+        <div className="mt-4">
+          <HypothesisList hypotheses={inv.hypotheses} />
+        </div>
       </Section>
 
-      <Section title="Recommended actions">
+      <Section title={UI_TEXT.actionsSection}>
         <ActionsList actions={inv.recommendedActions} />
       </Section>
 
-      <Section title="Related incidents">
+      <Section title={UI_TEXT.knowledgeRefsSection}>
         <KnowledgeReferences refs={inv.knowledgeReferences} />
       </Section>
 
