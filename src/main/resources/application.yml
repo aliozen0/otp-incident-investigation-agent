@@ -32,10 +32,18 @@ otp-sentinel:
   ai:
     mode: ${AI_MODE:stub}
     max-tool-calls: ${AI_MAX_TOOL_CALLS:8}
-    quick-mode-max-tool-calls: ${AI_QUICK_MODE_MAX_TOOL_CALLS:3}
+    # Quick mode skips the RAG lookup and runs the other 5 tools to completion, so the budget is
+    # exactly the 5 non-RAG tools (searchIncidentKnowledge short-circuits without touching the guard).
+    quick-mode-max-tool-calls: ${AI_QUICK_MODE_MAX_TOOL_CALLS:5}
     max-repair-attempts: ${AI_MAX_REPAIR_ATTEMPTS:1}
     timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
-    chat-memory-max-messages: ${AI_CHAT_MEMORY_MAX_MESSAGES:10}
+    # One thorough turn is ~15 messages: 1 system + 1 user + 6 AI tool-call messages + 6 tool
+    # results + 1 final answer. 40 keeps ~2.5 full turns, so a turn never evicts its own opening
+    # question and a follow-up still sees the previous turn (docs/16 ADR-017).
+    chat-memory-max-messages: ${AI_CHAT_MEMORY_MAX_MESSAGES:40}
+    # LRU cap on how many concurrent sessions keep a ChatMemory in process; anonymous
+    # investigations use their own id as memory id, so this must be bounded.
+    chat-memory-max-sessions: ${AI_CHAT_MEMORY_MAX_SESSIONS:1000}
   rag:
     top-k: ${RAG_TOP_K:5}
     min-score: ${RAG_MIN_SCORE:0.70}

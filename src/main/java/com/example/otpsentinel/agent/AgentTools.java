@@ -24,6 +24,7 @@ public final class AgentTools {
   private final KnowledgeSearchPort knowledgeSearchPort;
   private final ToolBudgetGuard guard;
   private final EvidenceCollector collector;
+  private final boolean ragEnabled;
 
   public AgentTools(
       OtpMetricsTool otpMetricsTool,
@@ -34,6 +35,35 @@ public final class AgentTools {
       KnowledgeSearchPort knowledgeSearchPort,
       ToolBudgetGuard guard,
       EvidenceCollector collector) {
+    this(
+        otpMetricsTool,
+        errorDistributionTool,
+        queueHealthTool,
+        providerHealthTool,
+        recentChangesTool,
+        knowledgeSearchPort,
+        guard,
+        collector,
+        true);
+  }
+
+  /**
+   * {@code ragEnabled=false} is M11's quick mode: {@link #searchIncidentKnowledge} answers "no
+   * results" immediately without touching {@link ToolBudgetGuard}, so the five live-signal tools
+   * still run to completion and produce a complete (not {@code PARTIAL_ANALYSIS}) result — the mode
+   * trades prior-incident knowledge for latency, not completeness.
+   */
+  public AgentTools(
+      OtpMetricsTool otpMetricsTool,
+      ErrorDistributionTool errorDistributionTool,
+      QueueHealthTool queueHealthTool,
+      ProviderHealthTool providerHealthTool,
+      RecentChangesTool recentChangesTool,
+      KnowledgeSearchPort knowledgeSearchPort,
+      ToolBudgetGuard guard,
+      EvidenceCollector collector,
+      boolean ragEnabled) {
+    this.ragEnabled = ragEnabled;
     this.otpMetricsTool = Objects.requireNonNull(otpMetricsTool);
     this.errorDistributionTool = Objects.requireNonNull(errorDistributionTool);
     this.queueHealthTool = Objects.requireNonNull(queueHealthTool);
@@ -111,6 +141,11 @@ public final class AgentTools {
       "Search incident knowledge base (runbooks, prior incidents) for relevant guidance, optionally filtered to a provider")
   public List<KnowledgeReference> searchIncidentKnowledge(
       String query, String providerFilter, int topK) {
+    if (!ragEnabled) {
+      // Quick mode: short-circuit before the guard so this costs neither a budget slot nor a
+      // rejection — the model just sees "no knowledge results" and writes its final answer.
+      return List.of();
+    }
     var searchResults =
         guard.execute(
             "searchIncidentKnowledge",

@@ -79,11 +79,12 @@ public class InvestigationOrchestrator {
       FixtureProviderHealthTool providerHealthTool,
       FixtureRecentChangesTool recentChangesTool,
       @Value("${otp-sentinel.ai.max-tool-calls:8}") int maxToolCalls,
-      @Value("${otp-sentinel.ai.quick-mode-max-tool-calls:3}") int quickModeMaxToolCalls,
+      @Value("${otp-sentinel.ai.quick-mode-max-tool-calls:5}") int quickModeMaxToolCalls,
       @Value("${otp-sentinel.tool.timeout-millis:2000}") long toolTimeoutMillis,
       @Value("${otp-sentinel.tool.retry-count:1}") int toolRetryCount,
       @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
-      @Value("${otp-sentinel.ai.chat-memory-max-messages:10}") int chatMemoryMaxMessages) {
+      @Value("${otp-sentinel.ai.chat-memory-max-messages:40}") int chatMemoryMaxMessages,
+      @Value("${otp-sentinel.ai.chat-memory-max-sessions:1000}") int chatMemoryMaxSessions) {
     this.investigationRepository = investigationRepository;
     this.incidentDraftRepository = incidentDraftRepository;
     this.auditEventRepository = auditEventRepository;
@@ -99,7 +100,8 @@ public class InvestigationOrchestrator {
     this.toolTimeout = Duration.ofMillis(toolTimeoutMillis);
     this.toolRetryCount = toolRetryCount;
     this.maxRepairAttempts = maxRepairAttempts;
-    this.sessionChatMemoryStore = new SessionChatMemoryStore(chatMemoryMaxMessages);
+    this.sessionChatMemoryStore =
+        new SessionChatMemoryStore(chatMemoryMaxMessages, chatMemoryMaxSessions);
   }
 
   public Investigation runInvestigation(
@@ -125,10 +127,11 @@ public class InvestigationOrchestrator {
         correlationId,
         resolvedTimeWindow.startAt() + "/" + resolvedTimeWindow.endAt());
 
-    int effectiveMaxToolCalls =
-        mode == com.example.otpsentinel.agent.InvestigationMode.QUICK
-            ? quickModeMaxToolCalls
-            : maxToolCalls;
+    // Quick mode = same live-signal tools, no RAG lookup (docs/16 ADR-017 / M11 finding 3). The
+    // knowledge tool short-circuits without consuming the budget, so the quick budget covers
+    // exactly the five non-RAG tools and the run still finishes with a complete result.
+    boolean ragEnabled = mode != com.example.otpsentinel.agent.InvestigationMode.QUICK;
+    int effectiveMaxToolCalls = ragEnabled ? maxToolCalls : quickModeMaxToolCalls;
     ToolBudgetGuard guard = new ToolBudgetGuard(effectiveMaxToolCalls, toolTimeout, toolRetryCount);
     EvidenceCollector collector =
         new EvidenceCollector(investigation, auditEventRepository, correlationId);
@@ -141,7 +144,8 @@ public class InvestigationOrchestrator {
             recentChangesTool,
             knowledgeSearchPort,
             guard,
-            collector);
+            collector,
+            ragEnabled);
     ChatModel chatModel = chatModelFactory.apply(modelId);
     String memoryId =
         (sessionId == null || sessionId.isBlank()) ? investigation.id().toString() : sessionId;

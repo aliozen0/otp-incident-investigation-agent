@@ -39,11 +39,12 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
-            3,
+            5,
             2000,
             1,
             1,
-            10);
+            40,
+            1000);
 
     TimeWindow window =
         new TimeWindow(
@@ -92,11 +93,12 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             new FixtureProviderHealthTool(scenario),
             new FixtureRecentChangesTool(scenario),
             8,
-            3,
+            5,
             2000,
             1,
             1,
-            10);
+            40,
+            1000);
 
     TimeWindow window =
         new TimeWindow(
