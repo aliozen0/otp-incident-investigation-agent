@@ -13,6 +13,7 @@ import com.example.otpsentinel.rag.KnowledgeIngestionService;
 import com.example.otpsentinel.rag.KnowledgeRepository;
 import com.example.otpsentinel.rag.KnowledgeSearchPort;
 import com.example.otpsentinel.rag.NvidiaNimEmbeddingService;
+import com.example.otpsentinel.rag.fixtures.CompositeKnowledgeSearchPort;
 import com.example.otpsentinel.rag.fixtures.FixtureKnowledgeSearchPort;
 import com.example.otpsentinel.tools.fixtures.FixtureCatalog;
 import com.example.otpsentinel.tools.fixtures.FixtureErrorDistributionTool;
@@ -37,6 +38,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @Configuration
 public class AgentConfig {
+
+  /**
+   * {@code otp-sentinel.rag.min-score} (0.70) is tuned for NVIDIA embeddings. Hash-trick cosine
+   * scores track raw vocabulary overlap and sit far lower, so the non-live adapter uses the same
+   * threshold the M4 hash-embedding retrieval tests use.
+   */
+  private static final double HASH_EMBEDDING_MIN_SCORE = 0.10;
 
   @Bean
   public java.util.function.Function<String, ChatModel> chatModelFactory(
@@ -87,7 +95,12 @@ public class AgentConfig {
           topK,
           minScore);
     }
-    return new FixtureKnowledgeSearchPort();
+    // Non-live: keep the deterministic demo citation AND surface anything actually ingested with
+    // the hash embedding (uploads via POST /api/v1/knowledge/documents) — M11 finding 4.
+    return new CompositeKnowledgeSearchPort(
+        new FixtureKnowledgeSearchPort(),
+        new JdbcKnowledgeSearchAdapter(
+            jdbcTemplate, new HashEmbeddingService(1024), topK, HASH_EMBEDDING_MIN_SCORE));
   }
 
   @Bean
