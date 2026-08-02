@@ -37,6 +37,19 @@ describe('ChatComposer', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it('guides a short message without submitting an investigation request', () => {
+    const onSubmit = vi.fn()
+    render(<ChatComposer disabled={false} onSubmit={onSubmit} />)
+
+    const textarea = screen.getByPlaceholderText(/Ne araştırmak istersiniz/)
+    fireEvent.change(textarea, { target: { value: 'Merhaba' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent(/daha açıklayıcı bir inceleme sorusu/i)
+    expect((textarea as HTMLTextAreaElement).value).toBe('Merhaba')
+  })
+
   it('includes the time window when the toggle is checked', () => {
     const onSubmit = vi.fn()
     render(<ChatComposer disabled={false} onSubmit={onSubmit} />)
@@ -47,13 +60,28 @@ describe('ChatComposer', () => {
     fireEvent.change(endInput, { target: { value: '2026-07-30T11:30' } })
 
     const textarea = screen.getByPlaceholderText(/Ne araştırmak istersiniz/)
-    fireEvent.change(textarea, { target: { value: 'soru' } })
+    fireEvent.change(textarea, { target: { value: 'OTP oranını incele' } })
     fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
 
-    expect(onSubmit).toHaveBeenCalledWith('soru', {
-      startAt: '2026-07-30T11:15:00Z',
-      endAt: '2026-07-30T11:30:00Z',
+    expect(onSubmit).toHaveBeenCalledWith('OTP oranını incele', {
+      startAt: new Date('2026-07-30T11:15').toISOString(),
+      endAt: new Date('2026-07-30T11:30').toISOString(),
     })
+  })
+
+  it('requires both manual time fields before submitting', () => {
+    const onSubmit = vi.fn()
+    render(<ChatComposer disabled={false} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByLabelText(/Zaman aralığı belirt/))
+    const [startInput] = screen.getAllByDisplayValue('') as HTMLInputElement[]
+    fireEvent.change(startInput, { target: { value: '2026-07-30T11:15' } })
+    const textarea = screen.getByPlaceholderText(/Ne araştırmak istersiniz/)
+    fireEvent.change(textarea, { target: { value: 'OTP oranını incele' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' })
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent(/Başlangıç ve bitiş zamanını birlikte/)
   })
 
   it('keeps verified model selection next to the composer', () => {

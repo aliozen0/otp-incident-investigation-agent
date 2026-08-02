@@ -158,3 +158,20 @@ gösterebilmelidir.
 
 WSL2 üzerinden `docker compose up --build` sonrasında SPA, API ve PostgreSQL healthy olmalı; stub
 akışı API key olmadan çalışmalıdır.
+
+## M12.2 investigation request düzeltmesi
+
+### AC-037
+
+`timeWindow` gönderilmediğinde `son 15 dakikada` ifadesi sunucu saatine göre tam 15 dakikalık
+UTC aralığına dönüştürülmeli; zaman ifadesi yoksa son 15 dakika varsayılanı kullanılmalıdır.
+
+### AC-038
+
+Composer'daki `datetime-local` değeri tarayıcının yerel saatinden ISO-8601 UTC'ye çevrilmeli;
+yerel saat ham olarak `Z` ekiyle gönderilmemelidir.
+
+### AC-039
+
+10 karakterden kısa soru API'ye gönderilmemeli; composer kullanıcıya OTP metriği, operatör ve
+zaman bağlamı içeren daha açıklayıcı bir soru yazması için inline yönlendirme göstermelidir.

@@ -70,6 +70,25 @@ class InvestigationControllerTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
+  void resolvesMissingTimeWindowInsteadOfRejectingBeforeAnalysis() {
+    String body =
+        """
+        {"question":"Son 15 dakikada OTP başarı oranı neden düştü?","locale":"tr-TR"}
+        """;
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response =
+        restTemplate.postForEntity(
+            "/api/v1/investigations", new HttpEntity<>(body, headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody())
+        .contains("ANOMALY_CONFIRMED")
+        .doesNotContain("INVALID_TIME_WINDOW");
+  }
+
+  @Test
   void investigatesTheOtpDropOneOhOneFixtureAndAllowsRefetch() {
     String body =
         """

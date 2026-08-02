@@ -25,14 +25,24 @@ export function ChatComposer({
   const [useTimeWindow, setUseTimeWindow] = useState(false)
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
+  const [validationMessage, setValidationMessage] = useState<string | null>(null)
 
   function submit() {
     const trimmed = question.trim()
     if (trimmed.length === 0 || disabled) return
+    if (trimmed.length < 10) {
+      setValidationMessage(UI_TEXT.shortQuestionGuidance)
+      return
+    }
+    if (useTimeWindow && (!startAt || !endAt)) {
+      setValidationMessage(UI_TEXT.incompleteTimeWindow)
+      return
+    }
     const timeWindow =
       useTimeWindow && startAt && endAt
-        ? { startAt: `${startAt}:00Z`, endAt: `${endAt}:00Z` }
+        ? { startAt: new Date(startAt).toISOString(), endAt: new Date(endAt).toISOString() }
         : undefined
+    setValidationMessage(null)
     onSubmit(trimmed, timeWindow)
     setQuestion('')
   }
@@ -50,7 +60,7 @@ export function ChatComposer({
         <div className="grid grid-cols-1 gap-3 border-b border-line bg-surface-muted px-4 py-3 sm:grid-cols-2">
           <div>
             <label htmlFor="startAt" className="field-label">
-              {UI_TEXT.timeWindowStart} · UTC
+              {UI_TEXT.timeWindowStart} · {UI_TEXT.localTime}
             </label>
             <input
               id="startAt"
@@ -62,7 +72,7 @@ export function ChatComposer({
           </div>
           <div>
             <label htmlFor="endAt" className="field-label">
-              {UI_TEXT.timeWindowEnd} · UTC
+              {UI_TEXT.timeWindowEnd} · {UI_TEXT.localTime}
             </label>
             <input
               id="endAt"
@@ -77,13 +87,22 @@ export function ChatComposer({
 
       <textarea
         value={question}
-        onChange={(e) => setQuestion(e.target.value)}
+        onChange={(e) => {
+          setQuestion(e.target.value)
+          if (validationMessage) setValidationMessage(null)
+        }}
         onKeyDown={handleKeyDown}
         placeholder={UI_TEXT.composerPlaceholder}
         rows={3}
         disabled={disabled}
         className="w-full resize-none border-0 bg-transparent px-4 pb-3 pt-4 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-subtle disabled:cursor-wait"
       />
+
+      {validationMessage && (
+        <p role="alert" className="mx-4 mb-3 rounded-md bg-alert-soft px-3 py-2 text-xs text-alert">
+          {validationMessage}
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-2.5">
         {models.length > 0 && (

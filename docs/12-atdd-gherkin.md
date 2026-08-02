@@ -159,10 +159,26 @@ Feature: Treat knowledge as untrusted data
 ```gherkin
 Feature: Validate time windows
 
+  Scenario: Resolve a relative interval from the question
+    Given the request does not contain an explicit time window
+    When I ask about the last 15 minutes
+    Then the resolved UTC interval should be exactly 15 minutes
+
+  Scenario: Use the safe default interval
+    Given the request does not contain an explicit time window
+    And the question contains no supported relative time expression
+    When I submit an actionable investigation question
+    Then the resolved interval should be the last 15 minutes
+
   Scenario: Future interval
     When I submit an interval ending in the future
     Then API should return 400
     And error code should be "INVALID_TIME_WINDOW"
+
+  Scenario: Guide a short console message without an API request
+    When I type a question shorter than 10 characters in the composer
+    Then the console should show inline investigation guidance
+    And no investigation request should be sent
 
   Scenario: Interval longer than 24 hours
     When I submit a 25 hour interval

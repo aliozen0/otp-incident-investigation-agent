@@ -40,7 +40,9 @@ Soru ve isteğe bağlı zaman aralığı kabul edilir.
 
 ### F-02 — Time-window resolution
 
-Explicit tarih varsa kullanılır; göreli süre çözümlenir; belirsiz aralık uydurulmaz.
+Explicit tarih varsa kullanılır; `son N dakika/saat` gibi göreli süre sunucu saatine göre
+çözümlenir. Zaman ifadesi yoksa incident konsolu için güvenli varsayılan son 15 dakikadır;
+1 dakika–24 saat sınırı her durumda deterministik olarak uygulanır.
 
 ### F-03 — Anomaly validation
 

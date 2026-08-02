@@ -93,6 +93,10 @@ export const UI_TEXT = {
   timeWindowToggle: 'Zaman aralığı belirt (aksi halde sorudan çözülür)',
   timeWindowStart: 'Başlangıç',
   timeWindowEnd: 'Bitiş',
+  localTime: 'yerel saat',
+  shortQuestionGuidance:
+    'Lütfen OTP metriği, operatör veya zaman bağlamı içeren daha açıklayıcı bir inceleme sorusu yazın.',
+  incompleteTimeWindow: 'Başlangıç ve bitiş zamanını birlikte belirtin veya zaman aralığını kapatın.',
   evidenceSection: 'Kanıtlar',
   hypothesesSection: 'Hipotezler',
   actionsSection: 'Önerilen aksiyonlar',

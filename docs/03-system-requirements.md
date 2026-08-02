@@ -18,8 +18,9 @@ Sistem soru ve isteğe bağlı zaman aralığı içeren request'i kabul etmelidi
 
 - Explicit `startAt/endAt` önceliklidir.
 - Göreli süre sunucu saatine göre çözülür.
+- Zaman ifadesi yoksa son 15 dakika güvenli varsayılan olarak kullanılır.
 - Tüm timestamp'ler UTC saklanır.
-- Belirsiz aralıkta tahmin yapılmaz.
+- Çözümlenen veya varsayılan aralık 1 dakika–24 saat sınırını aşamaz.
 
 ### FR-003 — Dönem karşılaştırma
 

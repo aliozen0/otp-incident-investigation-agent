@@ -24,7 +24,9 @@
 }
 ```
 
-`timeWindow` verilmezse soru içinden çözümlenir.
+`timeWindow` verilmezse `son N dakika/saat` ve `last N minutes/hours` ifadeleri sunucu UTC
+saatine göre çözümlenir. Desteklenen bir zaman ifadesi yoksa güvenli varsayılan olarak son 15
+dakika kullanılır. Explicit `startAt/endAt` her zaman önceliklidir.
 
 ### Validation
 
@@ -32,6 +34,8 @@
 - aralık: 1 dakika–24 saat
 - gelecek zaman kabul edilmez
 - locale allowlist
+- console kısa veya yalnızca selamlaşma niteliğindeki soruları API'ye göndermeden kullanıcıyı
+  operasyonel bir inceleme sorusu yazmaya yönlendirir
 
 ### Success
 
