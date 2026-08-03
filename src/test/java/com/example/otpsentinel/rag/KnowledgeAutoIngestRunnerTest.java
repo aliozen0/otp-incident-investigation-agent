@@ -26,7 +26,7 @@ class KnowledgeAutoIngestRunnerTest extends AbstractPostgresIntegrationTest {
   }
 
   @Test
-  void firstRunIngestsAllFourMvpDocuments() throws Exception {
+  void firstRunIngestsTheEntireCuratedDocumentPack() throws Exception {
     newEnabledRunner().run(new DefaultApplicationArguments());
 
     Integer count =

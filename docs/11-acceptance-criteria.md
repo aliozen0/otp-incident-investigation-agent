@@ -127,3 +127,100 @@ Response zorunlu alanları ve geçerli enum değerlerini taşımalıdır.
 ### AC-030
 
 GET endpoint aynı canonical result snapshot'ını döndürmelidir.
+
+## M12.1 agent console ve RAG explorer
+
+### AC-031
+
+POST ve sonraki GET response'ları aynı doğal dil `summary` değerini döndürmelidir.
+
+### AC-032
+
+Knowledge reference `documentId`, `version`, `title`, `chunkId` ve canonical similarity score
+taşımalıdır; model bilinmeyen citation metadata'sı ekleyememelidir.
+
+### AC-033
+
+Model seçici composer içinde görünmeli ve yalnızca canlı compatibility testiyle doğrulanmış allowlist
+değerlerini investigation request'e göndermelidir.
+
+### AC-034
+
+Knowledge explorer yüklenen belgeleri metadata, sanitize edilmiş içerik ve chunk ayrıntılarıyla
+göstermelidir.
+
+### AC-035
+
+Retrieval preview en fazla beş sonuç döndürmeli ve yeni yüklenen alakalı belgeyi citation alanlarıyla
+gösterebilmelidir.
+
+### AC-036
+
+WSL2 üzerinden `docker compose up --build` sonrasında SPA, API ve PostgreSQL healthy olmalı; stub
+akışı API key olmadan çalışmalıdır.
+
+## M12.2 investigation request düzeltmesi
+
+### AC-037
+
+`timeWindow` gönderilmediğinde `son 15 dakikada` ifadesi sunucu saatine göre tam 15 dakikalık
+UTC aralığına dönüştürülmeli; zaman ifadesi yoksa son 15 dakika varsayılanı kullanılmalıdır.
+
+### AC-038
+
+Composer'daki `datetime-local` değeri tarayıcının yerel saatinden ISO-8601 UTC'ye çevrilmeli;
+yerel saat ham olarak `Z` ekiyle gönderilmemelidir.
+
+### AC-039
+
+10 karakterden kısa soru API'ye gönderilmemeli; composer kullanıcıya OTP metriği, operatör ve
+zaman bağlamı içeren daha açıklayıcı bir soru yazması için inline yönlendirme göstermelidir.
+
+### AC-040
+
+Live demo auto-ingest kataloğu en az 16 benzersiz sentetik OTP belgesi içermeli; incident,
+runbook, provider playbook, error reference ve change policy türlerinin tamamını kapsamalı ve
+ikinci başlangıçta duplicate üretmemelidir.
+
+## M12.3 intent-aware OTP operational chat
+
+### AC-041
+Normal selam/yetenek sorusu CHAT döner, 0 tool ve 0 investigation kaydı üretir.
+
+### AC-042
+Model kimliği sorusu seçili allowlist modelini doğru söyler ve analiz başlatmaz.
+
+### AC-043
+Açık analiz talebi INVESTIGATION döner ve mevcut evidence validation hattından geçer.
+
+### AC-044
+Belirsiz operasyon mesajı CLARIFICATION döner ve 0 tool çağırır.
+
+### AC-045
+Explicit interaction mode semantik routing'i güvenli biçimde override eder.
+
+### AC-046
+Aynı session CHAT/INVESTIGATION turn'leri arasında bounded semantic context taşır; session'lar
+arasında sızıntı olmaz ve tool memory ile karışmaz.
+
+### AC-047
+LLM visualization yalnız canonical metric evidence ile render edilir; uydurma değer, unknown
+evidence/type veya incompatible unit reddedilir.
+
+### AC-048
+`OTP-DROP-001` anomaly investigation en az bir valid current/previous başarı karşılaştırma grafiği
+döndürür ve POST/GET aynı canonical grafiği taşır.
+
+### AC-049
+Normal chat/clarification UI'ında investigation panelleri görünmez; investigation cevabında canonical
+evidence, hypothesis, RAG, visualization ve approval bölümleri görünür.
+
+### AC-050
+Prompt injection interaction mode, tool allowlist, human approval veya visualization validation'ı
+değiştiremez.
+
+### AC-051
+Ana suite NVIDIA key olmadan deterministik router/chat/clarification/investigation yollarını doğrular.
+
+### AC-052
+WSL2 Compose stub ve yalnız onaylı sentetik fixture kullanan live smoke akışları çalışır.

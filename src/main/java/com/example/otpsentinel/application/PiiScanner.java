@@ -12,7 +12,7 @@ public final class PiiScanner {
 
   private static final Pattern OTP_VALUE = Pattern.compile("(?i)\\botp\\b\\D{0,10}\\d{4,8}\\b");
   private static final Pattern PHONE_NUMBER =
-      Pattern.compile("\\+?\\d{3}[-. ]\\d{3}[-. ]\\d{4}\\b|\\+?\\d{10,14}\\b");
+      Pattern.compile("(?<!\\d)\\+?(?:\\d[-. ]?){9,13}\\d\\b");
   private static final Pattern API_KEY =
       Pattern.compile("(?i)\\b(api[_-]?key|secret|token)\\b\\s*[:=]\\s*\\S{6,}");
 

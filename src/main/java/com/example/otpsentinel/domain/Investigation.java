@@ -27,6 +27,9 @@ public final class Investigation {
   private List<Hypothesis> hypotheses = List.of();
   private List<RecommendedAction> recommendedActions = List.of();
   private List<String> knowledgeReferences = List.of();
+  private List<KnowledgeCitation> knowledgeCitations = List.of();
+  private List<VisualizationSpec> visualizations = List.of();
+  private String summary;
   private Double confidence;
   private ValidationReport validationReport;
 
@@ -94,6 +97,9 @@ public final class Investigation {
       List<Hypothesis> hypotheses,
       List<RecommendedAction> recommendedActions,
       List<String> knowledgeReferences,
+      List<KnowledgeCitation> knowledgeCitations,
+      List<VisualizationSpec> visualizations,
+      String summary,
       Double confidence,
       ValidationReport validationReport,
       List<String> toolExecutions) {
@@ -107,6 +113,9 @@ public final class Investigation {
     investigation.hypotheses = List.copyOf(hypotheses);
     investigation.recommendedActions = List.copyOf(recommendedActions);
     investigation.knowledgeReferences = List.copyOf(knowledgeReferences);
+    investigation.knowledgeCitations = List.copyOf(knowledgeCitations);
+    investigation.visualizations = List.copyOf(visualizations);
+    investigation.summary = summary;
     investigation.confidence = confidence;
     investigation.validationReport = validationReport;
     investigation.toolExecutions.addAll(toolExecutions);
@@ -140,7 +149,49 @@ public final class Investigation {
       List<RecommendedAction> recommendedActions,
       List<String> knowledgeReferences,
       double confidence) {
+    proposeAnalysis(
+        "Investigation analysis completed.",
+        severity,
+        hypotheses,
+        recommendedActions,
+        List.of(),
+        confidence);
+    this.knowledgeReferences = List.copyOf(knowledgeReferences);
+  }
+
+  /** Stores the validated natural-language answer and application-owned retrieval citations. */
+  public void proposeAnalysis(
+      String summary,
+      Severity severity,
+      List<Hypothesis> hypotheses,
+      List<RecommendedAction> recommendedActions,
+      List<KnowledgeCitation> knowledgeCitations,
+      double confidence) {
+    proposeAnalysis(
+        summary,
+        severity,
+        hypotheses,
+        recommendedActions,
+        knowledgeCitations,
+        confidence,
+        List.of());
+  }
+
+  /**
+   * Stores validated visualizations; every point was already checked against canonical evidence.
+   */
+  public void proposeAnalysis(
+      String summary,
+      Severity severity,
+      List<Hypothesis> hypotheses,
+      List<RecommendedAction> recommendedActions,
+      List<KnowledgeCitation> knowledgeCitations,
+      double confidence,
+      List<VisualizationSpec> visualizations) {
     requirePhase(InvestigationPhase.GENERATING_ANALYSIS);
+    if (summary == null || summary.isBlank()) {
+      throw new IllegalArgumentException("summary must not be blank");
+    }
     if (hypotheses.size() > 3) {
       throw new IllegalArgumentException("at most 3 hypotheses are allowed");
     }
@@ -162,8 +213,12 @@ public final class Investigation {
     this.severity = severity;
     this.hypotheses = List.copyOf(hypotheses);
     this.recommendedActions = List.copyOf(recommendedActions);
-    this.knowledgeReferences = List.copyOf(knowledgeReferences);
+    this.summary = summary;
+    this.knowledgeCitations = List.copyOf(knowledgeCitations);
+    this.knowledgeReferences =
+        knowledgeCitations.stream().map(KnowledgeCitation::documentId).distinct().toList();
     this.confidence = confidence;
+    this.visualizations = List.copyOf(visualizations);
   }
 
   public void startValidating() {
@@ -267,6 +322,18 @@ public final class Investigation {
 
   public List<String> knowledgeReferences() {
     return knowledgeReferences;
+  }
+
+  public List<KnowledgeCitation> knowledgeCitations() {
+    return knowledgeCitations;
+  }
+
+  public List<VisualizationSpec> visualizations() {
+    return visualizations;
+  }
+
+  public String summary() {
+    return summary;
   }
 
   public Double confidence() {

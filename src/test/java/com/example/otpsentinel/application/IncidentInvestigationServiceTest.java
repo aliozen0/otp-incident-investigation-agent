@@ -28,12 +28,14 @@ import com.example.otpsentinel.tools.fixtures.FixtureProviderHealthTool;
 import com.example.otpsentinel.tools.fixtures.FixtureQueueHealthTool;
 import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureScenario;
+import dev.langchain4j.exception.InternalServerException;
 import dev.langchain4j.service.AiServices;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class IncidentInvestigationServiceTest {
@@ -70,6 +72,32 @@ class IncidentInvestigationServiceTest {
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.FAILED);
     assertThat(outcome.validationReport().warnings().getFirst())
         .contains("invalid after 1 repair attempt");
+  }
+
+  @Test
+  void propagatesProviderFailureInsteadOfMislabelingItAsStructuredOutput() {
+    Investigation investigation = Investigation.receive("q", window(), "v1", "v1");
+    ToolBudgetGuard guard = new ToolBudgetGuard(8, Duration.ofSeconds(2), 1);
+    EvidenceCollector collector = new EvidenceCollector(investigation);
+    AtomicInteger calls = new AtomicInteger();
+    IncidentAnalysisAiService unavailableProvider =
+        (question, timeWindow, memoryId) -> {
+          calls.incrementAndGet();
+          throw new InternalServerException("provider rejected tool-call history");
+        };
+
+    assertThatThrownBy(
+            () ->
+                new IncidentInvestigationService(1)
+                    .investigate(
+                        new InvestigationRequest("q", window(), "v1", "v1"),
+                        investigation,
+                        unavailableProvider,
+                        guard,
+                        collector))
+        .isInstanceOf(InternalServerException.class)
+        .hasMessageContaining("provider rejected");
+    assertThat(calls).hasValue(1);
   }
 
   @Test
@@ -145,6 +173,17 @@ class IncidentInvestigationServiceTest {
 
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
     assertThat(outcome.knowledgeReferences()).containsExactly("KB-1");
+    assertThat(outcome.summary()).isEqualTo("queue is healthy");
+    assertThat(outcome.knowledgeCitations())
+        .singleElement()
+        .satisfies(
+            citation -> {
+              assertThat(citation.documentId()).isEqualTo("KB-1");
+              assertThat(citation.version()).isEqualTo("1");
+              assertThat(citation.title()).isEqualTo("Pool runbook");
+              assertThat(citation.chunkId()).isEqualTo("KB-1#v1#c0");
+              assertThat(citation.similarityScore()).isEqualTo(0.82);
+            });
   }
 
   @Test
@@ -172,6 +211,33 @@ class IncidentInvestigationServiceTest {
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.FAILED);
     assertThat(outcome.validationReport().warnings().getFirst())
         .contains("FORBIDDEN_AUTOMATIC_ACTION");
+  }
+
+  @Test
+  void dropsFabricatedVisualizationButKeepsValidAnalysisWithWarning() {
+    String answer =
+        """
+        {"status":"NO_ANOMALY","severity":"LOW","summary":"queue is healthy",
+         "evidence":[{"evidenceId":"ev-queue-health"}],"hypotheses":[],
+         "recommendedActions":[],"knowledgeReferences":[],"confidence":0.9,
+         "visualizations":[{"id":"fabricated","type":"BAR","title":"Fake metric",
+           "unit":"PERCENT","series":[{"key":"rate","label":"Rate"}],
+           "points":[{"label":"Now","seriesKey":"rate","value":85.0,
+             "evidenceId":"ev-queue-health"}]}]}
+        """;
+    TestContext context =
+        context(
+            8,
+            (query, provider, topK) -> List.of(),
+            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+            StubScriptStep.finalAnswer(answer));
+
+    Investigation outcome = investigate(context);
+
+    assertThat(outcome.phase()).isEqualTo(InvestigationPhase.COMPLETED);
+    assertThat(outcome.visualizations()).isEmpty();
+    assertThat(outcome.validationReport().warnings())
+        .anyMatch(warning -> warning.startsWith("VISUALIZATION_REJECTED"));
   }
 
   @Test

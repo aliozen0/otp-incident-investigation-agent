@@ -1,4 +1,5 @@
 import type { Hypothesis } from '../api/types'
+import { PROBABILITY_LABEL_TR, UI_TEXT } from '../lib/labels'
 
 const PROBABILITY_STYLE: Record<Hypothesis['probability'], string> = {
   HIGH: 'text-alert',
@@ -8,7 +9,7 @@ const PROBABILITY_STYLE: Record<Hypothesis['probability'], string> = {
 
 export function HypothesisList({ hypotheses }: { hypotheses: Hypothesis[] }) {
   if (hypotheses.length === 0) {
-    return <p className="text-sm text-ink-muted">No hypotheses were produced.</p>
+    return <p className="text-sm text-ink-muted">{UI_TEXT.noHypotheses}</p>
   }
 
   return (
@@ -18,7 +19,7 @@ export function HypothesisList({ hypotheses }: { hypotheses: Hypothesis[] }) {
           <div className="flex items-center justify-between">
             <span className="font-display text-sm text-ink">#{h.rank} {h.possibleCause}</span>
             <span className={`font-mono text-xs uppercase ${PROBABILITY_STYLE[h.probability]}`}>
-              {h.probability}
+              {PROBABILITY_LABEL_TR[h.probability]}
             </span>
           </div>
           <div className="mt-2 flex flex-wrap gap-1.5">

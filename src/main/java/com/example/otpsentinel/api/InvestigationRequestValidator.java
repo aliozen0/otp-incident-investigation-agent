@@ -1,13 +1,23 @@
 package com.example.otpsentinel.api;
 
 import com.example.otpsentinel.api.dto.InvestigationRequestDto;
+import com.example.otpsentinel.application.InvestigationTimeWindowResolver;
 import com.example.otpsentinel.domain.TimeWindow;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Set;
 
 public final class InvestigationRequestValidator {
 
   private static final Set<String> ALLOWED_LOCALES = Set.of("tr-TR", "en-US");
+  private final InvestigationTimeWindowResolver timeWindowResolver;
+
+  public InvestigationRequestValidator() {
+    this(Clock.systemUTC());
+  }
+
+  InvestigationRequestValidator(Clock clock) {
+    this.timeWindowResolver = new InvestigationTimeWindowResolver(clock);
+  }
 
   public TimeWindow validate(InvestigationRequestDto request) {
     if (request.question() == null
@@ -26,29 +36,11 @@ public final class InvestigationRequestValidator {
           "Invalid request",
           "locale is not in the allowlist: " + request.locale());
     }
-    if (request.timeWindow() == null) {
-      throw new ApiException(
-          400,
-          "INVALID_TIME_WINDOW",
-          "Invalid time window",
-          "timeWindow is required (relative-time resolution is out of scope for M7)");
-    }
-    Instant startAt = request.timeWindow().startAt();
-    Instant endAt = request.timeWindow().endAt();
-    if (startAt == null || endAt == null) {
-      throw new ApiException(
-          400, "INVALID_TIME_WINDOW", "Invalid time window", "startAt and endAt are required");
-    }
-    Instant now = Instant.now();
-    if (endAt.isAfter(now) || startAt.isAfter(now)) {
-      throw new ApiException(
-          400,
-          "INVALID_TIME_WINDOW",
-          "Invalid time window",
-          "time window must not end in the future");
-    }
     try {
-      return new TimeWindow(startAt, endAt);
+      return timeWindowResolver.resolve(
+          request.question(),
+          request.timeWindow() == null ? null : request.timeWindow().startAt(),
+          request.timeWindow() == null ? null : request.timeWindow().endAt());
     } catch (IllegalArgumentException e) {
       throw new ApiException(400, "INVALID_TIME_WINDOW", "Invalid time window", e.getMessage());
     }

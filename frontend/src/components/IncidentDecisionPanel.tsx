@@ -3,6 +3,7 @@ import { previewIncidentDraft, submitIncidentDecision } from '../api/client'
 import { generateIdempotencyKey } from '../lib/idempotency'
 import { toUserMessage } from '../lib/errors'
 import type { IncidentDraftPreview, IncidentDecisionResponse } from '../api/types'
+import { SEVERITY_LABEL_TR } from '../lib/labels'
 
 type Stage = 'none' | 'previewing' | 'previewed' | 'deciding' | 'decided'
 
@@ -63,9 +64,9 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
   }
 
   return (
-    <div className="mt-6 border-t border-line pt-6">
+    <div>
       <h2 className="font-display text-sm uppercase tracking-wide text-ink-muted mb-2">
-        Incident draft
+        Olay taslağı
       </h2>
 
       {stage === 'none' && (
@@ -73,21 +74,21 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
           onClick={handlePreview}
           className="border border-signal text-signal font-display text-sm px-4 py-2 rounded-md hover:bg-signal-soft"
         >
-          Preview incident draft
+          Olay taslağını önizle
         </button>
       )}
 
-      {stage === 'previewing' && <p className="text-sm text-ink-muted">Loading preview…</p>}
+      {stage === 'previewing' && <p className="text-sm text-ink-muted">Önizleme yükleniyor…</p>}
 
       {(stage === 'previewed' || stage === 'deciding') && preview && (
         <div className="border border-line rounded-md p-4">
           <p className="text-xs text-ink-muted mb-2">
-            No incident exists yet &mdash; this is a preview only.
+            Henüz bir olay oluşturulmadı &mdash; bu yalnızca bir önizleme.
           </p>
           <p className="font-display text-sm text-ink">{preview.title}</p>
           <p className="text-sm text-ink mt-1">{preview.summary}</p>
           <p className="text-xs text-ink-muted mt-1 font-mono">
-            {preview.evidenceCount} evidence item(s) &middot; severity {preview.severity}
+            {preview.evidenceCount} kanıt öğesi &middot; önem: {SEVERITY_LABEL_TR[preview.severity]}
           </p>
           {preview.recommendedChecks.length > 0 && (
             <ul className="list-disc list-inside text-sm text-ink-muted mt-2">
@@ -98,7 +99,7 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
           )}
 
           <label htmlFor="reason" className="block text-xs text-ink-muted mt-4 mb-1">
-            Reason (recorded in the audit trail)
+            Gerekçe (denetim kaydına işlenir)
           </label>
           <input
             id="reason"
@@ -114,14 +115,14 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
               disabled={stage === 'deciding'}
               className="bg-confirm text-white font-display text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50"
             >
-              Approve
+              Onayla
             </button>
             <button
               onClick={() => handleDecision('REJECT')}
               disabled={stage === 'deciding'}
               className="border border-danger text-danger font-display text-sm px-4 py-2 rounded-md hover:bg-danger-soft disabled:opacity-50"
             >
-              Reject
+              Reddet
             </button>
           </div>
         </div>
@@ -130,14 +131,14 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
       {stage === 'decided' && decision && (
         <div className="border border-confirm bg-confirm-soft rounded-md p-4">
           <p className="font-display text-sm text-confirm">
-            {decision.externalIncidentId ? `Incident ${decision.externalIncidentId} created` : 'Decision recorded'}
+            {decision.externalIncidentId ? `Olay ${decision.externalIncidentId} oluşturuldu` : 'Karar kaydedildi'}
           </p>
           <p className="text-xs text-ink-muted mt-1 font-mono">
             incidentDraftId: {decision.incidentDraftId}
           </p>
           {decision.idempotentReplay && (
             <p className="text-xs text-signal mt-2 border border-signal bg-signal-soft rounded px-2 py-1 inline-block">
-              Idempotent replay &mdash; the same decision was already recorded, no duplicate was created.
+              Aynı istek tekrar edildi — tekrar kaydedilmedi, kopya oluşturulmadı.
             </p>
           )}
           <button
@@ -145,7 +146,7 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
             disabled={isResubmitting}
             className="block mt-3 text-xs text-ink-muted underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Resubmit with the same idempotency key (demonstrates replay)
+            Aynı idempotency key ile yeniden gönder (tekrar davranışını gösterir)
           </button>
         </div>
       )}

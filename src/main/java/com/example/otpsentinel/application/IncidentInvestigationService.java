@@ -4,7 +4,6 @@ import com.example.otpsentinel.agent.DuplicateToolCallException;
 import com.example.otpsentinel.agent.EvidenceCollector;
 import com.example.otpsentinel.agent.IncidentAnalysisAiService;
 import com.example.otpsentinel.agent.IncidentAnalysisResult;
-import com.example.otpsentinel.agent.KnowledgeReference;
 import com.example.otpsentinel.agent.ToolBudgetExceededException;
 import com.example.otpsentinel.agent.ToolBudgetGuard;
 import com.example.otpsentinel.domain.AuditEvent;
@@ -14,10 +13,8 @@ import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.ValidationReport;
 import com.example.otpsentinel.domain.ValidationStatus;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +30,7 @@ public final class IncidentInvestigationService {
 
   private final int maxRepairAttempts;
   private final ClaimValidator claimValidator = new ClaimValidator();
+  private final VisualizationValidator visualizationValidator = new VisualizationValidator();
 
   public IncidentInvestigationService(int maxRepairAttempts) {
     if (maxRepairAttempts < 0 || maxRepairAttempts > 1) {
@@ -123,17 +121,23 @@ public final class IncidentInvestigationService {
       return investigation;
     }
 
-    List<String> acceptedKnowledgeReferences =
-        filterKnownKnowledgeReferences(analysis.knowledgeReferences(), collector);
+    VisualizationValidationResult visualizationReport =
+        visualizationValidator.validate(analysis.visualizations(), investigation.evidence());
+    List<String> validationWarnings =
+        Stream.concat(claimReport.warnings().stream(), visualizationReport.warnings().stream())
+            .toList();
+
     try {
       investigation.proposeAnalysis(
+          analysis.summary(),
           analysis.severity(),
           analysis.hypotheses(),
           analysis.recommendedActions(),
-          acceptedKnowledgeReferences,
-          analysis.confidence());
+          collector.canonicalKnowledgeCitations(analysis.knowledgeReferences()),
+          analysis.confidence(),
+          visualizationReport.accepted());
       investigation.startValidating();
-      finish(investigation, analysis, claimReport.warnings());
+      finish(investigation, analysis, validationWarnings);
       audit(
           auditEventRepository,
           AuditEventType.VALIDATION_PASSED,
@@ -185,6 +189,9 @@ public final class IncidentInvestigationService {
         // Truncated: a structured-output parse failure can embed raw, unbounded model output
         // derived from user input.
         LOG.warn("aiService.analyze attempt {} failed: {}", attempt, describe(failure));
+        if (causedByProviderFailure(failure)) {
+          throw failure;
+        }
         if (causedByPolicyLimit(failure)) {
           return AnalysisAttempt.policyLimit();
         }
@@ -214,14 +221,14 @@ public final class IncidentInvestigationService {
     return false;
   }
 
-  private static List<String> filterKnownKnowledgeReferences(
-      List<KnowledgeReference> requested, EvidenceCollector collector) {
-    Set<KnowledgeReference> known = new HashSet<>(collector.knownKnowledgeReferences());
-    return requested.stream()
-        .filter(known::contains)
-        .map(KnowledgeReference::documentId)
-        .distinct()
-        .toList();
+  private static boolean causedByProviderFailure(Throwable failure) {
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current instanceof dev.langchain4j.exception.HttpException
+          || current instanceof dev.langchain4j.exception.RetriableException) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void finish(

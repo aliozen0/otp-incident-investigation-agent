@@ -4,13 +4,61 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.otpsentinel.api.dto.InvestigationRequestDto;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Test;
 
 class InvestigationRequestValidatorTest {
 
+  private static final Instant FIXED_NOW = Instant.parse("2026-08-02T18:30:00Z");
   private final InvestigationRequestValidator validator = new InvestigationRequestValidator();
+
+  @Test
+  void resolvesTurkishRelativeMinutesWhenExplicitWindowIsMissing() {
+    InvestigationRequestValidator fixedValidator =
+        new InvestigationRequestValidator(Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "Son 15 dakikada OTP başarı oranı neden düştü?", null, "tr-TR", null, null, null);
+
+    assertThat(fixedValidator.validate(request))
+        .extracting(window -> window.startAt(), window -> window.endAt())
+        .containsExactly(FIXED_NOW.minus(15, ChronoUnit.MINUTES), FIXED_NOW);
+  }
+
+  @Test
+  void defaultsToLastFifteenMinutesForActionableQuestionWithoutTimeExpression() {
+    InvestigationRequestValidator fixedValidator =
+        new InvestigationRequestValidator(Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "OTP başarı oranındaki düşüşü operatör bazında incele",
+            null,
+            "tr-TR",
+            null,
+            null,
+            null);
+
+    assertThat(fixedValidator.validate(request))
+        .extracting(window -> window.startAt(), window -> window.endAt())
+        .containsExactly(FIXED_NOW.minus(15, ChronoUnit.MINUTES), FIXED_NOW);
+  }
+
+  @Test
+  void rejectsRelativeWindowLongerThanTwentyFourHours() {
+    InvestigationRequestValidator fixedValidator =
+        new InvestigationRequestValidator(Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
+    InvestigationRequestDto request =
+        new InvestigationRequestDto(
+            "Son 25 saatte OTP başarı oranını incele", null, "tr-TR", null, null, null);
+
+    assertThatThrownBy(() -> fixedValidator.validate(request))
+        .isInstanceOf(ApiException.class)
+        .extracting(e -> ((ApiException) e).errorCode())
+        .isEqualTo("INVALID_TIME_WINDOW");
+  }
 
   @Test
   void resolveModeDefaultsToThoroughAndAcceptsKnownModesCaseInsensitively() {

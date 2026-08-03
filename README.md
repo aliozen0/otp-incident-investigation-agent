@@ -4,9 +4,16 @@ Java tabanlı, kanıta dayalı OTP operasyon inceleme agent'ı için **spec-driv
 
 ## Amaç
 
-Sistem, OTP teslimat performansındaki düşüşleri doğal dilde verilen bir operasyon sorusu üzerinden araştırır. Anlık operasyon verilerini tool calling ile toplar, geçmiş incident ve runbook belgelerini RAG ile getirir, kanıtlarla desteklenen hipotezler üretir ve kullanıcı onayıyla incident taslağı oluşturur.
+Sistem, sınırlı kapsamlı bir **OTP Sentinel operasyon asistanı** olarak normal konuşmayı operasyonel
+inceleme niyetinden ayırır. Normal sohbet ve belirsizliği gideren takip soruları toolsuz yanıtlanır;
+inceleme isteğinde anlık operasyon verileri tool calling ile toplanır, geçmiş incident/runbook
+belgeleri RAG ile getirilir, kanıta bağlı hipotezler ve güvenli görseller üretilir. Incident taslağı
+yalnız kullanıcı onayıyla oluşturulur.
 
 Bu sistem bir metric dashboard veya tam otonom remediation ürünü değildir. Mevcut operasyon araçlarının üzerinde çalışan bir **araştırma ve karar destek katmanıdır**.
+
+Genel bilgi chatbot'u değildir: hava durumu, haber, kod yazma ve kişisel tavsiye gibi OTP operasyon
+kapsamı dışındaki taleplerde kapsamını açıklar ve investigation tool'u çağırmaz.
 
 ## Quickstart
 
@@ -21,6 +28,39 @@ Wait for `db` health to report `healthy`, then check the app:
 curl -s http://localhost:8080/actuator/health
 # {"status":"UP"}
 ```
+
+Kurumsal agent konsolu: http://localhost:8080/
+
+Konsolda sohbet kutusunun içinden doğrulanmış NVIDIA modelini ve hızlı/detaylı
+inceleme modunu seçebilirsiniz. Sağdaki **Bilgi tabanı** alanı indekslenen
+belgeleri, chunk sayılarını, temizlenmiş belge içeriğini ve retrieval testini
+gösterir; aynı alandan yeni belge de yüklenebilir.
+
+Composer ayrıca `Otomatik | Sohbet | İnceleme` etkileşim modunu sunar. Otomatik modda seçili model
+mesajın niyetini semantik olarak belirler; belirsiz OTP sorusunda toolsuz tek takip sorusu sorar.
+Örneğin `Merhaba, ne yapıyorsun?` sade bir sohbet yanıtı, `Operatör B nasıl?` yeni bir oturumda
+açıklama sorusu, `Son 15 dakikada OTP başarı oranı neden düştü?` ise canonical investigation sonucu
+üretir. `Hızlı | Detaylı` yalnız investigation derinliğidir.
+
+### Windows + WSL2 Docker
+
+Windows'ta Docker komutu yoksa ve Docker Engine WSL2 dağıtımında çalışıyorsa
+Compose'u doğrudan WSL üzerinden başlatın:
+
+```powershell
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build"
+```
+
+Arka planda başlatmak ve durumu görmek için:
+
+```powershell
+wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d && docker compose ps"
+```
+
+Windows tarayıcısından yine http://localhost:8080/ adresini açın. Compose
+frontend'i ayrı bir servis olarak değil, Spring Boot üretim imajına gömülü
+olarak sunar; bu nedenle tek komut uygulama, arayüz ve PostgreSQL/pgvector'ü
+birlikte ayağa kaldırır.
 
 Swagger UI: http://localhost:8080/swagger-ui/index.html
 
@@ -70,6 +110,9 @@ MVP dış sistemleri mock adapter'dır. Detaylı container/sequence diyagramlar�
 `docs/05-domain-and-architecture.md`.
 
 ## API walkthrough
+
+Sohbet konsolunun ana endpoint'i `POST /api/v1/chat/messages`'tır. Eski
+`POST /api/v1/investigations` sözleşmesi geriye uyumlu kalır.
 
 ```bash
 # 1. Start an investigation
@@ -154,6 +197,13 @@ gerektirmez.
   eklenen Swagger UI/OpenAPI endpoint'leri (`/swagger-ui/**`, `/v3/api-docs`)
   dahil tüm REST API'yi kapsar. PoC kapsamı için kabul edilebilir bir
   boşluktur, ancak bilerek ve proaktif olarak burada belirtilmiştir.
+- Model listesi NVIDIA kataloğunun tamamını dinamik olarak yansıtmaz. Yalnızca
+  gerçek endpoint'e karşı tool-call kabul testini geçen altı model sunulur;
+  böylece seçim kutusunda uyumsuz veya doğrulanmamış bir model görünmez. NVIDIA'nın
+  tek-tool-call şablonları için çağrılar uygulama tarafında sıraya alınır.
+- Araçsız sohbet, selamlaşma ve Ankara'nın başkent olması gibi zamana dayanıklı genel
+  bilgileri doğal biçimde yanıtlayabilir. Güncel haber/hava, internet doğrulaması veya
+  investigation çalışmış gibi operasyonel iddialarda bulunamaz.
 
 ## Sabit teknoloji tabanı
 

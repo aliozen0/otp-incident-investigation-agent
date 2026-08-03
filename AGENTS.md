@@ -131,7 +131,15 @@ Use UTC internally and environment variables for configuration.
 
 Complete the `OTP-DROP-001` scenario before adding optional features.
 
-Do not expand the MVP into a general chatbot, CRM system, monitoring platform, or autonomous remediation system.
+M12.3 explicitly permits a **bounded OTP operational assistant chat**. It may answer greetings,
+identity/model/capability and usage questions, and follow-up conversation grounded in the current
+OTP investigation context. Out-of-scope requests (for example weather, news, coding, or personal
+advice) must receive a polite scope explanation without investigation tool calls.
+
+This exception does not permit an open-domain chatbot, CRM system, monitoring platform, internet
+search assistant, or autonomous remediation system. Semantic routing and analysis belong to the
+LLM; deterministic Java code owns validation, authorization, approval, tool limits, and safety
+gates. Do not implement a keyword/regex chatbot.
 
 ## Completion
 

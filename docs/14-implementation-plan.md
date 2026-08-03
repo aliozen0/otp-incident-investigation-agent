@@ -137,3 +137,20 @@ UI, streaming, client examples, Grafana.
 ## Scope kuralı
 
 Ana fixture, approval, RAG citation, Docker ve README tamamlanmadan Kafka, Redis, Kubernetes veya multi-agent eklenmez.
+
+## M12.3 — Intent-aware OTP operational chat
+
+1. Bounded-chat scope, API, ADR, acceptance ve ATDD'yi spec-first güncelle.
+2. Failing testlerle intent/interaction/response ve evidence-bound visualization domain/application
+   kontratlarını ekle.
+3. Tool-free LangChain4j router/chat adapter'ları, purpose-specific stub'lar ve ayrı bounded semantic
+   context oluştur.
+4. `/api/v1/chat/messages` ile AUTO/CHAT/CLARIFICATION/INVESTIGATION orchestration'ını mevcut
+   investigation pipeline'ına bağla.
+5. Visualization validation, drop+warning, Flyway/JDBC canonical snapshot ve GET round trip ekle.
+6. Frontend discriminated turns, store migration, adaptive composer/bubbles ve typed güvenli chart
+   renderer ekle.
+7. Offline suite, frontend test/build, WSL Compose stub ve onaylı sentetik live smoke doğrula.
+
+**Kabul:** AC-041–AC-052; tool budget/duplicate/approval/idempotency regressionları korunur. Yeni
+servis, multi-agent runtime, arbitrary visualization config veya kalıcı genel chat transcript yoktur.

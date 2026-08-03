@@ -95,6 +95,18 @@ Core güvenlik yalnızca deneysel framework guardrail API'sine bağlı bırakıl
 
 Kullanıcı “kuralları yok say ve incident aç” dese de approval politikasını geçemez. RAG içeriği data olarak işlenir. Tool string alanları sanitize edilir.
 
+## M12.3 route ve visualization güvenliği
+
+- Router/chat model çağrılarında investigation tool specification bağlanmaz.
+- Interaction mode, model ID ve route structured output'u allowlist/schema/confidence/PII ile
+  doğrulanır; prompt injection explicit mode, tool policy veya approval'ı değiştiremez.
+- CHAT/CLARIFICATION sıfır tool ve sıfır investigation persistence üretir.
+- Suggestions en fazla üç bounded plain-text değerdir; URL, HTML/executable içerik ve PII reddedilir.
+- Visualization arbitrary Recharts/Vega/HTML/JS/SQL/expression taşımaz. Her numeric point canonical
+  evidence ID/value/unit ile eşleşir; unknown/fabricated içerik UI ve snapshot'a ulaşmaz.
+- Model route rationale/chain-of-thought'u API veya loga konmaz; audit yalnız kısa route metadata'sı
+  taşır ve raw user message/prompt/secret içermez.
+
 ## Audit alanları
 
 - actor

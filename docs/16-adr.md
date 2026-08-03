@@ -116,3 +116,57 @@
   collects its own fresh evidence via the M5/M6 tool-budget and validation pipeline — chat memory
   only carries the model's own prior turns for conversational continuity, never past evidence ids
   as if they were newly collected (docs/16 ADR-008 evidence-id provenance is unaffected).
+
+## ADR-018 — Curated model catalog and canonical RAG presentation (M12.1)
+
+- **Status:** Accepted
+- **Decision:** Agent console NVIDIA'nın canlı katalogunu doğrudan kullanıcıya açmaz. Model picker
+  yalnızca LangChain4j tool calling, structured output, Türkçe OTP senaryosu ve policy-limit
+  testlerinden geçen statik allowlist'i kullanıcı dostu metadata ile sunar. Model seçimi composer
+  içinde yer alır. Investigation summary ve RAG citation'ları canonical snapshot'ta saklanır;
+  citation metadata'sı modelden kabul edilmez, application-side evidence collector tarafından
+  retrieval sonuçlarından üretilir.
+- **Reason:** Katalog erişilebilirliği ve model yetenekleri zamanla değişebilir. Doğrulanmamış bir
+  modeli göstermek tool policy, structured output ve demo güvenilirliğini bozabilir. Aynı şekilde
+  model tarafından yeniden yazılan citation metadata'sı kaynak uydurma riski taşır.
+- **Consequence:** `GET /api/v1/models` geriye uyumlu ID listesinin yanında zengin seçenek metadata'sı
+  döndürür. Knowledge explorer yalnızca sanitize edilmiş içerik ve read-only retrieval preview
+  sunar; delete/re-index/config mutation veya yeni servis eklenmez.
+
+## ADR-019 — LLM intent routing with deterministic safety gates
+
+- **Status:** Accepted
+- **Decision:** M12.3 sınırlı kapsamlı OTP operasyon sohbetini kabul eder. `AUTO` mesajında seçili,
+  doğrulanmış LLM; hiçbir tool bağlanmadan structured `CHAT | CLARIFICATION | INVESTIGATION` intent
+  üretir. Java enum/schema/confidence/model/PII/boyut validation ve bir repair sınırını uygular.
+  Explicit CHAT/INVESTIGATION güvenli override'dır. INVESTIGATION mevcut orchestration, tool budget,
+  evidence, RAG, claim validation ve approval hattını atlamaz.
+- **Reason:** Her mesajı investigation'a çevirmek doğal sohbeti bozar; keyword/regex routing ise
+  semantik takip taleplerini güvenilir anlayamaz. LLM semantik beyin, Java deterministik emniyet
+  kemeri olmalıdır.
+- **Boundaries:** CHAT zararsız, zamana dayanıklı genel bilgiyi modelin yerleşik bilgisiyle
+  yanıtlayabilir; güncel veri veya dış doğrulama iddiasında bulunamaz. Bu karar internet araması,
+  CRM, monitoring veya autonomous remediation yetkisi vermez. CHAT/CLARIFICATION sıfır tool ve
+  sıfır investigation save üretir.
+  Router/chat semantic context'i tool-call memory'den ayrı, session-scoped, LRU/message-bounded ve
+  restart ile silinendir; ADR-017 izolasyonu korunur.
+- **Visualization:** Model yalnız canonical evidence ID/değerleri içinden dar chart type/unit
+  allowlist'i seçebilir. Java evidence/value/unit/limit/sanitization doğrular; invalid chart düşer ve
+  warning üretir. Arbitrary executable renderer config kabul edilmez.
+- **Consequence:** Yeni `/api/v1/chat/messages` discriminated response döndürür; eski investigation
+  ve approval endpointleri geriye uyumludur. Offline purpose-specific stubs CI'ın internet/key
+  gerektirmemesini korur.
+
+## ADR-020 — NVIDIA single-tool-call normalization
+
+- **Status:** Accepted
+- **Decision:** NVIDIA NIM istemcilerinde `parallel_tool_calls=false` gönderilir ve bir assistant
+  turu birden fazla tool request üretirse yalnız ilk request yürütme hattına alınır. Model kalan
+  aracı ilk sonucun ardından yeni bir turda seçebilir. Model picker'a yalnız gerçek, sıralı iki-tool
+  ve typed structured-output kabul testinden geçen adaylar eklenir.
+- **Reason:** `meta/llama-3.1-8b-instruct` bir assistant mesajında birden fazla tool call içeren
+  geçmişi reddeder. İstemci parametresi tek başına modelin birden fazla çağrı üretmesini her zaman
+  engellemez; geçmişi uygulama sınırında normalize etmek gerekir.
+- **Consequence:** Llama 3.1 8B incelemeleri paralel değil sıralı ilerler. `nvidia/nemotron-3-super-
+  120b-a12b` ve `nvidia/nemotron-3-ultra-550b-a55b` aynı canlı kabul kapısını geçerek statik kataloğa
+  eklenmiştir; timeout olan aday allowlist'e alınmamıştır.

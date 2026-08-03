@@ -21,7 +21,29 @@ public record IncidentAnalysisResult(
     List<Hypothesis> hypotheses,
     List<RecommendedAction> recommendedActions,
     List<KnowledgeReference> knowledgeReferences,
-    double confidence) {
+    double confidence,
+    List<VisualizationProposal> visualizations) {
+
+  public IncidentAnalysisResult(
+      InvestigationStatus status,
+      Severity severity,
+      String summary,
+      List<EvidenceReference> evidence,
+      List<Hypothesis> hypotheses,
+      List<RecommendedAction> recommendedActions,
+      List<KnowledgeReference> knowledgeReferences,
+      double confidence) {
+    this(
+        status,
+        severity,
+        summary,
+        evidence,
+        hypotheses,
+        recommendedActions,
+        knowledgeReferences,
+        confidence,
+        List.of());
+  }
 
   public IncidentAnalysisResult {
     Objects.requireNonNull(status, "status must not be null");
@@ -36,6 +58,7 @@ public record IncidentAnalysisResult(
     }
     Objects.requireNonNull(recommendedActions, "recommendedActions must not be null");
     Objects.requireNonNull(knowledgeReferences, "knowledgeReferences must not be null");
+    visualizations = visualizations == null ? List.of() : List.copyOf(visualizations);
     if (confidence < 0.0 || confidence > 1.0) {
       throw new IllegalArgumentException("confidence must be within 0..1");
     }

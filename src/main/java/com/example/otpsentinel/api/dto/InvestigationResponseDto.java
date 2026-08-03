@@ -14,14 +14,18 @@ public record InvestigationResponseDto(
     List<KnowledgeReferenceDto> knowledgeReferences,
     double confidence,
     boolean approvalRequired,
-    ValidationDto validation) {
+    ValidationDto validation,
+    List<VisualizationDto> visualizations) {
 
   public record EvidenceDto(
       String id,
       String sourceType,
       String sourceReference,
       String observation,
-      String observedAt) {}
+      String observedAt,
+      String metricName,
+      Double metricValue,
+      String metricUnit) {}
 
   public record HypothesisDto(
       int rank,
@@ -33,7 +37,23 @@ public record InvestigationResponseDto(
   public record RecommendedActionDto(
       String actionType, String description, String risk, boolean requiresApproval) {}
 
-  public record KnowledgeReferenceDto(String documentId) {}
+  public record KnowledgeReferenceDto(
+      String documentId, String version, String chunkId, String title, Double similarityScore) {}
 
   public record ValidationDto(String status, List<String> warnings) {}
+
+  public record VisualizationDto(
+      String id,
+      String type,
+      String title,
+      String xAxisLabel,
+      String yAxisLabel,
+      String unit,
+      List<VisualizationSeriesDto> series,
+      List<VisualizationPointDto> points) {}
+
+  public record VisualizationSeriesDto(String key, String label) {}
+
+  public record VisualizationPointDto(
+      String label, String seriesKey, double value, String evidenceId) {}
 }

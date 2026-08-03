@@ -18,8 +18,9 @@ Sistem soru ve isteğe bağlı zaman aralığı içeren request'i kabul etmelidi
 
 - Explicit `startAt/endAt` önceliklidir.
 - Göreli süre sunucu saatine göre çözülür.
+- Zaman ifadesi yoksa son 15 dakika güvenli varsayılan olarak kullanılır.
 - Tüm timestamp'ler UTC saklanır.
-- Belirsiz aralıkta tahmin yapılmaz.
+- Çözümlenen veya varsayılan aralık 1 dakika–24 saat sınırını aşamaz.
 
 ### FR-003 — Dönem karşılaştırma
 
@@ -101,6 +102,80 @@ Tamamlanan investigation ID ile tekrar görüntülenebilmelidir.
 - approval/rejection
 - incident created
 
+### FR-018 — Agent console
+
+- Aynı session içindeki investigation'lar sohbet akışında gösterilmelidir.
+- Doğrulanmış model allowlist'i composer içinden seçilebilmelidir.
+- Structured result içindeki doğal dil özeti canonical snapshot'ta saklanmalıdır.
+- RAG citation alanları uygulamanın topladığı canonical metadata'dan üretilmelidir.
+
+### FR-019 — Knowledge explorer
+
+- Knowledge belgeleri tam metadata, güvenli içerik ve chunk ayrıntılarıyla listelenebilmelidir.
+- Kullanıcı en fazla 5 sonuç döndüren salt-okunur retrieval preview çalıştırabilmelidir.
+- Preview sonucu document ID, version, title, chunk ID ve similarity score taşımalıdır.
+
+### FR-020 — Structured intent routing
+
+`AUTO` mesajları seçili allowlist LLM ile, hiçbir tool bağlanmadan, `CHAT | CLARIFICATION |
+INVESTIGATION` structured sonucuna yönlendirilmelidir. İlk bozuk output için en fazla bir repair;
+ikinci bozuk output için `502 INTENT_ROUTING_FAILED` dönmelidir. Production kararı keyword/regex
+tabanlı olmamalıdır. `CHAT`, araçsız ve tazelik iddiası olmadan zararsız, zamana dayanıklı genel
+bilgiyi yanıtlayabilir; güncel dış veri, browsing veya operasyonel kanıt iddiası üretemez.
+
+### FR-021 — Interaction override ve analysis depth
+
+`interactionMode=AUTO|CHAT|INVESTIGATION`, `investigationMode=QUICK|THOROUGH` olmalıdır. Explicit
+CHAT toolsuz responder'a, explicit INVESTIGATION mevcut güvenli investigation pipeline'ına gider.
+
+### FR-022 — Normal conversation
+
+CHAT yanıtı seçili model, sınırlı OTP rolü ve bounded semantic session context ile doğal üretilmeli;
+investigation tool'u, repository save veya incident akışı çalışmamalıdır.
+
+### FR-023 — Clarification
+
+Belirsiz mesaj tek doğrulanmış takip sorusu döndürmeli; tool veya investigation çalıştırmamalıdır.
+
+### FR-024 — Chat API
+
+`POST /api/v1/chat/messages` 1–2000 karakter mesaj, UUID session, verified model ve mode allowlist'i
+kabul etmeli; her başarılı response dolu `assistantMessage` ve discriminated `responseType`
+taşımalıdır. Time window yalnız investigation dalında çözülmelidir.
+
+### FR-025 — Semantic context
+
+Son kullanıcı/asistan semantic turn'leri, investigation tool-call memory'sinden ayrı, session-scoped,
+LRU/message-bounded ve restart ile silinen bellekte tutulmalıdır. Session'lar arası sızıntı olmaz.
+
+### FR-026 — Visualization schema
+
+Investigation en fazla dört visualization; grafik başına en fazla dört series ve toplam 40 point
+taşıyabilir. Tipler `LINE|BAR|GROUPED_BAR|GAUGE|TABLE`, birimler
+`PERCENT|RATIO|COUNT|MILLISECONDS|CONNECTIONS|NONE` allowlist'indedir.
+
+### FR-027 — Visualization evidence binding
+
+Her numeric point canonical evidence ID'ye bağlı olmalı ve değer evidence metric'iyle yalnız
+deterministik percent/ratio dönüşümü toleransı içinde eşleşmelidir. Prose evidence sayısal point
+olamaz; uyumsuz birimler ve uydurma değerler reddedilir.
+
+### FR-028 — Visualization persistence
+
+Doğrulanmış visualization canonical investigation snapshot'ında saklanmalı; POST sonrası GET aynı
+listeyi dönmelidir. Eski kayıtlar boş liste olarak okunmalıdır.
+
+### FR-029 — Adaptive console
+
+Composer interaction mode ile investigation depth'i ayrı sunmalı; kısa fakat boş olmayan chat
+mesajlarını kabul etmelidir. CHAT/CLARIFICATION sade, INVESTIGATION canonical analiz panelleri ve
+doğrulanmış grafikleriyle render edilmelidir.
+
+### FR-030 — Suggestions
+
+En fazla üç plain-text suggestion dönebilir. Her biri uzunluk, PII ve HTML/executable içerik
+validasyonundan geçer ve hiçbir zaman otomatik aksiyon değildir.
+
 ## AI requirements
 
 ### AI-001 — Evidence bounded
@@ -135,6 +210,11 @@ Timeout/invalid JSON durumunda başarılı sonuç uydurulmamalıdır.
 
 Model provider/name, prompt version ve schema version saklanmalıdır.
 
+- **AI-009:** Router semantik kararı LLM verir; Java enum/schema/confidence/policy doğrular.
+- **AI-010:** CHAT responder'a ve router'a investigation tools veya RAG talimatları bağlanmaz.
+- **AI-011:** Model evidence/citation kimliği veya visualization sayısal değeri üretemez; yalnız
+  application contextinde verilen canonical ID/değerleri seçebilir.
+
 ## Data requirements
 
 - **DATA-001:** Timestamps UTC ve ISO-8601.
@@ -142,6 +222,8 @@ Model provider/name, prompt version ve schema version saklanmalıdır.
 - **DATA-003:** Knowledge belge sürümü taşır.
 - **DATA-004:** Embedding model/version saklanır.
 - **DATA-005:** Audit append-only yaklaşımında tutulur.
+- **DATA-006:** Canonical investigation snapshot doğal dil özetini ve zengin knowledge citation
+  metadata'sını saklar.
 
 ## Non-functional requirements
 
@@ -154,6 +236,12 @@ Model provider/name, prompt version ve schema version saklanmalıdır.
 - **NFR-007:** Hatalar tutarlı problem-details formatında olmalıdır.
 - **NFR-008:** Tool timeout, retry ve total deadline bulunmalıdır.
 - **NFR-009:** Hipotez-evidence ilişkisi kullanıcıya görünmelidir.
+- **NFR-010:** Agent console masaüstü ve mobil genişliklerde kullanılabilir, klavye ile erişilebilir
+  ve tüm statik metinleri Türkçe olmalıdır.
+- **NFR-011:** Semantic context en fazla yapılandırılmış mesaj/session sayısında tutulur, kalıcı genel
+  chat/CRM deposu oluşturulmaz.
+- **NFR-012:** Frontend unknown/invalid visualization ile çökmemeli; arbitrary config, raw HTML,
+  dynamic component veya eval çalıştırmamalıdır.
 
 ## Security requirements
 
@@ -163,3 +251,6 @@ Model provider/name, prompt version ve schema version saklanmalıdır.
 - **SEC-004:** Log'da API key, OTP, telefon veya auth header yoktur.
 - **SEC-005:** User/RAG içeriği typed validation olmadan tool parametresi olmaz.
 - **SEC-006:** Write işlemleri idempotent ve audit edilmelidir.
+- **SEC-007:** CHAT ve CLARIFICATION için tool çağrısı ve investigation persistence sıfır olmalıdır.
+- **SEC-008:** Intent, suggestion ve visualization model output'u typed, bounded, PII/HTML-safe Java
+  doğrulamasından geçmelidir.

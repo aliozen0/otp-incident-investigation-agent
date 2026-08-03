@@ -5,6 +5,15 @@ import type {
   IncidentDecisionRequest,
   IncidentDecisionResponse,
   ProblemDetails,
+  ModelsResponse,
+  ModelOption,
+  KnowledgeDocumentSummary,
+  KnowledgeDocumentDetail,
+  KnowledgeSearchResponse,
+  KnowledgeDocumentUploadRequest,
+  KnowledgeDocumentUploadResponse,
+  ChatMessageRequest,
+  ChatMessageResponse,
 } from './types'
 
 const BASE = '/api/v1'
@@ -61,6 +70,19 @@ export function normalizeInvestigation(raw: Investigation): Investigation {
     hypotheses: raw.hypotheses ?? [],
     recommendedActions: raw.recommendedActions ?? [],
     knowledgeReferences: raw.knowledgeReferences ?? [],
+    visualizations: raw.visualizations ?? [],
+  }
+}
+
+export async function sendChatMessage(req: ChatMessageRequest): Promise<ChatMessageResponse> {
+  const raw = await request<ChatMessageResponse>('/chat/messages', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  })
+  return {
+    ...raw,
+    suggestions: raw.suggestions ?? [],
+    investigation: raw.investigation ? normalizeInvestigation(raw.investigation) : null,
   }
 }
 
@@ -97,4 +119,73 @@ export function submitIncidentDecision(
       body: JSON.stringify(req),
     }
   )
+}
+
+export async function listSessionInvestigations(sessionId: string): Promise<Investigation[]> {
+  const raw = await request<Investigation[]>(`/sessions/${sessionId}/investigations`, {
+    method: 'GET',
+  })
+  return raw.map(normalizeInvestigation)
+}
+
+export async function listModels(): Promise<string[]> {
+  return (await getModelCatalog()).models
+}
+
+export async function getModelCatalog(): Promise<{
+  models: string[]
+  options: ModelOption[]
+  defaultModelId: string | null
+}> {
+  const raw = await request<ModelsResponse>('/models', { method: 'GET' })
+  const options =
+    raw.options ??
+    raw.models.map((id) => ({
+      id,
+      label: id.split('/').at(-1) ?? id,
+      provider: 'NVIDIA NIM',
+      profile: 'BALANCED',
+      description: 'Doğrulanmış analiz modeli',
+      verified: true,
+    }))
+  return {
+    models: raw.models,
+    options,
+    defaultModelId: raw.defaultModelId ?? raw.models[0] ?? null,
+  }
+}
+
+export function listKnowledgeDocuments(): Promise<KnowledgeDocumentSummary[]> {
+  return request<KnowledgeDocumentSummary[]>('/knowledge/documents', { method: 'GET' })
+}
+
+export function getKnowledgeDocument(
+  documentId: string,
+  version: string
+): Promise<KnowledgeDocumentDetail> {
+  return request<KnowledgeDocumentDetail>(
+    `/knowledge/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(version)}`,
+    { method: 'GET' }
+  )
+}
+
+export async function previewKnowledgeSearch(
+  query: string,
+  provider?: string,
+  topK = 5
+) {
+  const response = await request<KnowledgeSearchResponse>('/knowledge/search-preview', {
+    method: 'POST',
+    body: JSON.stringify({ query, provider: provider || undefined, topK }),
+  })
+  return response.results
+}
+
+export function uploadKnowledgeDocument(
+  req: KnowledgeDocumentUploadRequest
+): Promise<KnowledgeDocumentUploadResponse> {
+  return request<KnowledgeDocumentUploadResponse>('/knowledge/documents', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  })
 }

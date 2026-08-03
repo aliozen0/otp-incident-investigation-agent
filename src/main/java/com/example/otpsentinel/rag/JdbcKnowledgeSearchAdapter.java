@@ -15,7 +15,7 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
 
   private static final String SEARCH =
       """
-      SELECT kc.chunk_id, kc.document_id, kc.version, kd.title, kc.content,
+      SELECT kc.chunk_id, kc.document_id, kc.version, kd.title, kc.section_title, kc.content,
              1 - (kc.embedding <=> ?::vector) AS similarity
       FROM knowledge_chunk kc
       JOIN knowledge_document kd
@@ -79,6 +79,7 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
         rs.getString("version"),
         rs.getString("title"),
         rs.getString("chunk_id"),
+        rs.getString("section_title"),
         rs.getDouble("similarity"),
         rs.getString("content"));
   }

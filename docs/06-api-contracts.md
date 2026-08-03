@@ -24,7 +24,9 @@
 }
 ```
 
-`timeWindow` verilmezse soru içinden çözümlenir.
+`timeWindow` verilmezse `son N dakika/saat` ve `last N minutes/hours` ifadeleri sunucu UTC
+saatine göre çözümlenir. Desteklenen bir zaman ifadesi yoksa güvenli varsayılan olarak son 15
+dakika kullanılır. Explicit `startAt/endAt` her zaman önceliklidir.
 
 ### Validation
 
@@ -32,6 +34,8 @@
 - aralık: 1 dakika–24 saat
 - gelecek zaman kabul edilmez
 - locale allowlist
+- console kısa veya yalnızca selamlaşma niteliğindeki soruları API'ye göndermeden kullanıcıyı
+  operasyonel bir inceleme sorusu yazmaya yönlendirir
 
 ### Success
 
@@ -108,9 +112,87 @@
 - `502 MODEL_PROVIDER_ERROR`
 - `504 INVESTIGATION_TIMEOUT`
 
+## POST `/api/v1/chat/messages`
+
+Agent console'un yeni ana giriş noktasıdır. Eski investigation endpoint'i geriye uyumlu kalır.
+
+```json
+{
+  "message": "Son 15 dakikadaki düşüşü Operatör A ve B bazında karşılaştır.",
+  "sessionId": "8f663bc4-7a1b-47af-aeb7-6b86fb189cc0",
+  "modelId": "meta/llama-3.1-8b-instruct",
+  "interactionMode": "AUTO",
+  "investigationMode": "THOROUGH",
+  "timeWindow": {"startAt": "2026-08-02T18:00:00Z", "endAt": "2026-08-02T18:15:00Z"},
+  "locale": "tr-TR"
+}
+```
+
+Validation: `message` trim sonrası 1–2000 karakter; `sessionId` UUID; `modelId` verified catalog;
+mode/locale allowlist. Explicit time window 1 dakika–24 saat, UTC ve gelecekte olmama kurallarına
+tabidir fakat yalnız INVESTIGATION dalında resolve edilir.
+
+```json
+{
+  "messageId": "c73eed49-15a1-43e0-b32a-667935050d12",
+  "sessionId": "8f663bc4-7a1b-47af-aeb7-6b86fb189cc0",
+  "responseType": "INVESTIGATION",
+  "assistantMessage": "Başarı oranındaki düşüş Operatör B üzerinde yoğunlaşıyor.",
+  "route": {"intent": "INVESTIGATION", "confidence": 0.96, "modelId": "meta/llama-3.1-8b-instruct"},
+  "suggestions": ["Operatör B timeout dağılımını aç"],
+  "investigation": {"investigationId": "...", "visualizations": []}
+}
+```
+
+`responseType` yalnız `CHAT | CLARIFICATION | INVESTIGATION` olabilir ve `assistantMessage` doludur.
+CHAT/CLARIFICATION'da `investigation` null/yok ve tool/audit execution yoktur. INVESTIGATION'da
+canonical snapshot bulunur. `route` chain-of-thought taşımaz; yalnız intent/confidence/modelId.
+Suggestions en fazla üç sanitize plain-text değerdir.
+
+Visualization:
+
+```json
+{"id":"success-comparison","type":"BAR","title":"Başarı karşılaştırması","unit":"PERCENT",
+ "series":[{"key":"success","label":"Başarı"}],
+ "points":[{"label":"Mevcut","seriesKey":"success","value":72.1,"evidenceId":"ev-current-success"}]}
+```
+
+Tip/birim/series/point/evidence/value allowlist ve limitleri server-side doğrulanır. Unknown veya
+uydurma visualization düşürülür; analiz geçerliyse validation warnings'e `VISUALIZATION_REJECTED`
+eklenir.
+
+Yeni hatalar: `400 INVALID_CHAT_REQUEST`, `400 UNKNOWN_INTERACTION_MODE`, `400 UNKNOWN_MODEL`,
+`502 INTENT_ROUTING_FAILED`.
+
 ## GET `/api/v1/investigations/{id}`
 
 Canonical persisted result snapshot'ını döndürür.
+
+`summary` modelin ürettiği ve deterministik validator'dan geçen doğal dil özetidir. Persist edilen
+snapshot tekrar okunduğunda değişmez. `knowledgeReferences` yalnızca model çıktısından kopyalanmaz;
+uygulamanın retrieval sırasında topladığı canonical `documentId`, `version`, `title`, `chunkId` ve
+`similarityScore` alanlarıyla zenginleştirilir.
+
+## GET `/api/v1/models`
+
+Geriye uyumluluk için `models` alanında doğrulanmış model ID listesi korunur. `options` alanı
+composer'ın kullanacağı kullanıcı dostu metadata'yı, `defaultModelId` varsayılan seçimi taşır.
+Yalnızca canlı NVIDIA NIM tool-calling + structured-output compatibility testi geçen modeller
+listelenir.
+
+## GET `/api/v1/knowledge/documents`
+
+Belge envanterini tam metadata ve chunk sayısıyla döndürür. Ham/unsanitized içerik dönmez.
+
+## GET `/api/v1/knowledge/documents/{documentId}/versions/{version}`
+
+Belgenin metadata'sını, sanitize edilmiş canonical içeriğini ve chunk ayrıntılarını döndürür.
+
+## POST `/api/v1/knowledge/search-preview`
+
+Salt-okunur RAG doğrulama endpoint'idir. `query` zorunlu, `provider` opsiyonel ve `topK` 1–5
+aralığındadır. Sonuçlar `documentId`, `version`, `title`, `chunkId`, `sectionTitle`, sanitize edilmiş
+content excerpt ve `similarityScore` taşır. Tool budget veya incident approval akışını değiştirmez.
 
 ## POST `/api/v1/investigations/{id}/incident-draft/preview`
 

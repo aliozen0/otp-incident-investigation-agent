@@ -6,12 +6,12 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
 /**
- * Ingests the MVP knowledge fixture set (docs/15-demo-fixtures.md) on application startup so {@code
- * AI_MODE=live}'s pgvector RAG has real content without a manual step (prompts/handoff/M9-prompt.md
- * item 1). Idempotent: skips any document/version already present, so repeated {@code docker
- * compose up} restarts never duplicate rows. A no-op ({@code enabled = false}) in stub mode, where
- * {@link KnowledgeSearchPort} is the fixture-backed {@code FixtureKnowledgeSearchPort} and pgvector
- * content is irrelevant.
+ * Ingests the curated synthetic knowledge fixture set (docs/15-demo-fixtures.md) on application
+ * startup so {@code AI_MODE=live}'s pgvector RAG has real content without a manual step
+ * (prompts/handoff/M9-prompt.md item 1). Idempotent: skips any document/version already present, so
+ * repeated {@code docker compose up} restarts never duplicate rows. A no-op ({@code enabled =
+ * false}) in stub mode, where {@link KnowledgeSearchPort} is the fixture-backed {@code
+ * FixtureKnowledgeSearchPort} and pgvector content is irrelevant.
  */
 public final class KnowledgeAutoIngestRunner implements ApplicationRunner {
 

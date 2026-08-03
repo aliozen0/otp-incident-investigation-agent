@@ -13,6 +13,9 @@ public class ModelsController {
 
   @GetMapping
   public Map<String, Object> listModels() {
-    return Map.of("models", ModelCatalog.VERIFIED_MODELS);
+    return Map.of(
+        "models", ModelCatalog.VERIFIED_MODELS,
+        "options", ModelCatalog.VERIFIED_OPTIONS,
+        "defaultModelId", ModelCatalog.DEFAULT_MODEL_ID);
   }
 }

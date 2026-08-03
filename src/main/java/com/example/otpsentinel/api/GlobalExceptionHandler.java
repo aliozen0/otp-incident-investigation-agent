@@ -1,6 +1,7 @@
 package com.example.otpsentinel.api;
 
 import com.example.otpsentinel.api.dto.ProblemDetailsDto;
+import com.example.otpsentinel.application.IntentRoutingFailedException;
 import com.example.otpsentinel.config.InvestigationNotActionableException;
 import com.example.otpsentinel.config.InvestigationNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +46,23 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ProblemDetailsDto> handleModelProviderError(
       dev.langchain4j.exception.HttpException e, HttpServletRequest request) {
     return problem(502, "Model provider error", e.getMessage(), "MODEL_PROVIDER_ERROR", request);
+  }
+
+  @ExceptionHandler(dev.langchain4j.exception.RetriableException.class)
+  public ResponseEntity<ProblemDetailsDto> handleRetriableProviderError(
+      dev.langchain4j.exception.RetriableException e, HttpServletRequest request) {
+    return problem(502, "Model provider error", e.getMessage(), "MODEL_PROVIDER_ERROR", request);
+  }
+
+  @ExceptionHandler(IntentRoutingFailedException.class)
+  public ResponseEntity<ProblemDetailsDto> handleIntentRoutingFailed(
+      IntentRoutingFailedException e, HttpServletRequest request) {
+    return problem(
+        502,
+        "Intent routing failed",
+        "The selected model did not return a valid intent decision after one repair attempt.",
+        "INTENT_ROUTING_FAILED",
+        request);
   }
 
   // Note: langchain4j's own TimeoutException (dev.langchain4j.exception.TimeoutException), not

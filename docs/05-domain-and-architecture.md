@@ -25,6 +25,7 @@ Alanlar:
 - ValidationReport
 - ToolExecutions
 - PromptVersion/SchemaVersion
+- Visualizations
 
 Yaşam döngüsü:
 
@@ -92,6 +93,8 @@ Alanlar: investigationId, payload, approval, idempotencyKey, externalIncidentId.
 7. Approval olmadan incident yaratılamaz.
 8. Aynı idempotency key tek incident üretir.
 9. Tool'da olmayan sayı evidence olamaz.
+10. Visualization point'i canonical numeric evidence olmadan oluşturulamaz.
+11. CHAT ve CLARIFICATION investigation aggregate'i oluşturmaz.
 
 ## Mimari stil
 
@@ -216,6 +219,27 @@ sequenceDiagram
     Service->>DB: persist snapshot/audit
     Service-->>User: result
 ```
+
+## M12.3 iki aşamalı conversation routing
+
+```mermaid
+flowchart LR
+    M[User message] --> R[Tool-free LLM IntentRouter]
+    R --> V[Java route/schema/model safety gate]
+    V -->|CHAT| C[Tool-free ConversationResponder]
+    V -->|CLARIFICATION| Q[Validated single question]
+    V -->|INVESTIGATION| I[Existing InvestigationOrchestrator]
+    I --> T[Allowlisted tools and optional RAG]
+    T --> A[Claim + visualization validation]
+```
+
+Application kontratları `IntentRouter`, `ConversationResponder`, bounded semantic context ve
+conversation orchestration'dır. LangChain4j adapter'ları application portlarını uygular. Router/chat
+context'i ile investigation agent tool memory'si ayrı tutulur; yalnız doğrulanmış final investigation
+özeti semantic context'e eklenir. Domain Spring, LangChain4j, HTTP ve database import etmez.
+
+`VisualizationSpec` dar bir domain value object'tir: allowlisted type/unit, en fazla 4 series ve 40
+point; her point application-minted evidence ID taşır. Model serbest renderer config'i üretemez.
 
 ## Resilience
 

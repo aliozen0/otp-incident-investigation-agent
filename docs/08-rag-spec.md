@@ -10,13 +10,28 @@ RAG anlık metrik sağlamaz. Şu kurumsal bilgiyi getirir:
 - provider playbook
 - change policy
 
-## MVP belge seti
+## Kurumsal demo belge seti
 
 1. `INC-2026-041` — provider timeout + connection pool leak
 2. `RB-OTP-001` — OTP degradation runbook
 3. `ERR-OTP-001` — error glossary
 4. `POL-CHANGE-001` — rollback approval policy
-5. Negatif/ilgisiz belge
+5. `INC-2026-052` — provider rate-limit olayı
+6. `INC-2026-063` — queue backlog ve consumer yavaşlaması
+7. `INC-2026-077` — delivery-receipt gecikmesi
+8. `RB-OTP-002` — queue backlog triage runbook
+9. `RB-OTP-003` — delivery latency triage runbook
+10. `PB-OPERATOR-A-001` — Operator A rate-limit playbook
+11. `PB-OPERATOR-B-001` — Operator B timeout/circuit-breaker playbook
+12. `ERR-OTP-002` — delivery status ve retry sınıflandırması
+13. `CAP-OTP-001` — gateway kapasite değerlendirme rehberi
+14. `OBS-OTP-001` — OTP SLO ve gözlemlenebilirlik rehberi
+15. `SEC-OTP-001` — OTP evidence gizlilik politikası
+16. `POL-INCIDENT-001` — incident oluşturma ve eskalasyon politikası
+17. Negatif/ilgisiz belge (yalnızca güvenlik/evaluation testi; auto-ingest edilmez)
+
+Bu içeriklerin tamamı sentetik ve anonim demo verisidir; gerçek kurum, müşteri, telefon veya OTP
+değeri içermez.
 
 ## Metadata
 
