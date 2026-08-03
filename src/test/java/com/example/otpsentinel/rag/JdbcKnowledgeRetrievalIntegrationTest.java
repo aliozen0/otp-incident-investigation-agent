@@ -21,10 +21,11 @@ class JdbcKnowledgeRetrievalIntegrationTest extends AbstractPostgresIntegrationT
   private static final int DIMENSION = 1024;
 
   private JdbcKnowledgeSearchAdapter searchAdapter;
+  private EmbeddingService embeddingService;
 
   @BeforeEach
   void ingestFixtures() {
-    EmbeddingService embeddingService = new HashEmbeddingService(DIMENSION);
+    embeddingService = new HashEmbeddingService(DIMENSION);
     KnowledgeIngestionService ingestionService =
         new KnowledgeIngestionService(
             new ContentSanitizer(),
@@ -77,6 +78,17 @@ class JdbcKnowledgeRetrievalIntegrationTest extends AbstractPostgresIntegrationT
 
     assertThat(documentIds(results))
         .doesNotContain("INC-2026-041", "RB-OTP-001", "ERR-OTP-001", "POL-CHANGE-001");
+  }
+
+  @Test
+  void previewRanksBelowTheAgentFloorSoTheConsoleExplorerIsNeverSilentlyEmpty() {
+    JdbcKnowledgeSearchAdapter strict =
+        new JdbcKnowledgeSearchAdapter(jdbcTemplate, embeddingService, 5, 0.99);
+
+    assertThat(strict.searchIncidentKnowledge("provider timeout connection pool", null, 5))
+        .isEmpty();
+    assertThat(strict.previewIncidentKnowledge("provider timeout connection pool", null, 5))
+        .isNotEmpty();
   }
 
   @Test

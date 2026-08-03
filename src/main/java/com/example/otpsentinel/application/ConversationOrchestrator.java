@@ -25,8 +25,10 @@ public final class ConversationOrchestrator {
     this.responder = Objects.requireNonNull(responder);
     this.investigationExecutor = Objects.requireNonNull(investigationExecutor);
     this.contextStore = Objects.requireNonNull(contextStore);
-    if (maxRepairAttempts < 0 || maxRepairAttempts > 1) {
-      throw new IllegalArgumentException("maxRepairAttempts must be 0 or 1");
+    // Up to 3: small reasoning models occasionally answer with an empty content block or trailing
+    // prose, and a second retry recovers a complete analysis far more often than it costs.
+    if (maxRepairAttempts < 0 || maxRepairAttempts > 3) {
+      throw new IllegalArgumentException("maxRepairAttempts must be between 0 and 3");
     }
     this.maxRepairAttempts = maxRepairAttempts;
   }

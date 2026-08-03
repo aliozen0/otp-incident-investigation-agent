@@ -16,6 +16,13 @@ import com.example.otpsentinel.rag.KnowledgeSearchPort;
 import com.example.otpsentinel.rag.NvidiaNimEmbeddingService;
 import com.example.otpsentinel.rag.fixtures.CompositeKnowledgeSearchPort;
 import com.example.otpsentinel.rag.fixtures.FixtureKnowledgeSearchPort;
+import com.example.otpsentinel.operations.JdbcOperationalDataTools;
+import com.example.otpsentinel.operations.OperationalDataSeeder;
+import com.example.otpsentinel.tools.ErrorDistributionTool;
+import com.example.otpsentinel.tools.OtpMetricsTool;
+import com.example.otpsentinel.tools.ProviderHealthTool;
+import com.example.otpsentinel.tools.QueueHealthTool;
+import com.example.otpsentinel.tools.RecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureCatalog;
 import com.example.otpsentinel.tools.fixtures.FixtureErrorDistributionTool;
 import com.example.otpsentinel.tools.fixtures.FixtureId;
@@ -26,6 +33,8 @@ import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
 import com.example.otpsentinel.tools.fixtures.FixtureScenario;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import java.time.Clock;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,7 +50,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 public class AgentConfig {
 
   /**
-   * {@code otp-sentinel.rag.min-score} (0.70) is tuned for NVIDIA embeddings. Hash-trick cosine
+   * {@code otp-sentinel.rag.min-score} (0.50) is tuned for NVIDIA embeddings: measured against the
+   * ingested corpus, an exact title match on nv-embedqa-e5-v5 scores ~0.74 and a good topical match
+   * lands in the 0.5-0.7 band, so the original 0.70 floor rejected nearly every real hit. Hash-trick
+   * cosine
    * scores track raw vocabulary overlap and sit far lower, so the non-live adapter uses the same
    * threshold the M4 hash-embedding retrieval tests use.
    */
@@ -90,7 +102,7 @@ public class AgentConfig {
       @Value("${NVIDIA_API_KEY:}") String apiKey,
       @Value("${NVIDIA_EMBEDDING_MODEL:}") String embeddingModel,
       @Value("${otp-sentinel.rag.top-k:5}") int topK,
-      @Value("${otp-sentinel.rag.min-score:0.70}") double minScore) {
+      @Value("${otp-sentinel.rag.min-score:0.50}") double minScore) {
     if ("live".equalsIgnoreCase(aiMode)) {
       return new JdbcKnowledgeSearchAdapter(
           jdbcTemplate,
@@ -141,29 +153,82 @@ public class AgentConfig {
     return FixtureCatalog.forFixture(FixtureId.valueOf(fixtureId.replace('-', '_')));
   }
 
+  /**
+   * {@code otp-sentinel.operations.source=db} (the default) answers the five tools from the
+   * operational tables, so the console's data explorer and the agent read the same rows and an
+   * operator can verify any figure the model cites. {@code fixture} keeps the in-code dataset for
+   * offline demos and for tests that assert the docs/15 numbers.
+   */
   @Bean
-  public FixtureOtpMetricsTool fixtureOtpMetricsTool(FixtureScenario demoFixtureScenario) {
-    return new FixtureOtpMetricsTool(demoFixtureScenario);
+  public OperationalDataSeeder operationalDataSeeder(
+      JdbcTemplate jdbcTemplate,
+      @Value("${otp-sentinel.operations.history-hours:24}") long historyHours,
+      // 15 minutes on purpose: the default question asks about "the last 15 minutes", so the
+      // previous-period comparison lands on healthy traffic and the drop is actually visible.
+      @Value("${otp-sentinel.operations.degraded-lookback-minutes:15}") long degradedMinutes) {
+    return new OperationalDataSeeder(
+        jdbcTemplate,
+        Clock.systemUTC(),
+        Duration.ofHours(historyHours),
+        Duration.ofMinutes(degradedMinutes));
   }
 
   @Bean
-  public FixtureErrorDistributionTool fixtureErrorDistributionTool(
+  public JdbcOperationalDataTools jdbcOperationalDataTools(JdbcTemplate jdbcTemplate) {
+    return new JdbcOperationalDataTools(jdbcTemplate, Clock.systemUTC());
+  }
+
+  @Bean
+  public OtpMetricsTool otpMetricsTool(
+      @Value("${otp-sentinel.operations.source:db}") String source,
+      JdbcOperationalDataTools databaseTools,
       FixtureScenario demoFixtureScenario) {
-    return new FixtureErrorDistributionTool(demoFixtureScenario);
+    return fromDatabase(source)
+        ? databaseTools
+        : new FixtureOtpMetricsTool(demoFixtureScenario);
   }
 
   @Bean
-  public FixtureQueueHealthTool fixtureQueueHealthTool(FixtureScenario demoFixtureScenario) {
-    return new FixtureQueueHealthTool(demoFixtureScenario);
+  public ErrorDistributionTool errorDistributionTool(
+      @Value("${otp-sentinel.operations.source:db}") String source,
+      JdbcOperationalDataTools databaseTools,
+      FixtureScenario demoFixtureScenario) {
+    return fromDatabase(source)
+        ? databaseTools
+        : new FixtureErrorDistributionTool(demoFixtureScenario);
   }
 
   @Bean
-  public FixtureProviderHealthTool fixtureProviderHealthTool(FixtureScenario demoFixtureScenario) {
-    return new FixtureProviderHealthTool(demoFixtureScenario);
+  public QueueHealthTool queueHealthTool(
+      @Value("${otp-sentinel.operations.source:db}") String source,
+      JdbcOperationalDataTools databaseTools,
+      FixtureScenario demoFixtureScenario) {
+    return fromDatabase(source)
+        ? databaseTools
+        : new FixtureQueueHealthTool(demoFixtureScenario);
   }
 
   @Bean
-  public FixtureRecentChangesTool fixtureRecentChangesTool(FixtureScenario demoFixtureScenario) {
-    return new FixtureRecentChangesTool(demoFixtureScenario);
+  public ProviderHealthTool providerHealthTool(
+      @Value("${otp-sentinel.operations.source:db}") String source,
+      JdbcOperationalDataTools databaseTools,
+      FixtureScenario demoFixtureScenario) {
+    return fromDatabase(source)
+        ? databaseTools
+        : new FixtureProviderHealthTool(demoFixtureScenario);
+  }
+
+  @Bean
+  public RecentChangesTool recentChangesTool(
+      @Value("${otp-sentinel.operations.source:db}") String source,
+      JdbcOperationalDataTools databaseTools,
+      FixtureScenario demoFixtureScenario) {
+    return fromDatabase(source)
+        ? databaseTools
+        : new FixtureRecentChangesTool(demoFixtureScenario);
+  }
+
+  private static boolean fromDatabase(String source) {
+    return !"fixture".equalsIgnoreCase(source);
   }
 }

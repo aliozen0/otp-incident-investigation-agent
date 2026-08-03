@@ -14,6 +14,8 @@ import type {
   KnowledgeDocumentUploadResponse,
   ChatMessageRequest,
   ChatMessageResponse,
+  OperationsOverview,
+  OperationsSampleRow,
 } from './types'
 
 const BASE = '/api/v1'
@@ -188,4 +190,26 @@ export function uploadKnowledgeDocument(
     method: 'POST',
     body: JSON.stringify(req),
   })
+}
+
+function windowQuery(startAt: string, endAt: string, extra?: Record<string, string>): string {
+  const params = new URLSearchParams({ startAt, endAt, ...(extra ?? {}) })
+  return `?${params.toString()}`
+}
+
+export function getOperationsOverview(startAt: string, endAt: string): Promise<OperationsOverview> {
+  return request<OperationsOverview>(`/operations/overview${windowQuery(startAt, endAt)}`, {
+    method: 'GET',
+  })
+}
+
+export function getOperationsSamples(
+  startAt: string,
+  endAt: string,
+  provider?: string
+): Promise<OperationsSampleRow[]> {
+  return request<OperationsSampleRow[]>(
+    `/operations/samples${windowQuery(startAt, endAt, provider ? { provider } : undefined)}`,
+    { method: 'GET' }
+  )
 }

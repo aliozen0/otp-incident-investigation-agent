@@ -1,6 +1,7 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import type { InteractionMode, ModelOption } from '../api/types'
 import { INTERACTION_MODE_LABEL_TR, MODE_LABEL_TR, UI_TEXT } from '../lib/labels'
+import { IconAlert, IconClock, IconSend, IconSparkles } from './icons'
 
 interface Props {
   disabled: boolean
@@ -13,6 +14,8 @@ interface Props {
   interactionMode?: InteractionMode
   onInteractionModeChange?: (mode: InteractionMode) => void
 }
+
+const MAX_TEXTAREA_HEIGHT = 220
 
 export function ChatComposer({
   disabled,
@@ -30,6 +33,15 @@ export function ChatComposer({
   const [startAt, setStartAt] = useState('')
   const [endAt, setEndAt] = useState('')
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Grow with the text instead of scrolling inside three fixed rows.
+  useEffect(() => {
+    const node = textareaRef.current
+    if (!node) return
+    node.style.height = 'auto'
+    node.style.height = `${Math.min(node.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
+  }, [question])
 
   function submit() {
     const trimmed = question.trim()
@@ -57,7 +69,7 @@ export function ChatComposer({
   return (
     <div className="composer-shell">
       {interactionMode !== 'CHAT' && useTimeWindow && (
-        <div className="grid grid-cols-1 gap-3 border-b border-line bg-surface-muted px-4 py-3 sm:grid-cols-2">
+        <div className="animate-fade grid grid-cols-1 gap-3 border-b border-line bg-surface-sunken px-4 py-3 sm:grid-cols-2">
           <div>
             <label htmlFor="startAt" className="field-label">
               {UI_TEXT.timeWindowStart} · {UI_TEXT.localTime}
@@ -86,6 +98,7 @@ export function ChatComposer({
       )}
 
       <textarea
+        ref={textareaRef}
         value={question}
         onChange={(e) => {
           setQuestion(e.target.value)
@@ -93,21 +106,22 @@ export function ChatComposer({
         }}
         onKeyDown={handleKeyDown}
         placeholder={UI_TEXT.composerPlaceholder}
-        rows={3}
+        rows={2}
         disabled={disabled}
-        className="w-full resize-none border-0 bg-transparent px-4 pb-3 pt-4 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-subtle disabled:cursor-wait"
+        className="scroll-thin w-full resize-none border-0 bg-transparent px-4 pb-3 pt-4 text-[15px] leading-6 text-ink outline-none placeholder:text-ink-subtle disabled:cursor-wait"
       />
 
       {validationMessage && (
-        <p role="alert" className="mx-4 mb-3 rounded-md bg-alert-soft px-3 py-2 text-xs text-alert">
+        <p role="alert" className="mx-4 mb-3 flex items-center gap-2 rounded-lg bg-alert-soft px-3 py-2 text-xs text-alert">
+          <IconAlert size={14} />
           {validationMessage}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-2.5">
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-line-soft px-2.5 py-2">
         {models.length > 0 && (
           <div className="composer-select-wrap">
-            <span className="status-dot bg-confirm" aria-hidden="true" />
+            <span className="status-dot status-dot-live bg-confirm" aria-hidden="true" />
             <label htmlFor="composer-model" className="sr-only">
               Analiz modeli
             </label>
@@ -128,6 +142,7 @@ export function ChatComposer({
         )}
 
         <div className="composer-select-wrap">
+          <IconSparkles size={13} />
           <label htmlFor="composer-interaction-mode" className="sr-only">
             Etkileşim modu
           </label>
@@ -144,36 +159,43 @@ export function ChatComposer({
           </select>
         </div>
 
-        {interactionMode !== 'CHAT' && <div className="composer-select-wrap">
-          <label htmlFor="composer-mode" className="sr-only">
-            Analiz modu
+        {interactionMode !== 'CHAT' && (
+          <div className="composer-select-wrap">
+            <label htmlFor="composer-mode" className="sr-only">
+              Analiz modu
+            </label>
+            <select
+              id="composer-mode"
+              aria-label="Analiz modu"
+              value={mode}
+              onChange={(e) => onModeChange?.(e.target.value as 'quick' | 'thorough')}
+              className="composer-select"
+            >
+              <option value="quick">{MODE_LABEL_TR.quick}</option>
+              <option value="thorough">{MODE_LABEL_TR.thorough}</option>
+            </select>
+          </div>
+        )}
+
+        {interactionMode !== 'CHAT' && (
+          <label className="composer-tool" title={UI_TEXT.timeWindowToggle}>
+            <input
+              id="useTimeWindow"
+              type="checkbox"
+              checked={useTimeWindow}
+              onChange={(e) => setUseTimeWindow(e.target.checked)}
+              className="sr-only"
+            />
+            <IconClock size={14} />
+            <span className="hidden sm:inline" aria-hidden="true">Zaman aralığı</span>
+            <span className="sr-only">{UI_TEXT.timeWindowToggle}</span>
           </label>
-          <select
-            id="composer-mode"
-            aria-label="Analiz modu"
-            value={mode}
-            onChange={(e) => onModeChange?.(e.target.value as 'quick' | 'thorough')}
-            className="composer-select"
-          >
-            <option value="quick">{MODE_LABEL_TR.quick}</option>
-            <option value="thorough">{MODE_LABEL_TR.thorough}</option>
-          </select>
-        </div>}
+        )}
 
-        {interactionMode !== 'CHAT' && <label className="composer-tool" title={UI_TEXT.timeWindowToggle}>
-          <input
-            id="useTimeWindow"
-            type="checkbox"
-            checked={useTimeWindow}
-            onChange={(e) => setUseTimeWindow(e.target.checked)}
-            className="sr-only"
-          />
-          <span aria-hidden="true">◷</span>
-          <span>{UI_TEXT.timeWindowToggle}</span>
-        </label>}
-
-        <div className="ml-auto flex items-center gap-3">
-          <span className="hidden text-[11px] text-ink-subtle sm:inline">Enter gönderir</span>
+        <div className="ml-auto flex items-center gap-2.5">
+          <span className="hidden items-center gap-1.5 text-[11px] text-ink-subtle sm:flex">
+            <span className="kbd">Enter</span> gönderir
+          </span>
           <button
             type="button"
             onClick={submit}
@@ -181,7 +203,15 @@ export function ChatComposer({
             className="send-button"
             aria-label={disabled ? UI_TEXT.investigating : UI_TEXT.send}
           >
-            {disabled ? <span className="animate-pulse">•••</span> : <span aria-hidden="true">↑</span>}
+            {disabled ? (
+              <span className="flex items-center gap-[3px]">
+                <span className="typing-dot" />
+                <span className="typing-dot" style={{ animationDelay: '.18s' }} />
+                <span className="typing-dot" style={{ animationDelay: '.36s' }} />
+              </span>
+            ) : (
+              <IconSend size={17} />
+            )}
           </button>
         </div>
       </div>

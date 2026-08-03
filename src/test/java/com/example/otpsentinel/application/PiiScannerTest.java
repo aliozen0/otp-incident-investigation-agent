@@ -24,6 +24,16 @@ class PiiScannerTest {
   }
 
   @Test
+  void doesNotFlagTheInvestigatedTimeWindow() {
+    // Regression: an ISO instant is a dash-separated digit run, so the phone heuristic used to
+    // reject correct analyses that quoted their own time window.
+    assertThat(
+            scanner.scan(
+                "Verify provider timeouts during window 2026-08-03T19:29:28Z/2026-08-03T19:44:28Z"))
+        .isEmpty();
+  }
+
+  @Test
   void doesNotFlagOrdinaryMetricsSummary() {
     assertThat(
             scanner.scan(

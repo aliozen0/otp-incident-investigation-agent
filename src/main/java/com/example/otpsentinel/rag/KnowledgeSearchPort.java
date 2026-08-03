@@ -16,4 +16,15 @@ public interface KnowledgeSearchPort {
    */
   List<KnowledgeSearchResult> searchIncidentKnowledge(
       String queryText, String providerFilter, int topK);
+
+  /**
+   * Diagnostic ranking for the console's retrieval explorer: same query, same ordering, but without
+   * the agent's minimum-similarity floor. An operator checking what the knowledge base contains
+   * needs to see the near misses and their scores — silently returning nothing reads as "search is
+   * broken". The agent itself keeps using {@link #searchIncidentKnowledge}.
+   */
+  default List<KnowledgeSearchResult> previewIncidentKnowledge(
+      String queryText, String providerFilter, int topK) {
+    return searchIncidentKnowledge(queryText, providerFilter, topK);
+  }
 }

@@ -7,6 +7,7 @@ import {
   getRecordedQuestion,
   saveTurns,
   loadTurns,
+  deleteSession,
 } from './sessionStore'
 
 describe('sessionStore', () => {
@@ -86,5 +87,20 @@ describe('sessionStore', () => {
     expect(loadTurns(session.sessionId)).toEqual(turns)
     localStorage.setItem(`otp-sentinel:turns:${session.sessionId}`, JSON.stringify({ version: 1, turns: 'bad' }))
     expect(loadTurns(session.sessionId)).toEqual([])
+  })
+
+  it('deletes a session together with its turns and recorded questions', () => {
+    const kept = createSession()
+    const removed = createSession()
+    saveTurns(removed.sessionId, [
+      { kind: 'chat' as const, id: 'm-1', question: 'Merhaba', assistantMessage: 'Merhaba!' },
+    ])
+    recordQuestion(removed.sessionId, 'inv-1', 'Merhaba')
+
+    deleteSession(removed.sessionId)
+
+    expect(listSessions().map((s) => s.sessionId)).toEqual([kept.sessionId])
+    expect(loadTurns(removed.sessionId)).toEqual([])
+    expect(getRecordedQuestion(removed.sessionId, 'inv-1')).toBeUndefined()
   })
 })

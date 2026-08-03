@@ -228,3 +228,92 @@ export interface KnowledgeDocumentUploadResponse {
   documentId: string
   version: string
 }
+
+// Operational telemetry behind every investigation — the rows the agent's tools read.
+export interface OperationsTotals {
+  attempted: number
+  delivered: number
+  failed: number
+  retries: number
+  successRate: number
+  averageDeliverySeconds: number
+  p95DeliverySeconds: number
+}
+
+export interface OperationsSeriesPoint {
+  bucketAt: string
+  attempted: number
+  delivered: number
+  failed: number
+  retries: number
+  successRate: number
+  averageDeliverySeconds: number
+  p95DeliverySeconds: number
+}
+
+export interface OperationsProviderRow {
+  provider: string
+  attempted: number
+  delivered: number
+  failed: number
+  successRate: number
+  status: string | null
+  averageResponseSeconds: number
+  timeoutRate: number
+  circuitBreakerState: string | null
+  activeConnections: number
+  maxConnections: number
+}
+
+export interface OperationsErrorRow {
+  errorCode: string
+  failures: number
+  share: number
+}
+
+export interface OperationsQueueRow {
+  bucketAt: string
+  pendingMessages: number
+  normalPendingThreshold: number
+  oldestMessageAgeSeconds: number
+  activeConsumers: number
+  expectedConsumers: number
+  deadLetterCount: number
+  processingRateStatus: string
+  status: string
+}
+
+export interface OperationsChangeRow {
+  changeId: string
+  occurredAt: string
+  type: string
+  component: string
+  description: string
+  version?: string | null
+  approved?: boolean | null
+}
+
+export interface OperationsOverview {
+  startAt: string
+  endAt: string
+  totals: OperationsTotals
+  series: OperationsSeriesPoint[]
+  providers: OperationsProviderRow[]
+  errors: OperationsErrorRow[]
+  queue: OperationsQueueRow | null
+  changes: OperationsChangeRow[]
+}
+
+export interface OperationsSampleRow {
+  bucketAt: string
+  provider: string
+  attempted: number
+  delivered: number
+  failed: number
+  retries: number
+  averageDeliverySeconds: number
+  p95DeliverySeconds: number
+  providerStatus: string | null
+  timeoutRate: number
+  errors: string | null
+}

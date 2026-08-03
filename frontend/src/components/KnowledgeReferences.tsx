@@ -10,7 +10,7 @@ export function KnowledgeReferences({ refs }: { refs: KnowledgeReference[] }) {
   return (
     <ul className="space-y-2">
       {refs.map((r, i) => (
-        <li key={`${r.documentId}-${r.chunkId ?? i}`} className="rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-ink-muted">
+        <li key={`${r.documentId}-${r.chunkId ?? i}`} className="rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink-muted">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <strong className="block text-xs font-medium text-ink">{r.title ?? r.documentId}</strong>

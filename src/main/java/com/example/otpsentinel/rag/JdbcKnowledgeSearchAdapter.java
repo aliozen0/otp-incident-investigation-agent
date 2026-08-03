@@ -50,14 +50,25 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
   @Override
   public List<KnowledgeSearchResult> searchIncidentKnowledge(
       String queryText, String providerFilter, int topK) {
+    return rank(queryText, providerFilter, topK).stream()
+        .filter(r -> r.similarityScore() >= minScore)
+        .toList();
+  }
+
+  @Override
+  public List<KnowledgeSearchResult> previewIncidentKnowledge(
+      String queryText, String providerFilter, int topK) {
+    return rank(queryText, providerFilter, topK);
+  }
+
+  private List<KnowledgeSearchResult> rank(String queryText, String providerFilter, int topK) {
     Objects.requireNonNull(queryText, "queryText must not be null");
 
     int effectiveTopK = Math.min(Math.min(topK <= 0 ? defaultTopK : topK, defaultTopK), 5);
     String queryVector =
         VectorLiterals.toLiteral(embeddingService.embed(queryText, EmbeddingInputType.QUERY));
 
-    List<KnowledgeSearchResult> results =
-        jdbcTemplate.query(
+    return jdbcTemplate.query(
             SEARCH,
             this::mapRow,
             queryVector,
@@ -69,8 +80,6 @@ public final class JdbcKnowledgeSearchAdapter implements KnowledgeSearchPort {
             providerFilter,
             queryVector,
             effectiveTopK);
-
-    return results.stream().filter(r -> r.similarityScore() >= minScore).toList();
   }
 
   private KnowledgeSearchResult mapRow(ResultSet rs, int rowNum) throws SQLException {

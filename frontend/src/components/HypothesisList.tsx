@@ -15,7 +15,7 @@ export function HypothesisList({ hypotheses }: { hypotheses: Hypothesis[] }) {
   return (
     <ol className="space-y-4">
       {hypotheses.map((h) => (
-        <li key={h.rank} className="border border-line rounded-md p-4">
+        <li key={h.rank} className="rounded-xl border border-line bg-surface p-4">
           <div className="flex items-center justify-between">
             <span className="font-display text-sm text-ink">#{h.rank} {h.possibleCause}</span>
             <span className={`font-mono text-xs uppercase ${PROBABILITY_STYLE[h.probability]}`}>

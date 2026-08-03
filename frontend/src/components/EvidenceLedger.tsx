@@ -9,7 +9,7 @@ export function EvidenceLedger({ evidence }: { evidence: Evidence[] }) {
   return (
     <ul className="space-y-3">
       {evidence.map((item) => (
-        <li key={item.id} className="border border-line rounded-md p-3">
+        <li key={item.id} className="rounded-xl border border-line bg-surface p-3">
           <div className="flex items-center gap-2 flex-wrap">
             <code className="bg-signal-soft text-signal font-mono text-xs px-1.5 py-0.5 rounded">
               {item.id}

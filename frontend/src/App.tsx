@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
 import { SettingsPanel } from './components/SettingsPanel'
 import { ChatMessage, type ChatTurn } from './components/ChatMessage'
 import { ChatComposer } from './components/ChatComposer'
 import { EmptyState } from './components/EmptyState'
+import { DataExplorer } from './components/DataExplorer'
+import { IconArrowDown, IconCheck } from './components/icons'
 import { getModelCatalog, listSessionInvestigations, sendChatMessage } from './api/client'
 import {
   listSessions,
   createSession,
   renameSession,
+  deleteSession,
   recordQuestion,
   getRecordedQuestion,
   loadTurns,
@@ -18,6 +21,8 @@ import {
 } from './lib/sessionStore'
 import { toUserMessage } from './lib/errors'
 import type { ChatMessageRequest, InteractionMode, ModelOption } from './api/types'
+
+const SIDEBAR_KEY = 'otp-sentinel:sidebar-collapsed'
 
 export default function App() {
   const [sessions, setSessions] = useState<SessionMeta[]>([])
@@ -28,6 +33,12 @@ export default function App() {
   const [mode, setMode] = useState<'quick' | 'thorough'>('thorough')
   const [interactionMode, setInteractionMode] = useState<InteractionMode>('AUTO')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [dataOpen, setDataOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem(SIDEBAR_KEY) === '1'
+  )
+  const [atBottom, setAtBottom] = useState(true)
+  const [toast, setToast] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -54,6 +65,16 @@ export default function App() {
     scrollRef.current?.scrollTo?.({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [turns])
 
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? '1' : '0')
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 2600)
+    return () => clearTimeout(timer)
+  }, [toast])
+
   const activeSession = useMemo(
     () => sessions.find((session) => session.sessionId === activeSessionId),
     [sessions, activeSessionId]
@@ -67,7 +88,7 @@ export default function App() {
     setTurns([])
   }
 
-  async function selectSession(sessionId: string) {
+  const selectSession = useCallback(async (sessionId: string) => {
     setActiveSessionId(sessionId)
     const localTurns = loadTurns(sessionId)
     if (localTurns.length > 0) {
@@ -77,17 +98,65 @@ export default function App() {
     try {
       const investigations = await listSessionInvestigations(sessionId)
       const restored: ChatTurn[] = investigations.map((investigation) => ({
-          id: investigation.investigationId,
-          question: getRecordedQuestion(sessionId, investigation.investigationId) ?? 'Önceki inceleme',
-          kind: 'investigation' as const,
-          assistantMessage: investigation.summary,
-          investigation,
-        }))
+        id: investigation.investigationId,
+        question: getRecordedQuestion(sessionId, investigation.investigationId) ?? 'Önceki inceleme',
+        kind: 'investigation' as const,
+        assistantMessage: investigation.summary,
+        investigation,
+      }))
       setTurns(restored)
       saveTurns(sessionId, restored)
     } catch {
       setTurns([])
     }
+  }, [])
+
+  function handleRenameSession(sessionId: string, title: string) {
+    renameSession(sessionId, title)
+    setSessions(listSessions())
+  }
+
+  function handleDeleteSession(sessionId: string) {
+    deleteSession(sessionId)
+    const remaining = listSessions()
+    setSessions(remaining)
+    setToast('Sohbet silindi')
+    if (sessionId !== activeSessionId) return
+    if (remaining.length > 0) void selectSession(remaining[0].sessionId)
+    else handleNewChat()
+  }
+
+  // Global shortcuts keep the console usable without leaving the keyboard.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const meta = event.ctrlKey || event.metaKey
+      if (!meta) return
+      if (event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSidebarCollapsed(false)
+        setTimeout(() => document.getElementById('thread-search')?.focus(), 60)
+      } else if (event.shiftKey && event.key.toLowerCase() === 'o') {
+        event.preventDefault()
+        handleNewChat()
+      } else if (event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        setSidebarCollapsed((value) => !value)
+      } else if (event.key === ',') {
+        event.preventDefault()
+        setSettingsOpen(true)
+      } else if (event.key.toLowerCase() === 'd') {
+        event.preventDefault()
+        setDataOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  function handleScroll() {
+    const node = scrollRef.current
+    if (!node) return
+    setAtBottom(node.scrollHeight - node.scrollTop - node.clientHeight < 120)
   }
 
   async function handleSubmit(question: string, timeWindow?: { startAt: string; endAt: string }) {
@@ -125,33 +194,29 @@ export default function App() {
       if (response.investigation) {
         recordQuestion(activeSessionId, response.investigation.investigationId, question)
       }
-      setTurns((previous) =>
-        {
-          const next = previous.map((turn): ChatTurn => {
-            if (turn.id !== turnId) return turn
-            if (response.responseType === 'INVESTIGATION' && response.investigation) {
-              return { kind: 'investigation', id: response.investigation.investigationId, question,
-                assistantMessage: response.assistantMessage, suggestions: response.suggestions,
-                investigation: response.investigation }
-            }
-            return { kind: response.responseType === 'CLARIFICATION' ? 'clarification' : 'chat',
-              id: response.messageId, question, assistantMessage: response.assistantMessage,
-              suggestions: response.suggestions }
-          })
-          saveTurns(activeSessionId, next)
-          return next
-        }
-      )
+      setTurns((previous) => {
+        const next = previous.map((turn): ChatTurn => {
+          if (turn.id !== turnId) return turn
+          if (response.responseType === 'INVESTIGATION' && response.investigation) {
+            return { kind: 'investigation', id: response.investigation.investigationId, question,
+              assistantMessage: response.assistantMessage, suggestions: response.suggestions,
+              investigation: response.investigation }
+          }
+          return { kind: response.responseType === 'CLARIFICATION' ? 'clarification' : 'chat',
+            id: response.messageId, question, assistantMessage: response.assistantMessage,
+            suggestions: response.suggestions }
+        })
+        saveTurns(activeSessionId, next)
+        return next
+      })
     } catch (error) {
-      setTurns((previous) =>
-        {
-          const next = previous.map((turn): ChatTurn => turn.id === turnId
-            ? { kind: 'error', id: turnId, question, errorMessage: toUserMessage(error) }
-            : turn)
-          saveTurns(activeSessionId, next)
-          return next
-        }
-      )
+      setTurns((previous) => {
+        const next = previous.map((turn): ChatTurn => turn.id === turnId
+          ? { kind: 'error', id: turnId, question, errorMessage: toUserMessage(error) }
+          : turn)
+        saveTurns(activeSessionId, next)
+        return next
+      })
     } finally {
       setBusy(false)
     }
@@ -162,22 +227,39 @@ export default function App() {
       <Sidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
-        onSelect={selectSession}
+        onSelect={(sessionId) => {
+          void selectSession(sessionId)
+          if (window.innerWidth < 1024) setSidebarCollapsed(true)
+        }}
         onNewChat={handleNewChat}
-        className="hidden lg:flex"
+        onRename={handleRenameSession}
+        onDelete={handleDeleteSession}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
       />
+
+      {!sidebarCollapsed && (
+        <div
+          className="sidebar-backdrop lg:hidden"
+          onClick={() => setSidebarCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
 
       <section className="flex min-w-0 flex-1 flex-col bg-paper">
         <Header
           onOpenSettings={() => setSettingsOpen(true)}
+          onOpenData={() => setDataOpen(true)}
           onNewChat={handleNewChat}
           activeModel={activeModel?.label}
           mode={mode}
           interactionMode={interactionMode}
           sessionTitle={activeSession?.title}
+          sidebarCollapsed={sidebarCollapsed}
+          onExpandSidebar={() => setSidebarCollapsed((value) => !value)}
         />
 
-        <main ref={scrollRef} className="conversation-scroll">
+        <main ref={scrollRef} onScroll={handleScroll} className="conversation-scroll scroll-thin">
           <div className="mx-auto min-h-full w-full max-w-[940px] px-4 py-8 sm:px-8 lg:px-10">
             {turns.length === 0 ? (
               <EmptyState onPrompt={(prompt) => handleSubmit(prompt)} />
@@ -189,6 +271,18 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {!atBottom && turns.length > 0 && (
+            <button
+              type="button"
+              className="scroll-bottom-button animate-pop"
+              onClick={() =>
+                scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+              }
+            >
+              <IconArrowDown size={13} /> En alta git
+            </button>
+          )}
         </main>
 
         <div className="composer-dock">
@@ -204,22 +298,12 @@ export default function App() {
               interactionMode={interactionMode}
               onInteractionModeChange={setInteractionMode}
             />
-            <p className="mt-2 text-center text-[10px] tracking-wide text-ink-subtle">
+            <p className="mt-2 text-center text-[10.5px] tracking-wide text-ink-subtle">
               Çıktılar operasyonel kanıtlara dayanır. Değişiklik ve incident işlemleri açık onay gerektirir.
             </p>
           </div>
         </div>
       </section>
-
-      <SettingsPanel
-        modelId={modelId}
-        onModelChange={setModelId}
-        mode={mode}
-        onModeChange={setMode}
-        onClose={() => setSettingsOpen(false)}
-        embedded
-        interactionMode={interactionMode}
-      />
 
       {settingsOpen && (
         <SettingsPanel
@@ -230,6 +314,16 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
           interactionMode={interactionMode}
         />
+      )}
+
+      {dataOpen && <DataExplorer onClose={() => setDataOpen(false)} />}
+
+      {toast && (
+        <div className="toast-stack">
+          <div className="toast is-success" role="status">
+            <IconCheck size={15} /> {toast}
+          </div>
+        </div>
       )}
     </div>
   )

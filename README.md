@@ -32,9 +32,28 @@ curl -s http://localhost:8080/actuator/health
 Kurumsal agent konsolu: http://localhost:8080/
 
 Konsolda sohbet kutusunun içinden doğrulanmış NVIDIA modelini ve hızlı/detaylı
-inceleme modunu seçebilirsiniz. Sağdaki **Bilgi tabanı** alanı indekslenen
-belgeleri, chunk sayılarını, temizlenmiş belge içeriğini ve retrieval testini
-gösterir; aynı alandan yeni belge de yüklenebilir.
+inceleme modunu seçebilirsiniz. Üst bardaki **Bilgi tabanı** düğmesi ayarlar penceresini açar:
+indekslenen belgeler, chunk sayıları, temizlenmiş belge içeriği, eşik uygulamayan RAG retrieval
+testi ve belge yükleme aynı yerdedir.
+
+### Veri gezgini — modelin cevabını ham veriyle doğrulama
+
+Üst bardaki **Veri** düğmesi (veya `Ctrl+D`) agent'ın araçlarının okuduğu operasyonel tabloları
+açar: dakikalık başarı oranı grafiği, hata kodu dağılımı, operatör kırılımı, kuyruk sağlığı,
+değişiklik zaman çizelgesi ve satır satır ham kayıtlar (deneme/teslim/hata/retry/ortalama ve p95
+gecikme/timeout oranı). Aralık: 15 dakika, 1 saat, 6 saat, 24 saat.
+
+Bu veriler PostgreSQL'de tutulur (`otp_delivery_sample`, `otp_error_sample`,
+`provider_health_sample`, `queue_health_sample`, `change_event`) ve uygulama açılışında son 24 saat
+için üretilir; uygulama açıkken her dakika bir satır daha eklenir. Üretim deterministiktir —
+(dakika, operatör) çiftinin hash'inden türetilir — yani her operatörün kendi trafik hacmi, hata
+tabanı ve gecikme profili vardır, hiçbir iki dakika birbirinin aynısı değildir, ama aynı kurulum
+her zaman aynı veriyi üretir. Son 15 dakika kasıtlı olarak bozulmuş bir OPERATOR_B senaryosudur.
+
+Agent'ın araçları da aynı tabloları okur (`otp-sentinel.operations.source=db`, varsayılan). Yani
+modelin yazdığı her sayıyı `GET /api/v1/operations/overview?startAt=…&endAt=…` çıktısıyla veya
+konsoldaki tabloyla birebir karşılaştırabilirsiniz. `fixture` değeri eski, docs/15'teki sabit
+veri setine döner.
 
 Composer ayrıca `Otomatik | Sohbet | İnceleme` etkileşim modunu sunar. Otomatik modda seçili model
 mesajın niyetini semantik olarak belirler; belirsiz OTP sorusunda toolsuz tek takip sorusu sorar.

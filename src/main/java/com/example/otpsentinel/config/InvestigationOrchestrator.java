@@ -22,11 +22,11 @@ import com.example.otpsentinel.domain.Severity;
 import com.example.otpsentinel.domain.TimeWindow;
 import com.example.otpsentinel.domain.ValidationStatus;
 import com.example.otpsentinel.rag.KnowledgeSearchPort;
-import com.example.otpsentinel.tools.fixtures.FixtureErrorDistributionTool;
-import com.example.otpsentinel.tools.fixtures.FixtureOtpMetricsTool;
-import com.example.otpsentinel.tools.fixtures.FixtureProviderHealthTool;
-import com.example.otpsentinel.tools.fixtures.FixtureQueueHealthTool;
-import com.example.otpsentinel.tools.fixtures.FixtureRecentChangesTool;
+import com.example.otpsentinel.tools.ErrorDistributionTool;
+import com.example.otpsentinel.tools.OtpMetricsTool;
+import com.example.otpsentinel.tools.ProviderHealthTool;
+import com.example.otpsentinel.tools.QueueHealthTool;
+import com.example.otpsentinel.tools.RecentChangesTool;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import java.time.Duration;
@@ -47,7 +47,9 @@ import org.springframework.stereotype.Service;
 public class InvestigationOrchestrator {
 
   private static final String ACTOR = "demo-operator";
-  private static final String PROMPT_VERSION = "v1";
+  // v2: analysis system prompt rewritten (two-phase tool discipline, Turkish output contract,
+  // explicit enum/number rules, JSON-only answer). Audit rows keep the version that produced them.
+  private static final String PROMPT_VERSION = "v2";
   private static final String SCHEMA_VERSION = "v1";
 
   private final JdbcInvestigationRepository investigationRepository;
@@ -55,16 +57,17 @@ public class InvestigationOrchestrator {
   private final JdbcAuditEventRepository auditEventRepository;
   private final java.util.function.Function<String, ChatModel> chatModelFactory;
   private final KnowledgeSearchPort knowledgeSearchPort;
-  private final FixtureOtpMetricsTool otpMetricsTool;
-  private final FixtureErrorDistributionTool errorDistributionTool;
-  private final FixtureQueueHealthTool queueHealthTool;
-  private final FixtureProviderHealthTool providerHealthTool;
-  private final FixtureRecentChangesTool recentChangesTool;
+  private final OtpMetricsTool otpMetricsTool;
+  private final ErrorDistributionTool errorDistributionTool;
+  private final QueueHealthTool queueHealthTool;
+  private final ProviderHealthTool providerHealthTool;
+  private final RecentChangesTool recentChangesTool;
   private final int maxToolCalls;
   private final int quickModeMaxToolCalls;
   private final Duration toolTimeout;
   private final int toolRetryCount;
   private final int maxRepairAttempts;
+  private final String fallbackModelId;
   private final SessionChatMemoryStore sessionChatMemoryStore;
 
   public InvestigationOrchestrator(
@@ -73,18 +76,19 @@ public class InvestigationOrchestrator {
       JdbcAuditEventRepository auditEventRepository,
       java.util.function.Function<String, ChatModel> chatModelFactory,
       KnowledgeSearchPort knowledgeSearchPort,
-      FixtureOtpMetricsTool otpMetricsTool,
-      FixtureErrorDistributionTool errorDistributionTool,
-      FixtureQueueHealthTool queueHealthTool,
-      FixtureProviderHealthTool providerHealthTool,
-      FixtureRecentChangesTool recentChangesTool,
+      OtpMetricsTool otpMetricsTool,
+      ErrorDistributionTool errorDistributionTool,
+      QueueHealthTool queueHealthTool,
+      ProviderHealthTool providerHealthTool,
+      RecentChangesTool recentChangesTool,
       @Value("${otp-sentinel.ai.max-tool-calls:8}") int maxToolCalls,
       @Value("${otp-sentinel.ai.quick-mode-max-tool-calls:5}") int quickModeMaxToolCalls,
       @Value("${otp-sentinel.tool.timeout-millis:2000}") long toolTimeoutMillis,
       @Value("${otp-sentinel.tool.retry-count:1}") int toolRetryCount,
       @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
       @Value("${otp-sentinel.ai.chat-memory-max-messages:40}") int chatMemoryMaxMessages,
-      @Value("${otp-sentinel.ai.chat-memory-max-sessions:1000}") int chatMemoryMaxSessions) {
+      @Value("${otp-sentinel.ai.chat-memory-max-sessions:1000}") int chatMemoryMaxSessions,
+      @Value("${otp-sentinel.ai.fallback-model:meta/llama-3.1-8b-instruct}") String fallbackModelId) {
     this.investigationRepository = investigationRepository;
     this.incidentDraftRepository = incidentDraftRepository;
     this.auditEventRepository = auditEventRepository;
@@ -100,6 +104,7 @@ public class InvestigationOrchestrator {
     this.toolTimeout = Duration.ofMillis(toolTimeoutMillis);
     this.toolRetryCount = toolRetryCount;
     this.maxRepairAttempts = maxRepairAttempts;
+    this.fallbackModelId = fallbackModelId;
     this.sessionChatMemoryStore =
         new SessionChatMemoryStore(chatMemoryMaxMessages, chatMemoryMaxSessions);
   }
@@ -111,6 +116,40 @@ public class InvestigationOrchestrator {
       String sessionId,
       String modelId,
       com.example.otpsentinel.agent.InvestigationMode mode) {
+    Investigation outcome =
+        attemptInvestigation(question, resolvedTimeWindow, correlationId, sessionId, modelId, mode, false);
+    // A model that cannot hold the output schema must not cost the operator their answer: the
+    // evidence sweep is deterministic, so re-running it once on the fallback model turns a
+    // "structured output invalid" dead end into a real analysis. Only that failure is retried.
+    if (isStructuredOutputFailure(outcome)
+        && fallbackModelId != null
+        && !fallbackModelId.isBlank()
+        && !fallbackModelId.equals(modelId)) {
+      // Fresh memory on the retry: the failed attempt left its half-finished transcript in the
+      // session, and replaying that into another model makes it answer without calling any tool.
+      outcome =
+          attemptInvestigation(
+              question, resolvedTimeWindow, correlationId, sessionId, fallbackModelId, mode, true);
+    }
+    investigationRepository.save(outcome);
+    return outcome;
+  }
+
+  private static boolean isStructuredOutputFailure(Investigation investigation) {
+    return investigation.resultStatus() == com.example.otpsentinel.domain.InvestigationStatus.FAILED
+        && investigation.validationReport() != null
+        && investigation.validationReport().warnings().stream()
+            .anyMatch(warning -> warning.contains("structured output invalid"));
+  }
+
+  private Investigation attemptInvestigation(
+      String question,
+      TimeWindow resolvedTimeWindow,
+      String correlationId,
+      String sessionId,
+      String modelId,
+      com.example.otpsentinel.agent.InvestigationMode mode,
+      boolean isolatedMemory) {
     Investigation investigation =
         Investigation.receive(
             question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION, sessionId);
@@ -148,7 +187,9 @@ public class InvestigationOrchestrator {
             ragEnabled);
     ChatModel chatModel = chatModelFactory.apply(modelId);
     String memoryId =
-        (sessionId == null || sessionId.isBlank()) ? investigation.id().toString() : sessionId;
+        (isolatedMemory || sessionId == null || sessionId.isBlank())
+            ? investigation.id().toString()
+            : sessionId;
     IncidentAnalysisAiService aiService =
         AiServices.builder(IncidentAnalysisAiService.class)
             .chatModel(chatModel)
@@ -156,20 +197,16 @@ public class InvestigationOrchestrator {
             .chatMemoryProvider(id -> sessionChatMemoryStore.get((String) id))
             .build();
 
-    Investigation outcome =
-        new IncidentInvestigationService(maxRepairAttempts)
-            .investigate(
-                new InvestigationRequest(
-                    question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION),
-                investigation,
-                aiService,
-                guard,
-                collector,
-                auditEventRepository,
-                correlationId,
-                memoryId);
-    investigationRepository.save(outcome);
-    return outcome;
+    return new IncidentInvestigationService(maxRepairAttempts)
+        .investigate(
+            new InvestigationRequest(question, resolvedTimeWindow, PROMPT_VERSION, SCHEMA_VERSION),
+            investigation,
+            aiService,
+            guard,
+            collector,
+            auditEventRepository,
+            correlationId,
+            memoryId);
   }
 
   public Optional<Investigation> findInvestigation(InvestigationId id) {

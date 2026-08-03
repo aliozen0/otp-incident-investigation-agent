@@ -39,7 +39,8 @@ class ToolBudgetGuardTest {
     guard.execute("getOtpMetrics", "params-a", () -> success("exec-1"));
     assertThatThrownBy(() -> guard.execute("getOtpMetrics", "params-a", () -> success("exec-2")))
         .isInstanceOf(DuplicateToolCallException.class);
-    assertThat(guard.policyLimitReached()).isTrue();
+    // A repeat is refused but is not a policy limit: the run continues with the earlier result.
+    assertThat(guard.policyLimitReached()).isFalse();
   }
 
   @Test

@@ -121,7 +121,35 @@ class IncidentInvestigationServiceTest {
   }
 
   @Test
-  void hallucinatedEvidenceIdIsRejectedAsFailure() {
+  void keepsTheAnalysisWhenOnlySomeCitationsAreFabricated() {
+    String mixed =
+        """
+        {"status":"PARTIAL_ANALYSIS","severity":"MEDIUM","summary":"queue backlog observed",
+         "evidence":[{"evidenceId":"ev-queue-health"},{"evidenceId":"ev-does-not-exist"}],
+         "hypotheses":[{"rank":1,"possibleCause":"queue pressure","probability":0.5,
+          "supportingEvidenceIds":["ev-queue-health","ev-does-not-exist"],
+          "contradictingEvidenceIds":[],"verificationSteps":["kuyrugu kontrol et"]}],
+         "recommendedActions":[],"knowledgeReferences":[],"confidence":0.5}
+        """;
+    TestContext context =
+        context(
+            8,
+            (query, provider, topK) -> List.of(),
+            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+            StubScriptStep.finalAnswer(mixed));
+
+    Investigation outcome = investigate(context);
+
+    // The fabricated id is dropped and reported; the claim that does have evidence survives.
+    assertThat(outcome.phase()).isNotEqualTo(InvestigationPhase.FAILED);
+    assertThat(outcome.validationReport().warnings())
+        .anyMatch(warning -> warning.contains("never collected"));
+    assertThat(outcome.hypotheses()).singleElement().satisfies(hypothesis ->
+        assertThat(hypothesis.supportingEvidenceIds()).containsExactly("ev-queue-health"));
+  }
+
+  @Test
+  void failsWhenEveryCitationIsFabricated() {
     String hallucinated =
         """
         {"status":"ANOMALY_CONFIRMED","severity":"HIGH","summary":"unsupported",
@@ -139,8 +167,10 @@ class IncidentInvestigationServiceTest {
 
     Investigation outcome = investigate(context);
 
+    // Nothing survives the citation strip, so there is no evidence-bound analysis left to show.
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.FAILED);
-    assertThat(outcome.validationReport().warnings().getFirst()).contains("never collected");
+    assertThat(outcome.validationReport().warnings())
+        .anyMatch(warning -> warning.contains("never collected") || warning.contains("rejected"));
   }
 
   @Test

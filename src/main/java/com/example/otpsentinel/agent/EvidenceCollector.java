@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -56,7 +57,22 @@ public final class EvidenceCollector {
     auditToolCalled(result.toolName());
     if (result.status() != ToolStatus.SUCCESS) {
       auditToolOutcome(AuditEventType.TOOL_FAILED, result.toolName(), result.error().message());
-      return new AgentToolResponse<>(result.status(), null, List.of(), result.error().message());
+      // A failed tool is itself an observation the analysis legitimately reasons about ("provider
+      // health was unavailable"). Minting it as evidence gives the model a real id to cite instead
+      // of inventing one, which the evidence check would reject and fail the investigation.
+      String id = errorEvidenceId(result.toolName());
+      investigation.addEvidence(
+          new Evidence(
+              id,
+              "TOOL_RESULT",
+              result.toolName(),
+              result.toolName() + " returned no data: " + result.error().message(),
+              result.observedAt(),
+              null,
+              null,
+              null));
+      return new AgentToolResponse<>(
+          result.status(), null, List.of(id), result.error().message());
     }
     List<String> ids = mintEvidence(result);
     auditToolOutcome(AuditEventType.TOOL_COMPLETED, result.toolName(), "ids=" + ids);
@@ -211,6 +227,8 @@ public final class EvidenceCollector {
     }
     ErrorCount top =
         e.byErrorCode().stream().max(Comparator.comparingLong(ErrorCount::count)).orElseThrow();
+    List<String> ids = new ArrayList<>();
+    ids.add("ev-error-distribution-top");
     investigation.addEvidence(
         new Evidence(
             "ev-error-distribution-top",
@@ -221,7 +239,43 @@ public final class EvidenceCollector {
             null,
             null,
             null));
-    return List.of("ev-error-distribution-top");
+    // Per-code shares are the numbers an analyst actually quotes ("63.99% of failures were
+    // PROVIDER_TIMEOUT"). Minting them as evidence makes those claims verifiable and chartable
+    // instead of unsupported prose the validator has to reject.
+    for (ErrorCount error : e.byErrorCode()) {
+      String slug = error.errorCode().toLowerCase(Locale.ROOT).replace('_', '-');
+      String shareId = "ev-error-share-" + slug;
+      ids.add(shareId);
+      investigation.addEvidence(
+          new Evidence(
+              shareId,
+              "TOOL_RESULT",
+              "getErrorDistribution",
+              error.errorCode()
+                  + " accounts for "
+                  + error.count()
+                  + " of "
+                  + e.failedTotal()
+                  + " failures",
+              observedAt,
+              "otp_error_share_" + slug.replace('-', '_'),
+              // ErrorCount.share is already a percentage (docs/15 publishes 63.99, not 0.6399).
+              round2(error.share()),
+              "percent"));
+    }
+    return List.copyOf(ids);
+  }
+
+  /** {@code getProviderHealth} becomes {@code ev-provider-health-error}. */
+  private static String errorEvidenceId(String toolName) {
+    String withoutPrefix = toolName.startsWith("get") ? toolName.substring(3) : toolName;
+    String kebab =
+        withoutPrefix.replaceAll("([a-z0-9])([A-Z])", "$1-$2").toLowerCase(Locale.ROOT);
+    return "ev-" + kebab + "-error";
+  }
+
+  private static double round2(double value) {
+    return Math.round(value * 100.0) / 100.0;
   }
 
   private List<String> mintQueueHealth(QueueHealthResult q, Instant observedAt) {
