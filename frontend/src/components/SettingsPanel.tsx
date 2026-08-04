@@ -70,6 +70,7 @@ export function SettingsPanel({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadOk, setUploadOk] = useState(false)
+  const [uploadedDetail, setUploadedDetail] = useState<KnowledgeDocumentDetail | null>(null)
   const [uploading, setUploading] = useState(false)
   const [searching, setSearching] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -159,7 +160,7 @@ export function SettingsPanel({
     setUploadOk(false)
     setUploading(true)
     try {
-      await uploadKnowledgeDocument({
+      const created = await uploadKnowledgeDocument({
         title,
         documentType,
         provider: provider || undefined,
@@ -170,6 +171,13 @@ export function SettingsPanel({
         content,
       })
       setUploadOk(true)
+      // Show what actually happened to the document: how it was chunked and with which embedding
+      // model. "Yüklendi" alone leaves the operator guessing whether RAG can even use it.
+      try {
+        setUploadedDetail(await getKnowledgeDocument(created.documentId, created.version))
+      } catch {
+        setUploadedDetail(null)
+      }
       setTitle('')
       setProvider('')
       setTags('')
@@ -394,9 +402,47 @@ export function SettingsPanel({
                 </form>
               )}
               {uploadOk && (
-                <p className="mt-3 flex items-center gap-2 text-xs text-confirm">
-                  <IconCheck size={14} /> {UI_TEXT.uploadSuccess}
-                </p>
+                <div className="mt-3">
+                  <p className="flex items-center gap-2 text-xs text-confirm">
+                    <IconCheck size={14} /> {UI_TEXT.uploadSuccess}
+                  </p>
+                  {uploadedDetail && (uploadedDetail.chunks ?? []).length > 0 && (
+                    <div className="mt-3 rounded-xl border border-line bg-surface-sunken p-3">
+                      <div className="section-heading">
+                        <span>Belge nasıl indekslendi</span>
+                        <button type="button" onClick={() => setUploadedDetail(null)}>Gizle</button>
+                      </div>
+                      <div className="mb-3 grid grid-cols-3 gap-2">
+                        <div className="knowledge-stat">
+                          <strong>{uploadedDetail.chunks.length}</strong><span>Chunk</span>
+                        </div>
+                        <div className="knowledge-stat">
+                          <strong>
+                            {uploadedDetail.chunks.reduce((total, chunk) => total + chunk.tokenCount, 0)}
+                          </strong>
+                          <span>Toplam token</span>
+                        </div>
+                        <div className="knowledge-stat">
+                          <strong className="!text-[12px] leading-5">
+                            {uploadedDetail.chunks[0]?.embeddingModel ?? '—'}
+                          </strong>
+                          <span>Embedding modeli</span>
+                        </div>
+                      </div>
+                      <div className="chunk-preview-grid">
+                        {uploadedDetail.chunks.map((chunk, index) => (
+                          <div key={chunk.chunkId} className="chunk-preview">
+                            <header>
+                              <span>#{index + 1} · {chunk.sectionTitle || 'Genel bölüm'}</span>
+                              <span>{chunk.tokenCount} token · {chunk.chunkId}</span>
+                            </header>
+                            <p>{chunk.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </section>
 
