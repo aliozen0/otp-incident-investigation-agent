@@ -86,6 +86,9 @@ export function SettingsPanel({
   const [effectiveFrom, setEffectiveFrom] = useState('')
   const [effectiveTo, setEffectiveTo] = useState('')
   const [content, setContent] = useState('')
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -182,12 +185,39 @@ export function SettingsPanel({
       setProvider('')
       setTags('')
       setContent('')
+      setFileName(null)
+      setFileError(null)
       setShowUpload(false)
       refreshDocuments()
     } catch (error) {
       setUploadError(toUserMessage(error))
     } finally {
       setUploading(false)
+    }
+  }
+
+  // Sanitized content is capped server side; catching it here keeps the operator from pasting a
+  // 200-page export and getting a 400 back after the upload round trip.
+  const MAX_CONTENT_CHARS = 20_000
+
+  async function readFile(file: File | undefined) {
+    if (!file) return
+    setFileError(null)
+    const text = await file.text()
+    if (text.trim().length === 0) {
+      setFileError('Dosya boş görünüyor.')
+      return
+    }
+    if (text.length > MAX_CONTENT_CHARS) {
+      setFileError(
+        `Dosya ${text.length.toLocaleString('tr-TR')} karakter — sınır ${MAX_CONTENT_CHARS.toLocaleString('tr-TR')}. Belgeyi bölüp ayrı yükleyin.`
+      )
+      return
+    }
+    setContent(text)
+    setFileName(file.name)
+    if (!title.trim()) {
+      setTitle(file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim())
     }
   }
 
@@ -394,7 +424,38 @@ export function SettingsPanel({
                       <input type="date" value={effectiveTo} onChange={(event) => setEffectiveTo(event.target.value)} className="field-control mt-1" />
                     </label>
                   </div>
-                  <textarea required placeholder={UI_TEXT.uploadContentField} value={content} onChange={(event) => setContent(event.target.value)} rows={6} className="field-control resize-y" />
+                  <label
+                    className={`file-drop ${dragging ? 'is-dragging' : ''}`}
+                    onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      setDragging(false)
+                      void readFile(event.dataTransfer.files[0])
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept=".md,.markdown,.txt,.text,text/plain,text/markdown"
+                      className="sr-only"
+                      aria-label="Belge dosyası seç"
+                      onChange={(event) => {
+                        void readFile(event.target.files?.[0])
+                        event.target.value = ''
+                      }}
+                    />
+                    <span className="file-drop-icon"><IconUpload size={16} /></span>
+                    <span className="min-w-0">
+                      <strong>{fileName ?? 'Dosya seç veya sürükleyip bırak'}</strong>
+                      <small>
+                        {fileName
+                          ? `${content.length.toLocaleString('tr-TR')} karakter yüklendi · değiştirmek için tıklayın`
+                          : '.md veya .txt · en fazla 20.000 karakter · içeriği aşağıda düzenleyebilirsiniz'}
+                      </small>
+                    </span>
+                  </label>
+                  {fileError && <p role="alert" className="text-xs text-danger">{fileError}</p>}
+                  <textarea required placeholder={UI_TEXT.uploadContentField} value={content} onChange={(event) => { setContent(event.target.value); setFileName(null) }} rows={6} className="field-control resize-y" />
                   <button type="submit" disabled={uploading} className="primary-button w-full">
                     <IconUpload size={14} /> {UI_TEXT.uploadSubmit}
                   </button>

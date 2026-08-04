@@ -152,6 +152,40 @@ describe('SettingsPanel', () => {
     expect(screen.getByText(/hash-embedding-v1/)).toBeInTheDocument()
   })
 
+  it('fills the content and the title from a selected file', async () => {
+    render(
+      <SettingsPanel modelId={null} onModelChange={vi.fn()} mode="thorough" onModeChange={vi.fn()} onClose={vi.fn()} />
+    )
+
+    fireEvent.click(await screen.findByText('+ Belge ekle'))
+    const body = ['## Bolum', 'Operator B timeout playbook icerigi.'].join(String.fromCharCode(10))
+    const file = new File([body], 'operator-b-playbook.md', {
+      type: 'text/markdown',
+    })
+    fireEvent.change(screen.getByLabelText('Belge dosyası seç'), { target: { files: [file] } })
+
+    // Pasting a long document by hand is the worst part of a live demo; picking the file must fill
+    // both the content and a sensible title.
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText('İçerik')).toHaveValue(body)
+    )
+    expect(screen.getByPlaceholderText('Başlık')).toHaveValue('operator b playbook')
+    expect(screen.getByText('operator-b-playbook.md')).toBeInTheDocument()
+  })
+
+  it('refuses a file that exceeds the sanitized content limit', async () => {
+    render(
+      <SettingsPanel modelId={null} onModelChange={vi.fn()} mode="thorough" onModeChange={vi.fn()} onClose={vi.fn()} />
+    )
+
+    fireEvent.click(await screen.findByText('+ Belge ekle'))
+    const huge = new File(['x'.repeat(20001)], 'buyuk.md', { type: 'text/markdown' })
+    fireEvent.change(screen.getByLabelText('Belge dosyası seç'), { target: { files: [huge] } })
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/sınır 20/))
+    expect(screen.getByPlaceholderText('İçerik')).toHaveValue('')
+  })
+
   it('shows an error message when the upload fails', async () => {
     vi.stubGlobal('fetch', vi.fn((url: string, init?: RequestInit) => {
       if (url.includes('/models')) {
