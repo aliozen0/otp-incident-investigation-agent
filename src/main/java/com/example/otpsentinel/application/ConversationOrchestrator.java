@@ -12,6 +12,7 @@ public final class ConversationOrchestrator {
   private final InvestigationExecutor investigationExecutor;
   private final SemanticSessionContextStore contextStore;
   private final int maxRepairAttempts;
+  private final InvestigationNarrator narrator;
   private final IntentDecisionValidator validator = new IntentDecisionValidator();
   private final PiiScanner piiScanner = new PiiScanner();
 
@@ -21,6 +22,18 @@ public final class ConversationOrchestrator {
       InvestigationExecutor investigationExecutor,
       SemanticSessionContextStore contextStore,
       int maxRepairAttempts) {
+    this(intentRouter, responder, investigationExecutor, contextStore, maxRepairAttempts,
+        InvestigationNarrator.NONE);
+  }
+
+  public ConversationOrchestrator(
+      IntentRouter intentRouter,
+      ConversationResponder responder,
+      InvestigationExecutor investigationExecutor,
+      SemanticSessionContextStore contextStore,
+      int maxRepairAttempts,
+      InvestigationNarrator narrator) {
+    this.narrator = Objects.requireNonNull(narrator);
     this.intentRouter = Objects.requireNonNull(intentRouter);
     this.responder = Objects.requireNonNull(responder);
     this.investigationExecutor = Objects.requireNonNull(investigationExecutor);
@@ -87,10 +100,61 @@ public final class ConversationOrchestrator {
         investigation.summary() == null || investigation.summary().isBlank()
             ? "OTP incelemesi başlatıldı."
             : investigation.summary();
+    message = readable(investigation, message);
     message = validateAssistantMessage(message);
     contextStore.append(command.sessionId(), command.message(), message);
     return new ConversationResult(
         IntentType.INVESTIGATION, message, route, List.of(), investigation);
+  }
+
+  /**
+   * The chat bubble gets a readable Turkish restatement of the validated findings; the raw model
+   * summary stays on the investigation itself. If narration fails, is unsafe, or comes back empty,
+   * the original summary is shown unchanged — presentation never blocks the answer.
+   */
+  private String readable(Investigation investigation, String fallback) {
+    return narrator
+        .narrate(findings(investigation, fallback))
+        .filter(text -> text.length() <= 1200)
+        .filter(text -> text.indexOf('<') < 0 && text.indexOf('>') < 0)
+        .filter(text -> piiScanner.scan(text).isEmpty())
+        .orElse(fallback);
+  }
+
+  private static String findings(Investigation investigation, String summary) {
+    StringBuilder findings = new StringBuilder();
+    findings.append("Durum: ").append(investigation.resultStatus()).append(System.lineSeparator());
+    findings.append("Önem: ").append(investigation.severity()).append(System.lineSeparator());
+    findings.append("Güven: ").append(investigation.confidence()).append(System.lineSeparator());
+    findings.append("Model özeti: ").append(summary).append(System.lineSeparator());
+    investigation.hypotheses().forEach(
+        hypothesis ->
+            findings
+                .append("Hipotez #")
+                .append(hypothesis.rank())
+                .append(" (olasılık ")
+                .append(hypothesis.probability())
+                .append("): ")
+                .append(hypothesis.possibleCause())
+                .append(System.lineSeparator()));
+    investigation.evidence().stream()
+        .filter(evidence -> evidence.metricValue() != null)
+        .limit(8)
+        .forEach(
+            evidence ->
+                findings
+                    .append("Kanıt ")
+                    .append(evidence.id())
+                    .append(": ")
+                    .append(evidence.metricName())
+                    .append(" = ")
+                    .append(evidence.metricValue())
+                    .append(' ')
+                    .append(evidence.metricUnit())
+                    .append(System.lineSeparator()));
+    findings.append("Kullanılan bilgi tabanı parçası: ")
+        .append(investigation.knowledgeCitations().size());
+    return findings.toString();
   }
 
   private String validateAssistantMessage(String value) {

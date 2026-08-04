@@ -154,7 +154,7 @@ public final class AgentTools {
     ToolResult<java.util.List<com.example.otpsentinel.rag.KnowledgeSearchResult>> searchResults;
     try {
       searchResults =
-        guard.execute(
+        guard.executeUnbudgeted(
             "searchIncidentKnowledge",
             query + "|" + providerFilter + "|" + topK,
             () ->

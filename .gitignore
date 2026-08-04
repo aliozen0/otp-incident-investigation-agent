@@ -8,3 +8,6 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 HELP.md
 .DS_Store
+
+# Canlı tanıtım kiti — sunum materyali, ürün kodu değil
+demo/

@@ -111,6 +111,64 @@ class ConversationOrchestratorTest {
         router, responder, executor, new SemanticSessionContextStore(4, 10), 1);
   }
 
+  private static ConversationOrchestrator orchestrator(
+      IntentRouter router,
+      ConversationResponder responder,
+      AtomicInteger investigations,
+      InvestigationNarrator narrator) {
+    InvestigationExecutor executor =
+        command -> {
+          investigations.incrementAndGet();
+          TimeWindow window =
+              new TimeWindow(
+                  Instant.parse("2026-08-02T18:00:00Z"), Instant.parse("2026-08-02T18:15:00Z"));
+          return Investigation.receive(command.message(), window, "v1", "v1", command.sessionId());
+        };
+    return new ConversationOrchestrator(
+        router, responder, executor, new SemanticSessionContextStore(4, 10), 1, narrator);
+  }
+
+  @Test
+  void investigationBubbleUsesTheNarratedTurkishRestatementWhenAvailable() {
+    AtomicInteger investigations = new AtomicInteger();
+    InvestigationNarrator narrator =
+        findings -> {
+          assertThat(findings).contains("Durum: ");
+          return java.util.Optional.of("OTP başarı oranı düştü, OPERATOR_B zaman aşımı veriyor.");
+        };
+
+    ConversationResult result =
+        orchestrator(
+                (message, context, modelId) ->
+                    new IntentDecision(IntentType.INVESTIGATION, 1.0, message, null),
+                (message, context, modelId, locale) -> new ConversationReply("x", java.util.List.of()),
+                investigations,
+                narrator)
+            .handle(command(InteractionMode.AUTO));
+
+    assertThat(result.assistantMessage())
+        .isEqualTo("OTP başarı oranı düştü, OPERATOR_B zaman aşımı veriyor.");
+  }
+
+  @Test
+  void keepsTheModelSummaryWhenNarrationDeclines() {
+    AtomicInteger investigations = new AtomicInteger();
+    // The adapter swallows its own failures and answers empty; the orchestrator must then show the
+    // analysis exactly as the model wrote it rather than losing the turn.
+    InvestigationNarrator silent = findings -> java.util.Optional.empty();
+
+    ConversationResult result =
+        orchestrator(
+                (message, context, modelId) ->
+                    new IntentDecision(IntentType.INVESTIGATION, 1.0, message, null),
+                (message, context, modelId, locale) -> new ConversationReply("x", java.util.List.of()),
+                investigations,
+                silent)
+            .handle(command(InteractionMode.AUTO));
+
+    assertThat(result.assistantMessage()).isEqualTo("OTP incelemesi başlatıldı.");
+  }
+
   private static ConversationCommand command(InteractionMode mode) {
     return new ConversationCommand(
         "Merhaba",

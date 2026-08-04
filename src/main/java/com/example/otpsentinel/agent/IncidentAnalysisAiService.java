@@ -87,7 +87,13 @@ public interface IncidentAnalysisAiService {
         question, but every turn's evidence must come from this turn's own tool calls, never reused
         from an earlier turn's evidence ids.
       """)
-  @UserMessage("Investigate: {{question}}. Time window: {{timeWindow}}.")
+  @UserMessage(
+      """
+      Investigate: {{question}}
+      Time window: {{timeWindow}}
+      Call every tool in the listed order, including searchIncidentKnowledge, then answer with the
+      JSON object alone.
+      """)
   IncidentAnalysisResult analyze(
       @V("question") String question,
       @V("timeWindow") String timeWindow,

@@ -30,6 +30,7 @@ public final class ToolBudgetGuard {
   private final int retryCount;
   private final ExecutorService executor = Executors.newCachedThreadPool();
   private final List<CallRecord> calls = new ArrayList<>();
+  private int chargedCalls;
   private boolean policyLimitReached;
 
   public ToolBudgetGuard(int maxCalls, Duration toolTimeout, int retryCount) {
@@ -44,8 +45,24 @@ public final class ToolBudgetGuard {
     this.retryCount = retryCount;
   }
 
+  /**
+   * Same dedupe and timeout handling, but the call is not charged to the budget. Used for the
+   * knowledge lookup: it is a local read that must happen after the live signals, and letting the
+   * live tools spend the whole budget was starving it — the investigation then finished with no
+   * retrieval at all.
+   */
+  public <T> ToolResult<T> executeUnbudgeted(
+      String toolName, Object parameters, Supplier<ToolResult<T>> invocation) {
+    return execute(toolName, parameters, invocation, false);
+  }
+
   public <T> ToolResult<T> execute(
       String toolName, Object parameters, Supplier<ToolResult<T>> invocation) {
+    return execute(toolName, parameters, invocation, true);
+  }
+
+  private <T> ToolResult<T> execute(
+      String toolName, Object parameters, Supplier<ToolResult<T>> invocation, boolean charged) {
     Objects.requireNonNull(toolName, "toolName must not be null");
     String paramKey = String.valueOf(parameters);
 
@@ -60,9 +77,12 @@ public final class ToolBudgetGuard {
       throw new DuplicateToolCallException(
           "duplicate successful call rejected: " + toolName + " " + paramKey);
     }
-    if (calls.size() >= maxCalls) {
+    if (charged && chargedCalls >= maxCalls) {
       policyLimitReached = true;
       throw new ToolBudgetExceededException("tool budget of " + maxCalls + " calls exceeded");
+    }
+    if (charged) {
+      chargedCalls++;
     }
 
     try {

@@ -1,6 +1,7 @@
 package com.example.otpsentinel.config;
 
 import com.example.otpsentinel.agent.LangChain4jConversationResponder;
+import com.example.otpsentinel.agent.LangChain4jInvestigationNarrator;
 import com.example.otpsentinel.agent.LangChain4jIntentRouter;
 import com.example.otpsentinel.agent.stub.DeterministicConversationResponder;
 import com.example.otpsentinel.agent.stub.DeterministicIntentRouter;
@@ -8,6 +9,7 @@ import com.example.otpsentinel.application.ConversationOrchestrator;
 import com.example.otpsentinel.application.ConversationResponder;
 import com.example.otpsentinel.application.IntentRouter;
 import com.example.otpsentinel.application.InvestigationExecutor;
+import com.example.otpsentinel.application.InvestigationNarrator;
 import com.example.otpsentinel.application.InvestigationTimeWindowResolver;
 import com.example.otpsentinel.application.SemanticSessionContextStore;
 import dev.langchain4j.model.chat.ChatModel;
@@ -39,10 +41,21 @@ public class ConversationConfig {
   }
 
   @Bean
+  InvestigationNarrator investigationNarrator(
+      @Value("${AI_MODE:stub}") String aiMode,
+      @Value("${otp-sentinel.ai.conversation-model:meta/llama-3.1-8b-instruct}") String conversationModel,
+      Function<String, ChatModel> chatModelFactory) {
+    return "live".equalsIgnoreCase(aiMode)
+        ? new LangChain4jInvestigationNarrator(chatModelFactory, conversationModel)
+        : InvestigationNarrator.NONE;
+  }
+
+  @Bean
   ConversationOrchestrator conversationOrchestrator(
       IntentRouter intentRouter,
       ConversationResponder conversationResponder,
       InvestigationOrchestrator investigationOrchestrator,
+      InvestigationNarrator investigationNarrator,
       @Value("${otp-sentinel.ai.max-repair-attempts:1}") int maxRepairAttempts,
       @Value("${otp-sentinel.ai.semantic-context-max-turns:12}") int maxTurns,
       @Value("${otp-sentinel.ai.chat-memory-max-sessions:1000}") int maxSessions) {
@@ -62,6 +75,7 @@ public class ConversationConfig {
         conversationResponder,
         executor,
         new SemanticSessionContextStore(maxTurns, maxSessions),
-        maxRepairAttempts);
+        maxRepairAttempts,
+        investigationNarrator);
   }
 }

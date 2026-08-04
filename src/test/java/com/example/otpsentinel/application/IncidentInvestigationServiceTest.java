@@ -109,8 +109,11 @@ class IncidentInvestigationServiceTest {
             StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
             StubScriptStep.callTools(
                 toolCall(
-                    "searchIncidentKnowledge",
-                    Map.of("query", "connection pool", "providerFilter", "OPERATOR_B", "topK", 5))),
+                    "getOtpMetrics",
+                    Map.of(
+                        "startAt", "2026-07-30T11:15:00Z",
+                        "endAt", "2026-07-30T11:30:00Z",
+                        "includePreviousPeriod", "true"))),
             StubScriptStep.finalAnswer(noAnomalyJson()));
 
     Investigation outcome = investigate(context);
@@ -118,6 +121,28 @@ class IncidentInvestigationServiceTest {
     assertThat(outcome.phase()).isEqualTo(InvestigationPhase.PARTIAL);
     assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.PARTIAL_ANALYSIS);
     assertThat(context.guard().callCount()).isEqualTo(1);
+  }
+
+  @Test
+  void knowledgeSearchIsNotChargedToTheToolBudget() {
+    // The live tools were spending the whole budget and the retrieval step never ran, so an
+    // investigation could finish with no knowledge citations at all. The lookup is a local read
+    // that must always be reachable; deduplication still applies to it.
+    TestContext context =
+        context(
+            1,
+            (query, provider, topK) -> List.of(),
+            StubScriptStep.callTools(toolCall("getQueueHealth", Map.of())),
+            StubScriptStep.callTools(
+                toolCall(
+                    "searchIncidentKnowledge",
+                    Map.of("query", "connection pool", "providerFilter", "OPERATOR_B", "topK", 5))),
+            StubScriptStep.finalAnswer(noAnomalyJson()));
+
+    Investigation outcome = investigate(context);
+
+    assertThat(outcome.phase()).isNotEqualTo(InvestigationPhase.PARTIAL);
+    assertThat(outcome.resultStatus()).isEqualTo(InvestigationStatus.NO_ANOMALY);
   }
 
   @Test
