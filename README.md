@@ -34,7 +34,23 @@ Kurumsal agent konsolu: http://localhost:8080/
 Konsolda sohbet kutusunun içinden doğrulanmış NVIDIA modelini ve hızlı/detaylı
 inceleme modunu seçebilirsiniz. Üst bardaki **Bilgi tabanı** düğmesi ayarlar penceresini açar:
 indekslenen belgeler, chunk sayıları, temizlenmiş belge içeriği, eşik uygulamayan RAG retrieval
-testi ve belge yükleme aynı yerdedir.
+testi ve belge yükleme aynı yerdedir. Yeni belge yüklendiğinde sonuç ekranı belgenin kaç
+chunk'a bölündüğünü, toplam token sayısını, kullanılan embedding modelini ve her chunk'ın metnini
+gösterir — RAG'in ne göreceği yükleme anında görünür.
+
+### Kaynak izi — her yanıt neyi okuduğunu söyler
+
+Her asistan yanıtının altında iki rozet vardır: **Veritabanı** ve **RAG**. Rozete tıklayınca o yanıt
+için gerçekte ne okunduğu açılır:
+
+- **Veritabanı** — hangi tool hangi tabloyu sorguladı (`getOtpMetrics` → `otp_delivery_sample`
+  gibi), hangi kanıt kimliklerini üretti, her kanıtın okunan değeri ve ölçüm zamanı.
+- **RAG** — getirilen chunk'lar, benzerlik skoru, belge/chunk kimliği; başlığa tıklayınca modele
+  verilen metnin tamamı ve hangi embedding modeliyle indekslendiği.
+
+Toolsuz sohbet yanıtlarında rozet açıkça **"Kaynak yok · toolsuz sohbet"** der; RAG eşleşmesi
+çıkmadıysa **"RAG · eşleşme yok"**. Yani kısa bir cevabın bilgi tabanına dokunup dokunmadığı
+tahmin edilmez, yazar.
 
 ### Veri gezgini — modelin cevabını ham veriyle doğrulama
 

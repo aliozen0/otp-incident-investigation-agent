@@ -105,9 +105,22 @@ describe('SettingsPanel', () => {
       if (url.includes('/knowledge/documents') && init?.method === 'POST') {
         return Promise.resolve({ ok: true, status: 201, json: async () => ({ documentId: 'doc-2', version: '1' }) })
       }
-      if (url.includes('/knowledge/documents')) {
+      // Only the list endpoint counts: uploading now also fetches the new document's detail to
+      // show how it was chunked, and that URL shares the same prefix.
+      if (url.endsWith('/knowledge/documents')) {
         documentsCallCount += 1
         return Promise.resolve({ ok: true, status: 200, json: async () => [] })
+      }
+      if (url.includes('/knowledge/documents/')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            documentId: 'doc-2', version: '1', title: 'Yeni runbook', documentType: 'RUNBOOK',
+            effectiveFrom: '2026-08-02', sanitizedContent: 'İçerik',
+            chunks: [{ chunkId: 'doc-2#v1#c0', sectionTitle: 'Genel', content: 'İçerik', tokenCount: 3, embeddingModel: 'hash-embedding-v1' }],
+          }),
+        })
       }
       return Promise.reject(new Error(`unexpected fetch ${url}`))
     })
@@ -134,6 +147,9 @@ describe('SettingsPanel', () => {
 
     await waitFor(() => expect(screen.getByText('Belge yüklendi')).toBeInTheDocument())
     await waitFor(() => expect(documentsCallCount).toBe(2))
+    // Upload must show what RAG will actually see: the chunks and the embedding model.
+    await waitFor(() => expect(screen.getByText('Belge nasıl indekslendi')).toBeInTheDocument())
+    expect(screen.getByText(/hash-embedding-v1/)).toBeInTheDocument()
   })
 
   it('shows an error message when the upload fails', async () => {

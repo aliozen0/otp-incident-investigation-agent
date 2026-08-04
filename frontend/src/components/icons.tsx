@@ -124,6 +124,16 @@ export const IconKeyboard = (p: P) => (
 export const IconLayers = (p: P) => (
   <Icon {...p}><path d="m12 3 9 5-9 5-9-5Z" /><path d="m3 14 9 5 9-5" /></Icon>
 )
+export const IconDatabase = (p: P) => (
+  <Icon {...p}>
+    <ellipse cx="12" cy="6" rx="7.5" ry="3" />
+    <path d="M4.5 6v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6" />
+    <path d="M4.5 12v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6" />
+  </Icon>
+)
+export const IconChevronDown = (p: P) => (
+  <Icon {...p}><path d="m5 9 7 7 7-7" /></Icon>
+)
 export const IconRefresh = (p: P) => (
   <Icon {...p}><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v4.5h-4.5" /></Icon>
 )

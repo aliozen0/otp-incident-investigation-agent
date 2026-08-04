@@ -3,6 +3,7 @@ import type { ChatTurn } from '../api/types'
 import { ResultCard } from './ResultCard'
 import { ErrorPanel } from './ErrorPanel'
 import { TypingIndicator } from './TypingIndicator'
+import { SourceTrail } from './SourceTrail'
 import { IconCheck, IconCopy, IconShield } from './icons'
 
 export type { ChatTurn } from '../api/types'
@@ -57,6 +58,9 @@ export function ChatMessage({ turn, onSuggestion }: { turn: ChatTurn; onSuggesti
           {turn.kind === 'error' && <ErrorPanel message={turn.errorMessage} />}
           {turn.kind === 'investigation' && (
             <ResultCard investigation={turn.investigation} assistantMessage={turn.assistantMessage} />
+          )}
+          {(turn.kind === 'investigation' || turn.kind === 'chat' || turn.kind === 'clarification') && (
+            <SourceTrail turn={turn} />
           )}
           {(turn.kind === 'chat' || turn.kind === 'clarification') && (
             <div className={turn.kind === 'clarification' ? 'assistant-bubble clarification-bubble' : 'assistant-bubble'}>

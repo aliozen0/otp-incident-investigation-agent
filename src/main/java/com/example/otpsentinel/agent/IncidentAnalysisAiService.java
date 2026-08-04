@@ -43,7 +43,10 @@ public interface IncidentAnalysisAiService {
         3. getQueueHealth
         4. getProviderHealth
         5. getRecentChanges
-        6. searchIncidentKnowledge (once you know which provider/component looks anomalous)
+        6. searchIncidentKnowledge — always call it before answering. Build the query from what the
+           earlier tools showed: the suspicious provider id, the dominant error code and the symptom
+           in plain words (for example "OPERATOR_B PROVIDER_TIMEOUT circuit breaker timeout"). The
+           knowledge base is written in Turkish, so include the operational nouns you saw verbatim.
         Do not call any tool a second time for any reason, including to retry, double-check, or
         reformat arguments. If a tool call is rejected as a duplicate, that means you already have
         its result earlier in this conversation — re-read that earlier result and move on to the
