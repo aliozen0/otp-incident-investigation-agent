@@ -83,9 +83,8 @@ public final class AgentTools {
             parseInstant(startAt, "startAt"),
             parseInstant(endAt, "endAt"),
             parseBoolean(includePreviousPeriod, "includePreviousPeriod"));
-    ToolResult<OtpMetricsResult> result =
-        guard.execute("getOtpMetrics", request, () -> otpMetricsTool.getOtpMetrics(request));
-    return collector.collect(result);
+    return collectOrReuse(
+        "getOtpMetrics", () -> guard.execute("getOtpMetrics", request, () -> otpMetricsTool.getOtpMetrics(request)));
   }
 
   @Tool(
@@ -97,19 +96,19 @@ public final class AgentTools {
             parseInstant(startAt, "startAt"),
             parseInstant(endAt, "endAt"),
             optionalFilter(provider));
-    ToolResult<ErrorDistributionResult> result =
-        guard.execute(
-            "getErrorDistribution",
-            request,
-            () -> errorDistributionTool.getErrorDistribution(request));
-    return collector.collect(result);
+    return collectOrReuse(
+        "getErrorDistribution",
+        () ->
+            guard.execute(
+                "getErrorDistribution",
+                request,
+                () -> errorDistributionTool.getErrorDistribution(request)));
   }
 
   @Tool("Get current OTP outbound queue health (pending messages, consumer count, dead letters)")
   public AgentToolResponse<QueueHealthResult> getQueueHealth() {
-    ToolResult<QueueHealthResult> result =
-        guard.execute("getQueueHealth", "none", queueHealthTool::getQueueHealth);
-    return collector.collect(result);
+    return collectOrReuse(
+        "getQueueHealth", () -> guard.execute("getQueueHealth", "none", queueHealthTool::getQueueHealth));
   }
 
   @Tool(
@@ -118,11 +117,16 @@ public final class AgentTools {
       String provider, String startAt, String endAt) {
     ProviderHealthRequest request =
         new ProviderHealthRequest(
-            provider, parseInstant(startAt, "startAt"), parseInstant(endAt, "endAt"));
-    ToolResult<ProviderHealthResult> result =
-        guard.execute(
-            "getProviderHealth", request, () -> providerHealthTool.getProviderHealth(request));
-    return collector.collect(result);
+            // The port requires a provider; a placeholder becomes the explicit "any provider" ask,
+            // which the adapter answers with the worst-performing one.
+            optionalFilter(provider) == null ? "ALL" : provider.trim(),
+            parseInstant(startAt, "startAt"),
+            parseInstant(endAt, "endAt"));
+    return collectOrReuse(
+        "getProviderHealth",
+        () ->
+            guard.execute(
+                "getProviderHealth", request, () -> providerHealthTool.getProviderHealth(request)));
   }
 
   @Tool("Get recent config/deploy/observation changes for a component within a time window")
@@ -131,10 +135,11 @@ public final class AgentTools {
     RecentChangesRequest request =
         new RecentChangesRequest(
             parseInstant(from, "from"), parseInstant(to, "to"), optionalFilter(component));
-    ToolResult<RecentChangesResult> result =
-        guard.execute(
-            "getRecentChanges", request, () -> recentChangesTool.getRecentChanges(request));
-    return collector.collect(result);
+    return collectOrReuse(
+        "getRecentChanges",
+        () ->
+            guard.execute(
+                "getRecentChanges", request, () -> recentChangesTool.getRecentChanges(request)));
   }
 
   @Tool(
@@ -146,7 +151,9 @@ public final class AgentTools {
       // rejection — the model just sees "no knowledge results" and writes its final answer.
       return List.of();
     }
-    var searchResults =
+    ToolResult<java.util.List<com.example.otpsentinel.rag.KnowledgeSearchResult>> searchResults;
+    try {
+      searchResults =
         guard.execute(
             "searchIncidentKnowledge",
             query + "|" + providerFilter + "|" + topK,
@@ -156,7 +163,31 @@ public final class AgentTools {
                     "searchIncidentKnowledge",
                     Instant.now(),
                     knowledgeSearchPort.searchIncidentKnowledge(query, providerFilter, topK)));
+    } catch (DuplicateToolCallException duplicate) {
+      return List.of();
+    }
     return collector.collectKnowledge(searchResults.data());
+  }
+
+  /**
+   * A repeated call is answered with an explanation instead of an exception. Live models re-call a
+   * tool with slightly different arguments (a rounded timestamp, another provider) surprisingly
+   * often, and letting that abort the run threw away investigations whose evidence was already
+   * complete. The refusal still stands — no second execution, no extra evidence.
+   */
+  private <T> AgentToolResponse<T> collectOrReuse(
+      String toolName, java.util.function.Supplier<ToolResult<T>> call) {
+    try {
+      return collector.collect(call.get());
+    } catch (DuplicateToolCallException duplicate) {
+      return new AgentToolResponse<>(
+          ToolStatus.ERROR,
+          null,
+          List.of(),
+          toolName
+              + " was already called with these arguments in this turn; re-read that earlier result"
+              + " and continue with the next tool.");
+    }
   }
 
   private static Instant parseInstant(String value, String parameterName) {
@@ -188,7 +219,24 @@ public final class AgentTools {
     throw new IllegalArgumentException(parameterName + " must be true or false");
   }
 
+  /**
+   * Optional filters are the single biggest source of empty tool results with live models: instead
+   * of omitting the argument they send a placeholder ("null", "default", "all", "string"). Those
+   * mean "no filter", and treating them literally silently starved the analysis of error and
+   * provider data, which then read as "no anomaly".
+   */
   private static String optionalFilter(String value) {
-    return value == null || value.isBlank() ? null : value;
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    String normalized = value.trim();
+    return PLACEHOLDER_FILTERS.contains(normalized.toLowerCase(java.util.Locale.ROOT))
+        ? null
+        : normalized;
   }
+
+  private static final java.util.Set<String> PLACEHOLDER_FILTERS =
+      java.util.Set.of(
+          "null", "none", "nil", "default", "all", "any", "*", "undefined", "n/a", "na", "string",
+          "unknown", "-");
 }

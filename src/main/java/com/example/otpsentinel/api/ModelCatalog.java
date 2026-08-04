@@ -41,6 +41,13 @@ public final class ModelCatalog {
               "Karmaşık olaylarda ayrıntılı muhakeme ve güvenilir araç kullanımı",
               true),
           new ModelOption(
+              "nvidia/nvidia-nemotron-nano-9b-v2",
+              "Nemotron Nano 9B v2",
+              "NVIDIA NIM",
+              "FAST",
+              "Küçük ve hızlı; sıralı iki araç ve structured output canlı testte doğrulandı",
+              true),
+          new ModelOption(
               "nvidia/nemotron-3-nano-30b-a3b",
               "Nemotron 3 Nano 30B",
               "NVIDIA NIM",
@@ -65,7 +72,13 @@ public final class ModelCatalog {
   public static final List<String> VERIFIED_MODELS =
       VERIFIED_OPTIONS.stream().map(ModelOption::id).toList();
 
-  public static final String DEFAULT_MODEL_ID = VERIFIED_MODELS.getFirst();
+  /**
+   * Nemotron Nano 9B by measurement, not by size: over repeated live runs against the seeded
+   * telemetry it completes the full tool sequence and confirms the anomaly, where the 8B model
+   * frequently stops early and reports "no anomaly". The 70B+ models answer well but take ~30 s per
+   * tool call on the shared NIM endpoint and regularly return 503, which times an investigation out.
+   */
+  public static final String DEFAULT_MODEL_ID = "nvidia/nvidia-nemotron-nano-9b-v2";
 
   private ModelCatalog() {}
 }

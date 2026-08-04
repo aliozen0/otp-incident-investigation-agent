@@ -16,6 +16,14 @@ public final class PiiScanner {
   private static final Pattern API_KEY =
       Pattern.compile("(?i)\\b(api[_-]?key|secret|token)\\b\\s*[:=]\\s*\\S{6,}");
 
+  /**
+   * Every analysis quotes the investigated time window, and an ISO-8601 instant is a long run of
+   * digits separated by dashes — exactly the phone-number shape. Timestamps are masked out before
+   * the phone scan so a correct report is not rejected as leaking a subscriber number.
+   */
+  private static final Pattern ISO_TIMESTAMP =
+      Pattern.compile("\\d{4}-\\d{2}-\\d{2}(?:[T ]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?Z?)?");
+
   public Optional<String> scan(String text) {
     if (text == null || text.isBlank()) {
       return Optional.empty();
@@ -26,7 +34,7 @@ public final class PiiScanner {
     if (API_KEY.matcher(text).find()) {
       return Optional.of("API_KEY_OR_SECRET");
     }
-    if (PHONE_NUMBER.matcher(text).find()) {
+    if (PHONE_NUMBER.matcher(ISO_TIMESTAMP.matcher(text).replaceAll(" ")).find()) {
       return Optional.of("PHONE_NUMBER");
     }
     return Optional.empty();

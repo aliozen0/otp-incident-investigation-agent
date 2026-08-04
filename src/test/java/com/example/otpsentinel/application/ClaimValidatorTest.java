@@ -32,7 +32,8 @@ class ClaimValidatorTest {
 
     var report = validator.validate(analysis, known);
 
-    assertThat(report.status()).isEqualTo(ValidationStatus.FAILED);
+    // Reported, not rejected: the reader sees which figure is unsupported and keeps the analysis.
+    assertThat(report.status()).isEqualTo(ValidationStatus.PASSED);
     assertThat(report.warnings().getFirst()).contains("UNSUPPORTED_NUMERIC_CLAIM");
   }
 
@@ -45,7 +46,7 @@ class ClaimValidatorTest {
 
     var report = validator.validate(analysis, List.of());
 
-    assertThat(report.status()).isEqualTo(ValidationStatus.FAILED);
+    assertThat(report.status()).isEqualTo(ValidationStatus.PASSED);
     assertThat(report.warnings().getFirst()).contains("UNKNOWN_EVIDENCE_REFERENCE");
   }
 

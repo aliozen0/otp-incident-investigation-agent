@@ -53,6 +53,12 @@ export function renameSession(sessionId: string, title: string): void {
   )
 }
 
+export function deleteSession(sessionId: string): void {
+  writeSessions(readSessions().filter((s) => s.sessionId !== sessionId))
+  localStorage.removeItem(turnsKey(sessionId))
+  localStorage.removeItem(questionKey(sessionId))
+}
+
 export function recordQuestion(sessionId: string, investigationId: string, question: string): void {
   const key = questionKey(sessionId)
   const raw = localStorage.getItem(key)

@@ -42,6 +42,39 @@ describe('Sidebar', () => {
     expect(onNewChat).toHaveBeenCalled()
   })
 
+  it('renames a thread on Enter and deletes it from the row actions', () => {
+    const onRename = vi.fn()
+    const onDelete = vi.fn()
+    render(
+      <Sidebar
+        sessions={SESSIONS}
+        activeSessionId="s-1"
+        onSelect={vi.fn()}
+        onNewChat={vi.fn()}
+        onRename={onRename}
+        onDelete={onDelete}
+      />
+    )
+
+    fireEvent.click(screen.getByLabelText('İlk sohbet sohbetini yeniden adlandır'))
+    const input = screen.getByLabelText('Sohbet adını düzenle')
+    fireEvent.change(input, { target: { value: 'Yeniden adlandırıldı' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onRename).toHaveBeenCalledWith('s-1', 'Yeniden adlandırıldı')
+
+    fireEvent.click(screen.getByLabelText('İkinci sohbet sohbetini sil'))
+    expect(onDelete).toHaveBeenCalledWith('s-2')
+  })
+
+  it('hides the thread labels when collapsed but keeps the rows reachable', () => {
+    const { container } = render(
+      <Sidebar sessions={SESSIONS} activeSessionId="s-1" onSelect={vi.fn()} onNewChat={vi.fn()} collapsed />
+    )
+
+    expect(container.querySelector('.sidebar-shell')).toHaveClass('is-collapsed')
+    expect(screen.getByTitle('İlk sohbet')).toHaveAttribute('aria-current', 'true')
+  })
+
   it('shows the empty-list message when there are no sessions', () => {
     render(<Sidebar sessions={[]} activeSessionId={null} onSelect={vi.fn()} onNewChat={vi.fn()} />)
     expect(screen.getByText('Henüz sohbet yok')).toBeInTheDocument()

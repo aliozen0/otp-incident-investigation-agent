@@ -13,8 +13,11 @@ import com.example.otpsentinel.domain.Investigation;
 import com.example.otpsentinel.domain.InvestigationStatus;
 import com.example.otpsentinel.domain.ValidationReport;
 import com.example.otpsentinel.domain.ValidationStatus;
+import com.example.otpsentinel.domain.Hypothesis;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +36,10 @@ public final class IncidentInvestigationService {
   private final VisualizationValidator visualizationValidator = new VisualizationValidator();
 
   public IncidentInvestigationService(int maxRepairAttempts) {
-    if (maxRepairAttempts < 0 || maxRepairAttempts > 1) {
-      throw new IllegalArgumentException("maxRepairAttempts must be 0 or 1");
+    // Up to 3: small reasoning models occasionally answer with an empty content block or trailing
+    // prose, and a second retry recovers a complete analysis far more often than it costs.
+    if (maxRepairAttempts < 0 || maxRepairAttempts > 3) {
+      throw new IllegalArgumentException("maxRepairAttempts must be between 0 and 3");
     }
     this.maxRepairAttempts = maxRepairAttempts;
   }
@@ -107,6 +112,8 @@ public final class IncidentInvestigationService {
     }
     audit(auditEventRepository, AuditEventType.LLM_COMPLETED, investigation, correlationId, "ok");
 
+    // Validate what the model actually said, then hand the aggregate only the citations that exist:
+    // warnings must describe the real answer, the aggregate must see a consistent one.
     IncidentAnalysisResult analysis = attempt.analysis();
     investigation.startGeneratingAnalysis();
     ValidationReport claimReport = claimValidator.validate(analysis, investigation.evidence());
@@ -127,17 +134,18 @@ public final class IncidentInvestigationService {
         Stream.concat(claimReport.warnings().stream(), visualizationReport.warnings().stream())
             .toList();
 
+    IncidentAnalysisResult citable = withOnlyKnownCitations(analysis, investigation);
     try {
       investigation.proposeAnalysis(
-          analysis.summary(),
-          analysis.severity(),
-          analysis.hypotheses(),
-          analysis.recommendedActions(),
-          collector.canonicalKnowledgeCitations(analysis.knowledgeReferences()),
-          analysis.confidence(),
+          citable.summary(),
+          citable.severity(),
+          citable.hypotheses(),
+          citable.recommendedActions(),
+          collector.canonicalKnowledgeCitations(citable.knowledgeReferences()),
+          citable.confidence(),
           visualizationReport.accepted());
       investigation.startValidating();
-      finish(investigation, analysis, validationWarnings);
+      finish(investigation, citable, validationWarnings);
       audit(
           auditEventRepository,
           AuditEventType.VALIDATION_PASSED,
@@ -154,6 +162,49 @@ public final class IncidentInvestigationService {
       investigation.fail("analysis rejected by deterministic validation");
     }
     return investigation;
+  }
+
+  /**
+   * Drops citations the run never collected instead of letting the aggregate reject the analysis.
+   * ClaimValidator already reported the fabricated id as a warning; removing it keeps every
+   * surviving claim evidence-bound, which is the property that actually matters.
+   */
+  private static IncidentAnalysisResult withOnlyKnownCitations(
+      IncidentAnalysisResult analysis, Investigation investigation) {
+    Set<String> known =
+        investigation.evidence().stream()
+            .map(com.example.otpsentinel.domain.Evidence::id)
+            .collect(java.util.stream.Collectors.toSet());
+    List<com.example.otpsentinel.agent.EvidenceReference> evidence =
+        analysis.evidence().stream()
+            .filter(reference -> known.contains(reference.evidenceId()))
+            .toList();
+    List<Hypothesis> hypotheses = new ArrayList<>();
+    for (Hypothesis hypothesis : analysis.hypotheses()) {
+      List<String> supporting =
+          hypothesis.supportingEvidenceIds().stream().filter(known::contains).toList();
+      if (supporting.isEmpty()) {
+        continue;
+      }
+      hypotheses.add(
+          new Hypothesis(
+              hypothesis.rank(),
+              hypothesis.possibleCause(),
+              hypothesis.probability(),
+              supporting,
+              hypothesis.contradictingEvidenceIds().stream().filter(known::contains).toList(),
+              hypothesis.verificationSteps()));
+    }
+    return new IncidentAnalysisResult(
+        analysis.status(),
+        analysis.severity(),
+        analysis.summary(),
+        evidence,
+        hypotheses,
+        analysis.recommendedActions(),
+        analysis.knowledgeReferences(),
+        analysis.confidence(),
+        analysis.visualizations());
   }
 
   private static void audit(

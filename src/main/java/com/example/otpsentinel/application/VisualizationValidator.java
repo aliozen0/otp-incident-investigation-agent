@@ -73,13 +73,16 @@ public final class VisualizationValidator {
                   if (!seriesKeys.add(key)) {
                     throw new IllegalArgumentException("duplicate series key");
                   }
-                  return new VisualizationSpec.Series(key, plain(item.label(), "series label", 80));
+                  // A missing label is a cosmetic omission, not a reason to drop an
+                  // evidence-bound chart: fall back to the key the model did provide.
+                  String label = item.label() == null || item.label().isBlank() ? key : item.label();
+                  return new VisualizationSpec.Series(key, plain(label, "series label", 80));
                 })
             .toList();
     List<VisualizationSpec.Point> points = new ArrayList<>();
     for (VisualizationProposal.Point point : proposal.points()) {
-      if (!Double.isFinite(point.value())) {
-        throw new IllegalArgumentException("point value must be finite");
+      if (point.value() == null || !Double.isFinite(point.value())) {
+        throw new IllegalArgumentException("point value must be a finite number");
       }
       if (!seriesKeys.contains(point.seriesKey())) {
         throw new IllegalArgumentException("point references unknown series");
@@ -97,9 +100,11 @@ public final class VisualizationValidator {
       if (Math.abs(expected - point.value()) > TOLERANCE) {
         throw new IllegalArgumentException("point value does not match evidence");
       }
+      String pointLabel =
+          point.label() == null || point.label().isBlank() ? point.seriesKey() : point.label();
       points.add(
           new VisualizationSpec.Point(
-              plain(point.label(), "point label", 80),
+              plain(pointLabel, "point label", 80),
               point.seriesKey(),
               point.value(),
               point.evidenceId()));
@@ -128,18 +133,32 @@ public final class VisualizationValidator {
 
   private static VisualizationType parseType(String value) {
     try {
-      return VisualizationType.valueOf(value);
+      return VisualizationType.valueOf(normalizeEnum(value));
     } catch (RuntimeException failure) {
       throw new IllegalArgumentException("unknown visualization type");
     }
   }
 
+  /**
+   * Live models label units the way a human would ("%", "ms", "" for unitless) instead of copying
+   * the enum. The unit only selects a conversion that is still checked against the evidence value,
+   * so accepting these synonyms loses no safety but keeps a valid chart from being dropped.
+   */
   private static VisualizationUnit parseUnit(String value) {
-    try {
-      return VisualizationUnit.valueOf(value);
-    } catch (RuntimeException failure) {
-      throw new IllegalArgumentException("unknown visualization unit");
-    }
+    String normalized = normalizeEnum(value);
+    return switch (normalized) {
+      case "", "NULL", "NONE", "UNITLESS" -> VisualizationUnit.NONE;
+      case "%", "PCT", "PERCENT", "PERCENTAGE" -> VisualizationUnit.PERCENT;
+      case "MS", "MILLISECOND", "MILLISECONDS" -> VisualizationUnit.MILLISECONDS;
+      case "RATIO", "FRACTION" -> VisualizationUnit.RATIO;
+      case "COUNT", "COUNTS", "TOTAL" -> VisualizationUnit.COUNT;
+      case "CONNECTION", "CONNECTIONS" -> VisualizationUnit.CONNECTIONS;
+      default -> throw new IllegalArgumentException("unknown visualization unit");
+    };
+  }
+
+  private static String normalizeEnum(String value) {
+    return value == null ? "" : value.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
   }
 
   private static String optionalPlain(String value, String field, int max) {

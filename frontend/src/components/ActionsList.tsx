@@ -11,8 +11,8 @@ export function ActionsList({ actions }: { actions: RecommendedAction[] }) {
       {actions.map((a, i) => (
         <li
           key={i}
-          className={`border rounded-md p-3 flex items-start justify-between gap-3 ${
-            a.requiresApproval ? 'border-alert bg-alert-soft' : 'border-line'
+          className={`flex items-start justify-between gap-3 rounded-xl border p-3 ${
+            a.requiresApproval ? 'border-alert/40 bg-alert-soft' : 'border-line bg-surface'
           }`}
         >
           <div>

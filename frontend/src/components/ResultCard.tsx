@@ -10,6 +10,7 @@ import { ConfidenceGauge } from './charts/ConfidenceGauge'
 import { synthesizeSummary } from '../lib/summarize'
 import { formatDateTime, UI_TEXT } from '../lib/labels'
 import { VisualizationRenderer } from './charts/VisualizationRenderer'
+import { IconActivity, IconAlert, IconBook, IconLayers, IconSparkles } from './icons'
 
 function DetailSection({
   title,
@@ -51,7 +52,7 @@ export function ResultCard({ investigation, assistantMessage }: { investigation:
 
       <div className="result-stats">
         <div>
-          <span>Güven skoru</span>
+          <span><IconActivity size={12} /> Güven skoru</span>
           {inv.confidence !== null ? (
             <ConfidenceGauge confidence={inv.confidence} />
           ) : (
@@ -59,23 +60,23 @@ export function ResultCard({ investigation, assistantMessage }: { investigation:
           )}
         </div>
         <div>
-          <span>Kanıt</span>
+          <span><IconLayers size={12} /> Kanıt</span>
           <strong>{inv.evidence.length}</strong>
         </div>
         <div>
-          <span>Hipotez</span>
+          <span><IconSparkles size={12} /> Hipotez</span>
           <strong>{inv.hypotheses.length}</strong>
         </div>
         <div>
-          <span>RAG kaynağı</span>
+          <span><IconBook size={12} /> RAG kaynağı</span>
           <strong>{inv.knowledgeReferences.length}</strong>
         </div>
       </div>
 
       {inv.validation.warnings.length > 0 && (
-        <div className="mt-4 border-l-2 border-alert bg-alert-soft px-4 py-3">
-          <p className="font-display text-xs font-semibold uppercase tracking-wide text-alert">
-            Doğrulama notu
+        <div className="mt-4 rounded-xl border border-alert/25 border-l-[3px] border-l-alert bg-alert-soft px-4 py-3">
+          <p className="flex items-center gap-2 font-display text-xs font-semibold uppercase tracking-wide text-alert">
+            <IconAlert size={13} /> Doğrulama notu
           </p>
           <ul className="mt-1 space-y-1 text-sm leading-5 text-ink">
             {inv.validation.warnings.map((warning) => (
@@ -96,7 +97,7 @@ export function ResultCard({ investigation, assistantMessage }: { investigation:
         </section>
       )}
 
-      <div className="mt-5 overflow-hidden rounded-lg border border-line">
+      <div className="mt-5 overflow-hidden rounded-xl border border-line shadow-soft">
         <DetailSection title={UI_TEXT.hypothesesSection} count={inv.hypotheses.length} open>
           <HypothesisChart hypotheses={inv.hypotheses} />
           <div className="mt-4">

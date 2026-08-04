@@ -54,7 +54,9 @@ public final class ToolBudgetGuard {
             .anyMatch(
                 c -> c.toolName.equals(toolName) && c.paramKey.equals(paramKey) && c.succeeded);
     if (repeatsSuccess) {
-      policyLimitReached = true;
+      // Rejected, but not a policy breach: the model already has this result and repeating it costs
+      // nothing but a wasted call. Callers turn this into a "reuse the earlier result" answer so a
+      // clumsy repeat does not end an otherwise complete investigation.
       throw new DuplicateToolCallException(
           "duplicate successful call rejected: " + toolName + " " + paramKey);
     }

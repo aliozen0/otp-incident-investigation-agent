@@ -43,9 +43,15 @@ class NvidiaNimSequentialMultiToolCandidateLiveTest {
   @ValueSource(
       strings = {
         "meta/llama-3.1-8b-instruct",
+        "nvidia/nvidia-nemotron-nano-9b-v2",
         "nvidia/nemotron-3-super-120b-a12b",
         "nvidia/nemotron-3-ultra-550b-a55b"
       })
+  // Rejected on this account by the same gate (2026-08-03): meta/llama-3.2-3b-instruct and
+  // nvidia/llama-3.1-nemotron-nano-8b-v1 time out mid tool loop; nvidia/nemotron-mini-4b-instruct
+  // answers without calling the second tool; mistralai/mistral-7b-instruct-v0.3,
+  // nv-mistralai/mistral-nemo-12b-instruct, ibm/granite-3.0-8b-instruct and google/gemma-3-12b-it
+  // are not served to this API key (404). No qwen model is exposed by this endpoint at all.
   void completesSequentialMultiToolStructuredRoundTrip(String modelId) {
     String apiKey = System.getenv("NVIDIA_API_KEY");
     assumeTrue(apiKey != null && !apiKey.isBlank(), "NVIDIA_API_KEY not set, skipping live spike");

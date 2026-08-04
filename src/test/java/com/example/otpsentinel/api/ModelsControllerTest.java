@@ -25,15 +25,17 @@ class ModelsControllerTest extends AbstractPostgresIntegrationTest {
         .contains("meta/llama-3.1-8b-instruct")
         .contains("meta/llama-3.3-70b-instruct")
         .contains("nvidia/llama-3.3-nemotron-super-49b-v1.5")
+        .contains("nvidia/nvidia-nemotron-nano-9b-v2")
         .contains("nvidia/nemotron-3-nano-30b-a3b")
         .contains("nvidia/nemotron-3-super-120b-a12b")
         .contains("nvidia/nemotron-3-ultra-550b-a55b")
-        .contains("\"defaultModelId\":\"meta/llama-3.1-8b-instruct\"")
+        // Default is chosen by measured live reliability, not by parameter count.
+        .contains("\"defaultModelId\":\"nvidia/nvidia-nemotron-nano-9b-v2\"")
         .contains("\"options\"")
         .contains("\"label\":\"Llama 3.1 8B\"")
         .contains("\"profile\":\"FAST\"")
         .contains("\"verified\":true");
-    assertThat(ModelCatalog.VERIFIED_MODELS).hasSize(6);
+    assertThat(ModelCatalog.VERIFIED_MODELS).hasSize(7);
     assertThat(ModelCatalog.VERIFIED_OPTIONS)
         .extracting(ModelCatalog.ModelOption::id)
         .containsExactlyElementsOf(ModelCatalog.VERIFIED_MODELS);

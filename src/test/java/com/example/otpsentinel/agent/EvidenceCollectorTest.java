@@ -81,7 +81,35 @@ class EvidenceCollectorTest {
   }
 
   @Test
-  void mapsProviderHealthTimeoutToNoEvidence() {
+  void mintsEachErrorCodeShareAsVerifiableNumericEvidence() {
+    Investigation investigation = newInvestigation();
+    EvidenceCollector collector = new EvidenceCollector(investigation);
+
+    ErrorDistributionResult data =
+        new ErrorDistributionResult(
+            3_482L,
+            List.of(
+                new ErrorCount("PROVIDER_TIMEOUT", 2_228L, 63.99),
+                new ErrorCount("RATE_LIMITED", 627L, 18.01)),
+            List.of());
+
+    collector.collect(
+        ToolResult.success("exec-9", "getErrorDistribution", Instant.now(), data));
+
+    // The share is what an analyst quotes ("63.99% of failures"); it must be citable as its own
+    // numeric evidence, and it is already a percentage — never rescaled again.
+    assertThat(investigation.evidence())
+        .filteredOn(evidence -> evidence.id().equals("ev-error-share-provider-timeout"))
+        .singleElement()
+        .satisfies(
+            evidence -> {
+              assertThat(evidence.metricValue()).isEqualTo(63.99);
+              assertThat(evidence.metricUnit()).isEqualTo("percent");
+            });
+  }
+
+  @Test
+  void mapsProviderHealthTimeoutToACitableFailureEvidence() {
     Investigation investigation = newInvestigation();
     EvidenceCollector collector = new EvidenceCollector(investigation);
 
@@ -91,10 +119,19 @@ class EvidenceCollectorTest {
 
     AgentToolResponse<ProviderHealthResult> response = collector.collect(result);
 
-    assertThat(response.evidenceIds()).isEmpty();
+    // The failure is an observation the analysis may cite; without an id of its own the model
+    // invents one and the evidence check then fails the whole investigation.
+    assertThat(response.evidenceIds()).containsExactly("ev-provider-health-error");
     assertThat(response.status()).isEqualTo(ToolStatus.TIMEOUT);
     assertThat(response.errorMessage()).isEqualTo("no response");
-    assertThat(investigation.evidence()).isEmpty();
+    assertThat(investigation.evidence())
+        .singleElement()
+        .satisfies(
+            evidence -> {
+              assertThat(evidence.id()).isEqualTo("ev-provider-health-error");
+              assertThat(evidence.metricValue()).isNull();
+              assertThat(evidence.observation()).contains("no response");
+            });
   }
 
   @Test

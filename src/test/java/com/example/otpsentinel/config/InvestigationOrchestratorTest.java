@@ -44,7 +44,9 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             1,
             1,
             40,
-            1000);
+            1000,
+            // no fallback model in tests: the stub model always returns a parseable analysis
+            "");
 
     TimeWindow window =
         new TimeWindow(
@@ -98,7 +100,9 @@ class InvestigationOrchestratorTest extends AbstractPostgresIntegrationTest {
             1,
             1,
             40,
-            1000);
+            1000,
+            // no fallback model in tests: the stub model always returns a parseable analysis
+            "");
 
     TimeWindow window =
         new TimeWindow(

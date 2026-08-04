@@ -22,6 +22,9 @@ interface IntentRoutingAiService {
 
       A vague OTP operational status request is not CHAT, even when phrased casually. CHAT never
       answers a request for the current status or health of a provider, metric, queue, or OTP flow.
+      But a question ABOUT an answer already given — what it means, which team to notify, what to do
+      next, how confident you are, "explain that again" — is CHAT: it needs the previous turn, not
+      fresh measurements. Choose INVESTIGATION only when new operational data must be read.
       For example:
       - With prior semantic turns exactly "(no prior semantic turns)", the Turkish request
         "Operatör B nasıl?" is CLARIFICATION because both the signal and time range are missing.

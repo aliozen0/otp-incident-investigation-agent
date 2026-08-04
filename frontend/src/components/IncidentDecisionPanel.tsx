@@ -4,6 +4,7 @@ import { generateIdempotencyKey } from '../lib/idempotency'
 import { toUserMessage } from '../lib/errors'
 import type { IncidentDraftPreview, IncidentDecisionResponse } from '../api/types'
 import { SEVERITY_LABEL_TR } from '../lib/labels'
+import { IconAlert, IconCheck, IconClose, IconLayers, IconRefresh } from './icons'
 
 type Stage = 'none' | 'previewing' | 'previewed' | 'deciding' | 'decided'
 
@@ -65,23 +66,20 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
 
   return (
     <div>
-      <h2 className="font-display text-sm uppercase tracking-wide text-ink-muted mb-2">
-        Olay taslağı
+      <h2 className="mb-2 flex items-center gap-2 font-display text-sm uppercase tracking-wide text-ink-muted">
+        <IconLayers size={14} /> Olay taslağı
       </h2>
 
       {stage === 'none' && (
-        <button
-          onClick={handlePreview}
-          className="border border-signal text-signal font-display text-sm px-4 py-2 rounded-md hover:bg-signal-soft"
-        >
-          Olay taslağını önizle
+        <button onClick={handlePreview} className="secondary-button border-signal/40 text-signal">
+          <IconAlert size={14} /> Olay taslağını önizle
         </button>
       )}
 
       {stage === 'previewing' && <p className="text-sm text-ink-muted">Önizleme yükleniyor…</p>}
 
       {(stage === 'previewed' || stage === 'deciding') && preview && (
-        <div className="border border-line rounded-md p-4">
+        <div className="rounded-xl border border-line bg-surface p-4 shadow-soft">
           <p className="text-xs text-ink-muted mb-2">
             Henüz bir olay oluşturulmadı &mdash; bu yalnızca bir önizleme.
           </p>
@@ -106,31 +104,32 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full border border-line-strong rounded-md p-2 text-sm bg-paper focus:outline-none focus:ring-2 focus:ring-signal"
+            className="field-control"
           />
 
           <div className="mt-3 flex gap-2">
             <button
               onClick={() => handleDecision('APPROVE')}
               disabled={stage === 'deciding'}
-              className="bg-confirm text-white font-display text-sm px-4 py-2 rounded-md hover:opacity-90 disabled:opacity-50"
+              className="primary-button border-confirm bg-confirm hover:bg-confirm/90 disabled:opacity-50"
             >
-              Onayla
+              <IconCheck size={14} /> Onayla
             </button>
             <button
               onClick={() => handleDecision('REJECT')}
               disabled={stage === 'deciding'}
-              className="border border-danger text-danger font-display text-sm px-4 py-2 rounded-md hover:bg-danger-soft disabled:opacity-50"
+              className="secondary-button border-danger/40 text-danger hover:bg-danger-soft disabled:opacity-50"
             >
-              Reddet
+              <IconClose size={14} /> Reddet
             </button>
           </div>
         </div>
       )}
 
       {stage === 'decided' && decision && (
-        <div className="border border-confirm bg-confirm-soft rounded-md p-4">
-          <p className="font-display text-sm text-confirm">
+        <div className="rounded-xl border border-confirm/30 bg-confirm-soft p-4">
+          <p className="flex items-center gap-2 font-display text-sm text-confirm">
+            <IconCheck size={14} />
             {decision.externalIncidentId ? `Olay ${decision.externalIncidentId} oluşturuldu` : 'Karar kaydedildi'}
           </p>
           <p className="text-xs text-ink-muted mt-1 font-mono">
@@ -144,9 +143,9 @@ export function IncidentDecisionPanel({ investigationId }: { investigationId: st
           <button
             onClick={handleResubmit}
             disabled={isResubmitting}
-            className="block mt-3 text-xs text-ink-muted underline disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs text-ink-muted underline disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Aynı idempotency key ile yeniden gönder (tekrar davranışını gösterir)
+            <IconRefresh size={12} /> Aynı idempotency key ile yeniden gönder (tekrar davranışını gösterir)
           </button>
         </div>
       )}

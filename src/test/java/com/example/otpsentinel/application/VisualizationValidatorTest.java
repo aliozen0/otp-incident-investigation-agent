@@ -52,7 +52,7 @@ class VisualizationValidatorTest {
             proposal(
                 "BAR",
                 "COUNT",
-                List.of(new VisualizationProposal.Point("X", "rate", 1, "ev-prose"))),
+                List.of(new VisualizationProposal.Point("X", "rate", 1.0, "ev-prose"))),
             proposal(
                 "SCRIPT",
                 "PERCENT",
@@ -62,6 +62,45 @@ class VisualizationValidatorTest {
 
     assertThat(result.accepted()).isEmpty();
     assertThat(result.warnings()).hasSize(4).allMatch(w -> w.startsWith("VISUALIZATION_REJECTED"));
+  }
+
+  @Test
+  void keepsTheAnalysisWhenTheModelSendsATextualPointValue() {
+    // Regression: a live model put a TABLE cell string in "value". A strict double component made
+    // Jackson reject the entire IncidentAnalysisResult, so the whole investigation failed.
+    VisualizationProposal.Point textual =
+        VisualizationProposal.Point.of("chg-101", "rate", "Retry count changed from 3 to 2", "ev-current");
+    VisualizationProposal.Point numericText =
+        VisualizationProposal.Point.of("Current", "rate", "72.1", "ev-current");
+
+    assertThat(textual.value()).isNull();
+    assertThat(numericText.value()).isEqualTo(72.1);
+
+    VisualizationValidationResult result =
+        validator.validate(List.of(proposal("TABLE", "NONE", List.of(textual))), evidence);
+
+    assertThat(result.accepted()).isEmpty();
+    assertThat(result.warnings())
+        .singleElement()
+        .asString()
+        .contains("point value must be a finite number");
+  }
+
+  @Test
+  void acceptsHumanWrittenUnitSynonyms() {
+    VisualizationValidationResult result =
+        validator.validate(
+            List.of(
+                proposal(
+                    "line",
+                    "%",
+                    List.of(new VisualizationProposal.Point("Current", "rate", 72.1, "ev-current")))),
+            evidence);
+
+    assertThat(result.accepted()).singleElement().satisfies(spec -> {
+      assertThat(spec.type()).isEqualTo(VisualizationType.LINE);
+      assertThat(spec.unit()).isEqualTo(VisualizationUnit.PERCENT);
+    });
   }
 
   private static VisualizationProposal proposal(

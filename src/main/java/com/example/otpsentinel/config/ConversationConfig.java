@@ -29,9 +29,12 @@ public class ConversationConfig {
 
   @Bean
   ConversationResponder conversationResponder(
-      @Value("${AI_MODE:stub}") String aiMode, Function<String, ChatModel> chatModelFactory) {
+      @Value("${AI_MODE:stub}") String aiMode,
+      @Value("${otp-sentinel.ai.conversation-model:meta/llama-3.1-8b-instruct}")
+          String conversationModel,
+      Function<String, ChatModel> chatModelFactory) {
     return "live".equalsIgnoreCase(aiMode)
-        ? new LangChain4jConversationResponder(chatModelFactory)
+        ? new LangChain4jConversationResponder(chatModelFactory, conversationModel)
         : new DeterministicConversationResponder();
   }
 

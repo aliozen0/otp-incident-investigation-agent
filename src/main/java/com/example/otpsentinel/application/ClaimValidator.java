@@ -40,20 +40,27 @@ public final class ClaimValidator {
 
   private final PiiScanner piiScanner = new PiiScanner();
 
+  /**
+   * Safety failures still reject the whole analysis; presentation problems are reported instead.
+   *
+   * <p>A fabricated evidence id or an unverifiable percentage used to discard a complete, otherwise
+   * correct investigation — the operator lost everything because of one wrong citation. Those two
+   * now surface as warnings the console shows next to the result, so the reader can see exactly
+   * which claim is unsupported. Leaking PII or proposing an unapproved automatic action is a
+   * different class of problem and still fails hard.
+   */
   public ValidationReport validate(IncidentAnalysisResult analysis, List<Evidence> knownEvidence) {
+    List<String> warnings = new ArrayList<>();
+
     Optional<String> unknownEvidence = unknownEvidenceViolation(analysis, knownEvidence);
-    if (unknownEvidence.isPresent()) {
-      return ValidationReport.failed(
-          List.of(
-              "UNKNOWN_EVIDENCE_REFERENCE: evidence id "
-                  + unknownEvidence.get()
-                  + " was never collected"));
-    }
+    unknownEvidence.ifPresent(
+        id ->
+            warnings.add(
+                "UNKNOWN_EVIDENCE_REFERENCE: evidence id " + id + " was never collected"));
 
     Optional<String> numericClaim = numericClaimViolation(analysis, knownEvidence);
-    if (numericClaim.isPresent()) {
-      return ValidationReport.failed(List.of("UNSUPPORTED_NUMERIC_CLAIM: " + numericClaim.get()));
-    }
+    numericClaim.ifPresent(
+        claim -> warnings.add("UNSUPPORTED_NUMERIC_CLAIM: " + claim + " is not backed by evidence"));
 
     Optional<RecommendedAction> forbiddenAction = forbiddenActionViolation(analysis);
     if (forbiddenAction.isPresent()) {
@@ -69,7 +76,6 @@ public final class ClaimValidator {
       return ValidationReport.failed(List.of("PII_DETECTED: " + pii.get()));
     }
 
-    List<String> warnings = new ArrayList<>();
     if (hasCausationLanguage(analysis)) {
       warnings.add(
           "CAUSATION_LANGUAGE_DETECTED: wording implies definite causation instead of"
@@ -97,14 +103,7 @@ public final class ClaimValidator {
 
   private static Optional<String> numericClaimViolation(
       IncidentAnalysisResult analysis, List<Evidence> knownEvidence) {
-    Set<Double> knownPercentValues = new HashSet<>();
-    for (Evidence evidence : knownEvidence) {
-      if (evidence.metricValue() == null) {
-        continue;
-      }
-      knownPercentValues.add(round1(evidence.metricValue()));
-      knownPercentValues.add(round1(evidence.metricValue() * 100));
-    }
+    Set<Double> knownPercentValues = supportedPercentValues(knownEvidence);
     for (String text : claimTexts(analysis)) {
       Matcher matcher = PERCENT_CLAIM.matcher(text);
       while (matcher.find()) {
@@ -117,6 +116,36 @@ public final class ClaimValidator {
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * A percentage in the narrative is supported when it is a collected metric or a arithmetic
+   * reading of two of them: the share one count makes of another (a "63.99% of errors were
+   * PROVIDER_TIMEOUT" claim is computed from counts, never stored as its own metric) or the gap
+   * between two values. Restricting support to stored metrics alone rejected correct analysis; a
+   * figure that matches nothing here is still treated as fabricated and fails the whole result.
+   */
+  // ponytail: O(n^2) over evidence, which is bounded by the 8-tool-call budget; if evidence ever
+  // grows past a few dozen items, precompute the pair values once per investigation instead.
+  private static Set<Double> supportedPercentValues(List<Evidence> knownEvidence) {
+    List<Double> metrics =
+        knownEvidence.stream().map(Evidence::metricValue).filter(java.util.Objects::nonNull).toList();
+    Set<Double> supported = new HashSet<>();
+    for (double value : metrics) {
+      supported.add(round1(value));
+      supported.add(round1(value * 100));
+      supported.add(round1(value / 100));
+    }
+    for (double left : metrics) {
+      for (double right : metrics) {
+        supported.add(round1(Math.abs(left - right)));
+        supported.add(round1(Math.abs(left - right) * 100));
+        if (right != 0.0) {
+          supported.add(round1(left / right * 100));
+        }
+      }
+    }
+    return supported;
   }
 
   private static Optional<RecommendedAction> forbiddenActionViolation(

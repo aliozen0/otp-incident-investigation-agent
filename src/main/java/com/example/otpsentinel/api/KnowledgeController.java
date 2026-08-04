@@ -132,7 +132,7 @@ public class KnowledgeController {
           "query must be 3-1000 characters and topK must be between 1 and 5");
     }
     List<KnowledgeDocumentDto.SearchResult> results =
-        searchPort.searchIncidentKnowledge(query, blankToNull(request.provider()), topK).stream()
+        searchPort.previewIncidentKnowledge(query, blankToNull(request.provider()), topK).stream()
             .map(
                 result ->
                     new KnowledgeDocumentDto.SearchResult(
