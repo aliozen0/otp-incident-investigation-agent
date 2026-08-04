@@ -6,12 +6,12 @@
 
 **Architecture:** No new endpoints, tools, or business rules. Work is additive documentation/config (README, springdoc-openapi, `scripts/demo.sh`) plus one narrow bugfix carried over from M7's final review (exception-type mislabeling). Every claim in the final report must be backed by an actually-executed command, not an assertion.
 
-**Tech Stack:** Java 21, Spring Boot 3.3.5, LangChain4j 1.18.1, PostgreSQL+pgvector, Maven, Docker Compose (WSL2), springdoc-openapi (new, this plan).
+**Tech Stack:** Java 21, Spring Boot 3.3.5, LangChain4j 1.18.1, PostgreSQL+pgvector, Maven, Docker Compose, springdoc-openapi (new, this plan).
 
 ## Global Constraints
 
-- All `mvn`/`docker`/`docker compose` commands run through WSL2, never Windows-native (`docs/19-technology-baseline.md`): `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && ..."`.
-- `mvn` runs natively **inside WSL2** via the sdkman-installed JDK 21/Maven (confirmed present: Maven 3.9.16, Java 21 Temurin, Docker OK) — this is what M7 actually used, and it's required for Testcontainers-backed integration tests to reach the Docker daemon. Do NOT run `mvn` inside a nested `docker run maven:...` container — Testcontainers inside that container cannot reach the host Docker daemon and integration tests fail with Docker infrastructure errors unrelated to the code. Always: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B <goal>"`.
+- Run all `mvn`, `docker` and `docker compose` commands from the repository root.
+- Use Java 21 and Maven 3.9+. Testcontainers must be able to reach the active Docker Engine.
 - Before every commit: `mvn spotless:apply` then full `mvn verify` green (per M8-prompt).
 - No new domain rule, tool, or endpoint (M8-prompt: "yeni özellik eklemiyor"). The one exception is the narrow bugfix in Task 1, which is a correction to existing M7 behavior, not new behavior, and gets its own report per `prompts/05-bugfix.md`.
 - New dependency (springdoc) requires the `docs/00-project-charter.md` scope-change justification (strengthens main scenario demo-ability, measurable via `/swagger-ui.html` reachability, doesn't touch the offline stub path, explainable in interview) — write this into the Task 2 commit body.
@@ -90,7 +90,7 @@ void rejectsNegativeRetryCountAsAnInternalConfigBug() {
 
 - [ ] **Step 2: Run tests, confirm they fail**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B -pl . test -Dtest=IncidentInvestigationServiceTest,ToolBudgetGuardTest"`
+Run: `mvn -B -pl . test -Dtest=IncidentInvestigationServiceTest,ToolBudgetGuardTest`
 Expected: the 3 new tests FAIL (`isInstanceOf(IllegalStateException.class)` fails because the actual type is `IllegalArgumentException`).
 
 - [ ] **Step 3: Fix the two throw sites**
@@ -127,12 +127,12 @@ Expected: the 3 new tests FAIL (`isInstanceOf(IllegalStateException.class)` fail
 
 - [ ] **Step 4: Run tests, confirm they pass**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B -pl . test -Dtest=IncidentInvestigationServiceTest,ToolBudgetGuardTest"`
+Run: `mvn -B -pl . test -Dtest=IncidentInvestigationServiceTest,ToolBudgetGuardTest`
 Expected: PASS, all tests including the 3 new ones.
 
 - [ ] **Step 5: Full verify, then commit**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply verify"`
+Run: `mvn -B spotless:apply verify`
 Expected: BUILD SUCCESS, full suite green.
 
 ```bash
@@ -183,7 +183,7 @@ In `pom.xml`, inside `<dependencies>` (after `spring-boot-starter-validation`):
 
 - [ ] **Step 2: Verify the app still boots and Swagger is reachable**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B verify"`
+Run: `mvn -B verify`
 Expected: BUILD SUCCESS (no dependency conflict with the LangChain4j/Spring Boot BOMs).
 
 Then (after Task 6's compose environment is up, or bring it up locally for this check): `curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/v3/api-docs` — expect `200`.
@@ -246,7 +246,7 @@ public record ProblemDetailsDto(
 
 - [ ] **Step 5: mvn verify, then commit**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply verify"`
+Run: `mvn -B spotless:apply verify`
 Expected: BUILD SUCCESS.
 
 ```bash
@@ -316,7 +316,7 @@ screen. Verified no class logs a stack trace, secret, or raw prompt
 - Modify: `README.md`
 
 **Interfaces:**
-- Consumes: the mermaid diagrams already in `docs/05-domain-and-architecture.md` (context diagram, lines 109-129), the request/response examples in `docs/06-api-contracts.md`, the disclaimer language in `docs/18-demo-interview-guide.md` ("Gösterilmemesi gerekenler", "Bu NETGSM'in gerçek sistemi mi?" answer).
+- Consumes: the mermaid diagrams already in `docs/05-domain-and-architecture.md` (context diagram, lines 109-129), the request/response examples in `docs/06-api-contracts.md`, the disclaimer language in `docs/18-demo-interview-guide.md` ("Gösterilmemesi gerekenler", "Bu gerçek bir kurum sistemi mi?" answer).
 - Produces: a README any outside reader (or interviewer) can follow standalone to run and demo the system.
 
 - [ ] **Step 1: Add a Quickstart section right after "Amaç"**
@@ -351,8 +351,8 @@ Directly under the Quickstart section:
 ```markdown
 ## Bu bir mock/PoC'tur
 
-Bu proje NETGSM'in (veya herhangi bir şirketin) iç mimarisini temsil etme
-iddiası taşımaz. Tüm metrik, provider, kuyruk ve incident verisi
+Bu proje herhangi bir kurumun iç mimarisini temsil etme iddiası taşımaz. Tüm
+metrik, provider, kuyruk ve incident verisi
 `docs/15-demo-fixtures.md`'deki sabit fixture'lardır — gerçek OTP gönderimi,
 gerçek müşteri verisi veya gerçek provider entegrasyonu yoktur. Amaç, Java +
 Spring Boot + LangChain4j ile tool calling / RAG / structured output /
@@ -507,7 +507,7 @@ void secondInvestigationOnTheSameOrchestratorInstanceStillSucceeds() {
 
 - [ ] **Step 2: Run the test, confirm it fails**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B -pl . test -Dtest=InvestigationOrchestratorTest"`
+Run: `mvn -B -pl . test -Dtest=InvestigationOrchestratorTest`
 Expected: compile error first (constructor signature doesn't accept a `Supplier` yet) — that's fine, it's the same "failing test" signal for a constructor-shape change. Note the compile failure in your report, then proceed to Step 3 (you can't get a runtime-red test until the signature changes too — that's expected for this kind of fix, unlike a pure logic bug).
 
 - [ ] **Step 3: Change `InvestigationOrchestrator` to take a factory**
@@ -542,15 +542,15 @@ In `src/main/java/com/example/otpsentinel/config/AgentConfig.java`:
 
 - [ ] **Step 5: Run the test, confirm it passes**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B -pl . test -Dtest=InvestigationOrchestratorTest"`
+Run: `mvn -B -pl . test -Dtest=InvestigationOrchestratorTest`
 Expected: PASS, including the new `secondInvestigationOnTheSameOrchestratorInstanceStillSucceeds` test.
 
 - [ ] **Step 6: Full verify, then a live re-check of the exact bug scenario**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply verify"`
+Run: `mvn -B spotless:apply verify`
 Expected: BUILD SUCCESS, 140+ tests (140 plus your 1 new test), all green.
 
-Then, to prove the actual bug is gone end to end: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d"`, wait for healthy, then run the investigation-creation curl (from README's API walkthrough) **twice** against the same running container and confirm BOTH return `"status":"ANOMALY_CONFIRMED"` (not `FAILED`/"structured output invalid"), then `docker compose down -v`. Paste both real responses into your report.
+Then, to prove the actual bug is gone end to end: `docker compose up --build -d`, wait for healthy, then run the investigation-creation curl (from README's API walkthrough) **twice** against the same running container and confirm BOTH return `"status":"ANOMALY_CONFIRMED"` (not `FAILED`/"structured output invalid"), then `docker compose down -v`. Paste both real responses into your report.
 
 - [ ] **Step 7: Commit**
 
@@ -644,8 +644,8 @@ chmod +x scripts/demo.sh
 
 - [ ] **Step 3: Run it against the real compose stack, capture actual output**
 
-Run (inside WSL2, after `docker compose up --build -d` from Task 7):
-`wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && ./scripts/demo.sh"`
+Run after `docker compose up --build -d` from Task 7:
+`./scripts/demo.sh`
 Expected: all 6 steps print real JSON; step 6's `idempotentReplay` is `true` and its `incidentDraftId` equals step 5's.
 
 Paste the real output into the M8 report.
@@ -673,19 +673,19 @@ preview, approve, idempotent replay) into one runnable script."
 
 - [ ] **Step 1: Full clean build**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply verify"`
+Run: `mvn -B spotless:apply verify`
 Record: BUILD SUCCESS, test counts (unit + integration + ATDD), in the report.
 
 - [ ] **Step 2: Clean-environment compose up**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose down -v && docker compose up --build -d"`
-Then poll: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose ps"` until `db` shows `healthy` and `app` is `Up`.
+Run: `docker compose down -v && docker compose up --build -d`
+Then poll: `docker compose ps` until `db` shows `healthy` and `app` is `Up`.
 Verify: `curl -s http://localhost:8080/actuator/health` returns `{"status":"UP"}`.
 If port 5432 is occupied on the host, set `POSTGRES_PORT` in `.env` and retry — record which happened.
 
 - [ ] **Step 3: Run `scripts/demo.sh`, time it**
 
-Run: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && time ./scripts/demo.sh"`
+Run: `time ./scripts/demo.sh`
 Record: wall time (must support a 5-7 minute *narrated* demo — the script itself should run in well under a minute; the 5-7 minutes is presenter narration time per `docs/18`).
 
 - [ ] **Step 4: Secret scan**
@@ -716,7 +716,7 @@ to `- [x]` for each item actually verified in Steps 1-5, with a one-line evidenc
 ```markdown
 ### M8 status
 
-- `docker compose up --build` verified clean (`docker compose down -v && up --build`, WSL2, host port 5432 free): `db` healthy, `app` Up, `GET /actuator/health` -> `{"status":"UP"}`.
+- `docker compose up --build` verified clean (`docker compose down -v && up --build`): `db` healthy, `app` Up, `GET /actuator/health` -> `{"status":"UP"}`.
 - `scripts/demo.sh` run end to end: investigation created, preview generated, approved (incidentDraftId=..., externalIncidentId=DEMO-INC-...), replayed with the same Idempotency-Key -> idempotentReplay=true, same incidentDraftId.
 - Secret scan: `git log -p` and repo grep for `nvapi-`/`api_key=` clean; `.env` untracked.
 - Mock/PoC disclaimer present in README ("Bu bir mock/PoC'tur").

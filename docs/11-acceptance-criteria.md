@@ -156,7 +156,7 @@ gösterebilmelidir.
 
 ### AC-036
 
-WSL2 üzerinden `docker compose up --build` sonrasında SPA, API ve PostgreSQL healthy olmalı; stub
+repository kökünden `docker compose up --build` sonrasında SPA, API ve PostgreSQL healthy olmalı; stub
 akışı API key olmadan çalışmalıdır.
 
 ## M12.2 investigation request düzeltmesi
@@ -223,4 +223,4 @@ değiştiremez.
 Ana suite NVIDIA key olmadan deterministik router/chat/clarification/investigation yollarını doğrular.
 
 ### AC-052
-WSL2 Compose stub ve yalnız onaylı sentetik fixture kullanan live smoke akışları çalışır.
+Docker Compose stub ve yalnız onaylı sentetik fixture kullanan live smoke akışları çalışır.

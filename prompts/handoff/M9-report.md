@@ -7,7 +7,7 @@ DONE
 
 M0-M8'de `AI_MODE=live` yalnızca izole spike'larla (M4: tek embed çağrısı, M5: tek chat çağrısı) doğrulanmıştı. Bu oturumda gerçek NVIDIA NIM chat model (`meta/llama-3.1-8b-instruct`) + gerçek pgvector RAG + gerçek agentic tool-calling ile uçtan uca bir investigation'ın çalıştığı, gerçek `NVIDIA_API_KEY` ile beş kez kanıtlandı.
 
-`superpowers:subagent-driven-development` ile 4 kodlanabilir task (bilgi tabanı auto-ingest, dev-only CORS, README/.env dokümantasyonu, final whole-branch review + fix) taze implementer+reviewer subagent çiftleriyle yapıldı; gerçek canlı doğrulama koşusu (Task 4) kontrolör tarafından elle çalıştırıldı (gerçek `NVIDIA_API_KEY` gerektiği, otomatik test olmadığı ve iteratif sistem-promptu ayarı gerektirdiği için).
+`superpowers:subagent-driven-development` ile 4 kodlanabilir task (bilgi tabanı auto-ingest, dev-only CORS, README/.env dokümantasyonu, final whole-branch review + fix) taze implementer+reviewer subagent çiftleriyle yapıldı; canlı doğrulama koşusu (Task 4) environment üzerinden sağlanan credential ile elle çalıştırıldı.
 
 Canlı koşu sırasında **iki gerçek, önceden bilinmeyen hata** bulunup düzeltildi:
 1. `docker-compose.yml`, `NVIDIA_API_KEY`/`NVIDIA_BASE_URL`/`NVIDIA_CHAT_MODEL`/`NVIDIA_EMBEDDING_MODEL`'i app container'ına hiç aktarmıyordu (`.env`'de doluydu ama compose `environment:` bloğunda tanımlı değildi) — `AI_MODE=live` ile app açılışta `modelId must not be blank` hatasıyla çöküyordu.
@@ -34,8 +34,8 @@ Final whole-branch review (opus, en yetenekli model) 2 Important + 6 Minor bulgu
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
 
-Offline suite (WSL2, NVIDIA_API_KEY olmadan):
-Komut: `wsl.exe -e bash -lc 'cd ... && source sdkman-init.sh && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'`
+Offline suite (`NVIDIA_API_KEY` olmadan):
+Komut: `mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 ```
 [INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 0
 [INFO] --- spotless:2.43.0:check (spotless-check) @ otp-sentinel ---

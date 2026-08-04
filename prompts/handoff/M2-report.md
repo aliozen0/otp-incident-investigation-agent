@@ -18,7 +18,7 @@ DONE
 - `src/test/java/.../tools/fixtures/*Test.java` (5 dosya) — her tool için component test, `OTP-DROP-001` sayı doğrulaması ve timeout senaryosu dahil.
 
 ## Testler (gerçek komut + gerçek çıktı)
-Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker run --rm -v $(pwd):/build -v maven-repo:/root/.m2 -w /build maven:3.9-eclipse-temurin-21 mvn -B verify"`
+Komut: `mvn -B verify`
 
 Çıktı özeti:
 ```

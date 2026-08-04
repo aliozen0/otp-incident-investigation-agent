@@ -4,7 +4,7 @@
 DONE
 
 ## Kapsam
-Compatibility spike önce ve ayrı çalıştırıldı: NVIDIA NIM embedding endpoint'ine (`https://integrate.api.nvidia.com/v1/embeddings`) `curl` ile doğrudan, sonra LangChain4j'nin `OpenAiEmbeddingModel`'i ile canlı bir `NvidiaNimEmbeddingServiceLiveTest` testinden gerçek `NVIDIA_API_KEY` ile çalıştırıldı — model `nvidia/nv-embedqa-e5-v5` (dimension 1024), `input_type` (`query`/`passage`) parametresini destekliyor. LangChain4j 1.18.1'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u (Javadoc'unda NVIDIA `input_type`'ı açıkça anıyor) bu alanı taşıyor — ayrı bir HTTP interceptor/custom framework gerekmedi, ADR-015'in öngördüğü gibi. Spike sırasında iki gerçek bug bulunup düzeltildi: (1) `.env`'de `NVIDIA_EMBEDDING_MODEL` boştu → "model field is required" hatası (env dosyası düzeltildi); (2) `export $(...)` ile `.env` okumak tırnak karakterlerini API key'e literal olarak katıyordu → 401 (doğru yöntem: `set -a; source .env; set +a`, sadece yerel WSL komut satırı için, koda dokunmadı).
+Compatibility spike önce ve ayrı çalıştırıldı: NVIDIA NIM embedding endpoint'ine (`https://integrate.api.nvidia.com/v1/embeddings`) `curl` ile doğrudan, sonra LangChain4j'nin `OpenAiEmbeddingModel`'i ile canlı bir `NvidiaNimEmbeddingServiceLiveTest` testinden environment üzerinden sağlanan credential ile çalıştırıldı — model `nvidia/nv-embedqa-e5-v5` (dimension 1024), `input_type` (`query`/`passage`) parametresini destekliyor. LangChain4j 1.18.1'in `OpenAiEmbeddingRequestParameters.CUSTOM_PARAMETERS` passthrough'u bu alanı ayrı bir HTTP interceptor gerektirmeden taşıyor.
 
 Ardından `rag` paketi: `KnowledgeDocumentType` (allowlist enum'un kendisi), `EmbeddingService` portu + `NvidiaNimEmbeddingService` adapter'ı, `Chunker` (500-800 kelime, 80-120 overlap, satır bazlı — tablo satırı asla bölünmüyor), `ContentSanitizer` (script/HTML strip, 20000 karakter limit, instruction-pattern sinyali), `KnowledgeIngestionService` (sanitize → chunk → embed(PASSAGE) → persist, tip allowlist'i `KnowledgeDocumentType.valueOf` ile reddediyor), `KnowledgeRepository`/`JdbcKnowledgeRepository` (pgvector kolonu `::vector` text-literal cast ile, pgvector-java bağımlılığı eklenmeden), `KnowledgeSearchPort`/`JdbcKnowledgeSearchAdapter` (T-006, henüz `@Tool` değil — embed(QUERY) → cosine similarity → provider/expiry filter → topK<=5 → minScore filtresi, citation alanlarıyla). `V3__knowledge_schema.sql` (`knowledge_document`, `knowledge_chunk` + hnsw index) M3 Flyway zincirine eklendi.
 
@@ -22,7 +22,7 @@ Ana test suite'in NVIDIA key gerektirmemesi için `DeterministicHashEmbeddingSer
 - `.env`, `.env.example`, `docs/19-technology-baseline.md` — `NVIDIA_EMBEDDING_MODEL=nvidia/nv-embedqa-e5-v5` dolduruldu, gerekçe not düşüldü.
 
 ## Testler (gerçek komut + gerçek çıktı)
-Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker run --rm -v $(pwd):/build -v maven-repo:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -w /build maven:3.9-eclipse-temurin-21 mvn -B spotless:apply verify"`
+Komut: `mvn -B spotless:apply verify`
 
 Çıktı özeti:
 ```
@@ -45,7 +45,7 @@ Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && doc
 69/69 test yeşil (M0-M3'ün 52'si + M4'ün 17'si), `NVIDIA_API_KEY` olmadan. `local-live` grubu (`NvidiaNimEmbeddingServiceLiveTest`) bu koşuda skip edildi (surefire `excludedGroups`).
 
 Compatibility spike ayrı komutla, gerçek key ile:
-Komut: `wsl -e bash -lc "... set -a && source .env && set +a && docker run --rm -e NVIDIA_API_KEY=\"\$NVIDIA_API_KEY\" -e NVIDIA_BASE_URL -e NVIDIA_EMBEDDING_MODEL ... mvn -B -Dsurefire.excludedGroups= -Dtest=NvidiaNimEmbeddingServiceLiveTest test"`
+Komut: `mvn -B -Dsurefire.excludedGroups= -Dtest=NvidiaNimEmbeddingServiceLiveTest test`
 ```
 [INFO] Running com.example.otpsentinel.rag.NvidiaNimEmbeddingServiceLiveTest
 [INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 29.29 s

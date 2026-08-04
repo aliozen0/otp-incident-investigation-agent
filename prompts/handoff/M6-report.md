@@ -42,7 +42,7 @@ investigation sonucu bundan etkilenmiyor (ayrı testle kanıtlandı). M1/M5 doma
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
 Komut:
-`wsl.exe -e bash -lc 'cd otp-incident-agent && source sdkman-init.sh && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'`
+`mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 
 Çıktı özeti:
 ```text

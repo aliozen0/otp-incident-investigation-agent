@@ -17,7 +17,7 @@
 - No persistent chat memory (ADR-012) — every `Investigation` gets a fresh `AiServices` call, no shared `ChatMemory` bean.
 - Schema/JSON-parse failure → exactly 1 repair attempt, then `FAILED` (AC-022). Deeper validation (numeric-claim source check, forbidden-action check, correlation wording check) is **out of scope** — that's M6.
 - No REST endpoint, no `InvestigationRepository.save()` wiring — that's M7. `IncidentInvestigationService` returns the completed/partial/failed `Investigation` to its caller (a test, in this milestone).
-- All `mvn`/`docker` commands run under WSL2.
+- Run all `mvn` and `docker` commands from the repository root.
 - Before the final commit: `mvn spotless:apply` then full `mvn verify` (whole project, not just the new package) must be green.
 - Commit convention: `{type}({scope}): {summary}` (docs/20), scope `agent` (and `application`/`docs` where relevant). Branch: `milestone/M5-agent-orchestration`.
 
@@ -56,7 +56,7 @@ These resolve ambiguities in docs/07's literal schema so every task below can re
 
 - [ ] **Step 1: Confirm the LangChain4j chat API shape**
 
-Run (WSL2):
+Run from the repository root:
 ```bash
 mvn -o dependency:sources -Dclassifier=sources 2>/dev/null || mvn dependency:sources
 ```

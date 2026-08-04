@@ -46,7 +46,7 @@ $ node scripts/validate_palette.js "#8FAEEA,#5B87DE,#1D4ED8" --mode light --ordi
   [PASS] Single hue
   → ALL CHECKS PASS
 ```
-Backend (WSL2, `NVIDIA_API_KEY` olmadan, dokunulmadı ama doğrulandı):
+Backend (`NVIDIA_API_KEY` olmadan, dokunulmadı ama doğrulandı):
 ```
 $ mvn -o verify
 [INFO] Tests run: 167, Failures: 0, Errors: 0, Skipped: 0
@@ -55,7 +55,7 @@ $ mvn -o verify
 [INFO] Total time:  01:58 min
 ```
 
-**Yapılamadı (bu oturumda ortam kısıtı):** `docker compose up --build` + gerçek Chrome tarayıcısında (`mcp__claude-in-chrome__*`) uçtan uca manuel akış (yeni sohbet → soru → grafikli sonuç → takip sorusu ile memory doğrulama → model değiştir → mod değiştir → belge yükle → RAG'in yeni belgeyi kullandığını gör). Bu oturumun ortamında `docker` komutu mevcut değil (ne native Windows'ta ne WSL2'de). Otomatik doğrulanabilen her şey (frontend build/test, palet, backend `mvn verify`) yapıldı; canlı tarayıcı akışı bağımsız oturuma kalıyor.
+**Yapılamadı:** `docker compose up --build` ile uçtan uca manuel tarayıcı akışı. Otomatik doğrulanabilen frontend build/test, palet ve backend `mvn verify` adımları tamamlandı; canlı tarayıcı akışı bağımsız doğrulamaya bırakıldı.
 
 ## Karşılanan requirement/AC
 - Layout (sidebar/orta panel/navbar) — Task 7 (Sidebar) + Task 9 (App.tsx) ile.

@@ -13,7 +13,7 @@
 - Main suite (`mvn verify`) must stay green **without** `NVIDIA_API_KEY` (NFR-004). Any new live-only verification is manual/`local-live`-tagged, never part of the default Surefire run.
 - The LLM still has no write access — `createIncidentDraft` stays out of the agent's tool set (do not add it).
 - No new infrastructure/containers. CORS is Spring config only, no gateway.
-- All `mvn`/`docker` commands run via WSL2 (per repo convention — see M4/M5 reports for the exact `wsl.exe -e bash -lc '...'` wrapping style).
+- Run all `mvn` and `docker` commands from the repository root.
 - Don't write frontend code (M10) or new domain/business rules — this milestone is live-mode plumbing + proof only.
 - Follow existing code conventions: config beans build NVIDIA clients inline per `AI_MODE` branch (see `AgentConfig.chatModelFactory`/`knowledgeSearchPort` — do not introduce a new abstraction layer for this).
 
@@ -106,8 +106,8 @@ class KnowledgeAutoIngestRunnerTest extends AbstractPostgresIntegrationTest {
 
 - [ ] **Step 2: Run test to verify it fails (compile error — types don't exist yet)**
 
-Run (WSL2, main repo `.env` not needed for this — Testcontainers only):
-`wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B -q -Dtest=KnowledgeAutoIngestRunnerTest test'`
+Run from the repository root (`.env` is not needed for this Testcontainers test):
+`mvn -B -q -Dtest=KnowledgeAutoIngestRunnerTest test`
 
 Expected: compilation failure — `KnowledgeAutoIngestRunner` and `KnowledgeRepository.existsDocument` do not exist yet.
 
@@ -196,7 +196,7 @@ public final class KnowledgeAutoIngestRunner implements ApplicationRunner {
 
 - [ ] **Step 6: Run the test to verify it passes**
 
-Run: `wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B -Dtest=KnowledgeAutoIngestRunnerTest test'`
+Run: `mvn -B -Dtest=KnowledgeAutoIngestRunnerTest test`
 Expected: `Tests run: 3, Failures: 0, Errors: 0, Skipped: 0` / `BUILD SUCCESS`.
 
 - [ ] **Step 7: Wire the runner as a Spring bean in `AgentConfig`**
@@ -255,7 +255,7 @@ First check `EmbeddingService`'s exact method signatures in `src/main/java/com/e
 
 - [ ] **Step 8: Run the full test suite**
 
-Run: `wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'`
+Run: `mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 Expected: `BUILD SUCCESS`, same test count as before + 3 new tests, no `NVIDIA_API_KEY` needed (stub-mode bean construction never touches the network — verify `AgentConfigTest` in `src/test/java/com/example/otpsentinel/config/AgentConfigTest.java` still passes; if it asserts the exact bean set/shape, extend it to also assert `knowledgeAutoIngestRunner` bean exists and is disabled when `AI_MODE=stub`/unset).
 
 - [ ] **Step 9: Commit**
@@ -353,7 +353,7 @@ Use whichever matches the existing `@SpringBootTest` setup pattern in this codeb
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B -Dtest=DevCorsConfigTest test'`
+Run: `mvn -B -Dtest=DevCorsConfigTest test`
 Expected: compilation failure (`DevCorsConfig` doesn't exist) or the `DevProfile` case failing (bean absent).
 
 - [ ] **Step 3: Implement `DevCorsConfig`**
@@ -391,7 +391,7 @@ public class DevCorsConfig implements WebMvcConfigurer {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B -Dtest=DevCorsConfigTest test'`
+Run: `mvn -B -Dtest=DevCorsConfigTest test`
 Expected: `Tests run: 2, Failures: 0, Errors: 0, Skipped: 0` / `BUILD SUCCESS`.
 
 - [ ] **Step 5: Commit**
@@ -414,7 +414,7 @@ git commit -m "feat(api): dev-profile-only CORS for future Vite frontend dev ser
 
 - [ ] **Step 1: Verify `.env.example` completeness**
 
-Open `.env.example`. Confirm every variable `AgentConfig` reads for live mode is present and non-empty where it must be non-empty for the app to boot in live mode: `AI_MODE`, `NVIDIA_API_KEY` (must stay empty — real key goes in the untracked `.env`), `NVIDIA_BASE_URL`, `NVIDIA_CHAT_MODEL`, `NVIDIA_EMBEDDING_MODEL`. These are already present per M4/M5 reports — this step is a read-and-confirm, not necessarily an edit. If any is missing, add it with the same default as `application.yml`'s `${VAR:default}` fallback.
+Open `.env.example`. Confirm every variable `AgentConfig` reads for live mode is present where required: `AI_MODE`, `NVIDIA_API_KEY` (must stay empty; live credential is injected at runtime), `NVIDIA_BASE_URL`, `NVIDIA_CHAT_MODEL`, `NVIDIA_EMBEDDING_MODEL`. If any non-secret variable is missing, add it with the same default as `application.yml`'s `${VAR:default}` fallback.
 
 - [ ] **Step 2: Add a "Canlı demo nasıl çalıştırılır" section to `README.md`**
 
@@ -480,7 +480,7 @@ This task is **not** written as failing-test/implementation steps — it is a on
 - [ ] **Step 1: Boot the stack in live mode**
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && set -a && source .env && set +a && AI_MODE=live docker compose up --build -d'
+set -a && source .env && set +a && AI_MODE=live docker compose up --build -d
 ```
 
 Wait for `docker compose ps` to show `db` as `healthy` and the app as `Up`. Check `curl -s http://localhost:8080/actuator/health` returns `{"status":"UP"}`.
@@ -488,7 +488,7 @@ Wait for `docker compose ps` to show `db` as `healthy` and the app as `Up`. Chec
 - [ ] **Step 2: Confirm knowledge auto-ingest actually ran**
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && docker compose exec -T db psql -U otpsentinel -d otpsentinel -c "SELECT document_id, version FROM knowledge_document ORDER BY document_id;"'
+docker compose exec -T db psql -U otpsentinel -d otpsentinel -c "SELECT document_id, version FROM knowledge_document ORDER BY document_id;"
 ```
 
 Expected: 4 rows (`ERR-OTP-001`, `INC-2026-041`, `POL-CHANGE-001`, `RB-OTP-001`). Restart the app container (`docker compose restart app` or equivalent service name) and re-run the same query — row count must stay 4 (idempotency proof for the report).
@@ -496,9 +496,9 @@ Expected: 4 rows (`ERR-OTP-001`, `INC-2026-041`, `POL-CHANGE-001`, `RB-OTP-001`)
 - [ ] **Step 3: Run the real investigation and capture output**
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && curl -s -X POST http://localhost:8080/api/v1/investigations \
+curl -s -X POST http://localhost:8080/api/v1/investigations \
   -H "Content-Type: application/json" \
-  -d "{\"question\": \"Son 15 dakikada OTP teslimat oranı neden düştü?\", \"timeWindow\": {\"startAt\": \"2026-07-30T11:15:00Z\", \"endAt\": \"2026-07-30T11:30:00Z\"}, \"locale\": \"tr-TR\"}" | tee /tmp/m9-live-investigation.json | jq .'
+  -d "{\"question\": \"Son 15 dakikada OTP teslimat oranı neden düştü?\", \"timeWindow\": {\"startAt\": \"2026-07-30T11:15:00Z\", \"endAt\": \"2026-07-30T11:30:00Z\"}, \"locale\": \"tr-TR\"}" | tee /tmp/m9-live-investigation.json | jq .
 ```
 
 Capture the full JSON response and the app container logs for this request (`docker compose logs app --since=2m`) — the logs must show real HTTP calls going out to `integrate.api.nvidia.com` (tool-calling round-trips), not stub script log lines.
@@ -516,7 +516,7 @@ If any of these fail because the model didn't call tools correctly or returned u
 - [ ] **Step 5: Tear down**
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && docker compose down'
+docker compose down
 ```
 
 - [ ] **Step 6: No commit for this task unless Step 4 required a system-prompt change**
@@ -537,7 +537,7 @@ git commit -m "fix(agent): tighten live system prompt after M9 live e2e verifica
 - [ ] **Step 1: Full offline build**
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'
+mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live
 ```
 
 Expected: `BUILD SUCCESS`, all tests green, Spotless clean, no `NVIDIA_API_KEY` used.

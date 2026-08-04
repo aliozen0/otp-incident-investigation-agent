@@ -150,7 +150,7 @@ Ana fixture, approval, RAG citation, Docker ve README tamamlanmadan Kafka, Redis
 5. Visualization validation, drop+warning, Flyway/JDBC canonical snapshot ve GET round trip ekle.
 6. Frontend discriminated turns, store migration, adaptive composer/bubbles ve typed güvenli chart
    renderer ekle.
-7. Offline suite, frontend test/build, WSL Compose stub ve onaylı sentetik live smoke doğrula.
+7. Offline suite, frontend test/build, Docker Compose stub ve onaylı sentetik live smoke doğrula.
 
 **Kabul:** AC-041–AC-052; tool budget/duplicate/approval/idempotency regressionları korunur. Yeni
 servis, multi-agent runtime, arbitrary visualization config veya kalıcı genel chat transcript yoktur.

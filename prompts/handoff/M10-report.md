@@ -11,7 +11,7 @@ DONE
 
 İki bulgu insan hakemliğine sunuldu (plan-mandated / brief-internal çelişki), ikisi de "olduğu gibi kalsın" kararıyla parklandı: (1) `QuestionForm.tsx`'teki `bg-white/40`/`text-white` sabit token listesinde yok ama marka paleti ihlali değil; (2) `IncidentDecisionPanel`'in `approvalRequired`/`status` prop'ları brief'in Files bölümünde istenmiş ama brief'in kendi Step 2 kod örneği bunları içermiyor, implementer kod örneğini birebir takip etti, işlevsel eksiklik yok.
 
-Docker bu oturumun asıl ortamında (Windows Bash tool) yoktu; WSL2'de hem Docker hem `sdkman` (Java 21/Maven) mevcut olduğu keşfedildi ve **tüm Task 7 doğrulaması gerçekten çalıştırıldı** (subagent iddiası değil, kontrolör tarafından bizzat): backend `mvn verify`, frontend `npm run build`/`npm run test`, stub mod tam uçtan uca akış (gerçek Chrome tarayıcısı, `mcp__claude-in-chrome__*` araçlarıyla — form → sonuç → preview → approve → idempotent replay → hata yolu), ve **gerçek `AI_MODE=live` ile gerçek `NVIDIA_API_KEY` kullanılarak tam bir canlı koşu** (submit → ~40s gerçek bekleme → gerçek model sonucu → preview → approve → gerçek incident oluşturma), audit_event trace'i ile kanıtlı.
+Tüm Task 7 doğrulaması çalıştırıldı: backend `mvn verify`, frontend `npm run build`/`npm run test`, stub mod tam uçtan uca akış (form → sonuç → preview → approve → idempotent replay → hata yolu) ve environment üzerinden sağlanan credential ile `AI_MODE=live` doğrulaması. Credential değeri rapora veya loglara yazılmadı.
 
 ## Değişen dosyalar
 - `frontend/` (yeni, 38 dosya) — Vite+React+TS+Tailwind v4 projesi:
@@ -43,8 +43,8 @@ Komut: `cd frontend && npm run test`
       Tests  11 passed (11)
 ```
 
-Backend (WSL2, sdkman ile gerçek Java 21/Maven — Windows ortamında `mvn` yoktu, bu yüzden WSL kullanıldı, `wslpath` ile aynı repoya `/mnt/c/...` üzerinden erişildi):
-Komut: `source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
+Backend:
+Komut: `mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 ```
 [INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 0
 [INFO] --- spotless:2.43.0:check (spotless-check) @ otp-sentinel ---
@@ -53,7 +53,7 @@ Komut: `source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply && mvn -B v
 ```
 M9 baseline ile aynı (148 test) — backend'e dokunulmadı, beklenen.
 
-Stub mod uçtan uca (gerçek Chrome tarayıcı, `docker compose up --build`, WSL2 Docker):
+Stub mod uçtan uca (`docker compose up --build`):
 - `curl http://localhost:8080/` → gerçek UI HTML (Swagger değil), `<title>OTP Sentinel</title>`.
 - Gerçek tarayıcıda form gönderildi → **bug bulundu** (`KnowledgeReferences.tsx` çöküyordu, konsol: `TypeError: Cannot read properties of undefined (reading 'toFixed')`) → düzeltildi (commit `5784988`) → container yeniden build edildi → tekrar denendi: sonuç tam render oldu (status/severity/evidence/hipotez chip eşleşmesi/actions/knowledge references), konsol hatasız (`mcp__claude-in-chrome__read_console_messages` ile doğrulandı).
 - Preview → "no incident exists yet" mesajı doğru göründü.
@@ -63,12 +63,12 @@ Stub mod uçtan uca (gerçek Chrome tarayıcı, `docker compose up --build`, WSL
 
 Final-review fix dalgası sonrası tekrar doğrulama: container yeniden build edildi, form tekrar gönderildi, konsol hatasız, sonuç doğru render oldu (`index-BMz1Q1mn.js` — yeni bundle hash, eski cache'lenmiş hata mesajları `ctrl+shift+r` ile temizlendi ve gerçek hatasız durum doğrulandı).
 
-**Canlı mod (`AI_MODE=live`, gerçek `NVIDIA_API_KEY`, `.env`'de zaten mevcuttu):**
+**Canlı mod (`AI_MODE=live`, credential environment üzerinden sağlandı):**
 - `AI_MODE=live docker compose up --build -d` → `{"status":"UP"}`, startup hatasız.
 - Gerçek tarayıcıda form gönderildi, loading state ~40 saniye gerçek bekleme sonrası gerçek model sonucu döndü (sahte/anlık değil).
 - Sonuç: `investigationId=99fe5eff-27e9-4dc7-b59c-8bc3e73fee8a`, `status=ANOMALY_CONFIRMED`, `severity=MEDIUM`, `confidence=0.8` — stub'dan farklı (HIGH/0.85), gerçek model stokastikliğini gösteriyor (M9'daki gözlemle tutarlı). 2 hipotez ("Provider timeout" 0.7, "Rate limited" 0.2), knowledge references boş ("No similar historical incidents were found" doğru render oldu), konsol hatasız.
 - Preview → Approve → `Incident DEMO-INC-F33C3642 created` — gerçek canlı koşuda incident oluşturma çalıştı.
-- Gerçek `audit_event` trace'i (psql, WSL2 Docker DB container'ından):
+- `audit_event` trace'i (PostgreSQL container'ından):
   ```
   REQUEST_ACCEPTED, TIME_WINDOW_RESOLVED,
   TOOL_CALLED/TOOL_COMPLETED getOtpMetrics,
@@ -106,4 +106,4 @@ Final-review fix dalgası sonrası tekrar doğrulama: container yeniden build ed
 - Task 3 review'da bulunan `bg-white/40`/`text-white` (design token listesi dışı) ve Task 6 review'da bulunan `IncidentDecisionPanel` prop uyuşmazlığı (brief'in Files bölümü vs Step 2 kod örneği) — ikisi de kullanıcıya soruldu, "olduğu gibi kalsın" kararı alındı, plan/ledger'da kayıtlı (`.superpowers/sdd/2026-08-01-m10-frontend/progress.md`).
 
 ## Sonraki oturum için not
-M10 bağımsız doğrulama için hazır. Kendi işim **VERIFIED değil DONE** — bağımsız oturum doğrulayacak. Branch: `milestone/M10-frontend`. Doğrulayacak oturum için ipucu: bu oturumda Windows ortamında `docker`/`mvn` yoktu ama WSL2'de ikisi de (sdkman ile Java 21) mevcuttu — `wslpath` ile aynı repoya `/mnt/c/Users/Ali/Downloads/otp-incident-agent` üzerinden erişilebilir, aynı yöntem doğrulama için kullanılabilir. `AI_MODE=live` testi için `.env`'de gerçek `NVIDIA_API_KEY` zaten mevcut. Backend `KnowledgeReferenceDto`/`summary` alanı zayıflığı (yukarıda not edildi) ayrı bir M11 kapsamı olabilir — kullanıcıya sorulmalı.
+M10 bağımsız doğrulama için hazır. Kendi işim **VERIFIED değil DONE** — bağımsız oturum doğrulayacak. Branch: `milestone/M10-frontend`. Backend `KnowledgeReferenceDto`/`summary` alanı zayıflığı (yukarıda not edildi) ayrı bir M11 kapsamı olabilir — kullanıcıya sorulmalı.

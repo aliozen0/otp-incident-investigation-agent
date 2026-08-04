@@ -51,7 +51,7 @@
 | R-11 | Demo internet sorunu | Yüksek | Yüksek | Stub fallback |
 | R-12 | Fixture tutarsızlığı | Orta | Yüksek | Arithmetic tests |
 | R-13 | İç mimari varmış algısı | Orta | Orta | Açık mock disclaimer |
-| R-14 | Windows Docker sorunu | Orta | Orta | Portable paths/smoke |
+| R-14 | Platforma özel Docker sorunu | Orta | Orta | Portable paths/smoke |
 | R-15 | Her mesajın investigation'a dönüşmesi | Orta | Yüksek | Tool-free LLM route + typed Java gate |
 | R-16 | Route prompt injection / invalid output | Orta | Yüksek | Explicit mode policy, schema validation, repair once, fail closed |
 | R-17 | Chat tool sızıntısı | Düşük | Kritik | Ayrı tool-free adapter + request-level tool specification tests |
@@ -103,7 +103,7 @@ suite. `docker compose up --build`, `README quickstart`, demo, and secret scan r
 ### M8 status
 
 - `mvn -B spotless:apply verify`: `BUILD SUCCESS`, `Tests run: 141, Failures: 0, Errors: 0, Skipped: 0` (141 = 137 tests on `main` + 4 new tests on this branch: 3 exception-mislabeling regression tests + 1 stub-script-exhaustion regression test), HEAD `85ac762`.
-- `docker compose up --build` verified clean (`docker compose down -v && up --build -d`, WSL2, host port 5432 free, no `POSTGRES_PORT` override needed): `db` healthy, `app` healthy/Up, `GET /actuator/health` -> `{"status":"UP"}`.
+- `docker compose up --build` verified clean (`docker compose down -v && up --build -d`): `db` healthy, `app` healthy/Up, `GET /actuator/health` -> `{"status":"UP"}`.
 - `scripts/demo.sh` run end to end (`time` real 0.446s, well under a minute): investigation created (`ANOMALY_CONFIRMED`/`HIGH`), preview generated (`requiresExplicitApproval=true`), approved (`incidentDraftId=0de1f2c8-a807-42b0-b7c2-d87f37780d18`, `externalIncidentId=DEMO-INC-4A8472AF`), replayed with the same Idempotency-Key -> `idempotentReplay=true`, same `incidentDraftId`.
 - README quickstart + API walkthrough re-run verbatim against the same live environment (separately from `demo.sh`): `docker compose up --build`, health check, Swagger UI (`/swagger-ui/index.html` -> HTTP 200), and the 5-step curl walkthrough all worked with no undocumented flags; second idempotency replay again returned `idempotentReplay=true` with the same `incidentDraftId`.
 - Secret scan: `git log -p milestone/M8-demo-readiness ^main | grep -iE "nvapi-|api[_-]?key.*=|password.*="` -> clean (no match); `grep -rn "nvapi-" . --include=*.md --include=*.yml --include=*.java --include=*.env*` -> only doc/plan files mentioning the literal string `nvapi-` as documentation text (this checklist and the M8 plan doc itself), no real key; `git ls-files .env` -> empty (untracked, confirmed).

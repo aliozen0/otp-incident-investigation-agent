@@ -44,7 +44,7 @@ Bu milestone'un "Kabul" kriteri: ana Gherkin akışları (docs/12 "Human approva
 - Approval ayrı, açık `APPROVE` kararı olmadan `IncidentDraft` kalıcı olamaz (M1 domain invariant'ı zaten bunu zorluyor — controller bunu bypass etmemeli).
 - Idempotency DB seviyesinde garanti (M3) — controller'da ayrıca application-level kontrol ekleme, tek kaynak DB constraint kalsın.
 - API DTO'ları domain tiplerini `api` paketine sızdırmadan map etsin (hexagonal sınır, `AGENTS.md`).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 - Commit'ten önce `mvn spotless:apply` + tam `mvn verify` (tüm proje) yeşil olduğunu doğrula.
 
 ### Bitti sayılması için

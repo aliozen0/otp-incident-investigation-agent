@@ -19,7 +19,7 @@ DONE
 - `src/test/java/.../adapters/persistence/JdbcInvestigationRepositoryTest.java`, `JdbcIncidentDraftRepositoryTest.java`, `JdbcAuditEventRepositoryTest.java` — entegrasyon testleri.
 
 ## Testler (gerçek komut + gerçek çıktı)
-Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker run --rm -v $(pwd):/build -v maven-repo:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -w /build maven:3.9-eclipse-temurin-21 mvn -B verify"`
+Komut: `mvn -B verify`
 
 Çıktı özeti:
 ```

@@ -82,7 +82,7 @@ prompt'unun "tek kaynak DB constraint kalsın" kısıtına birebir uyuyor, ayrı
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
 Komut:
-`wsl.exe -e bash -lc 'cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'`
+`mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 
 Çıktı özeti:
 ```text
@@ -143,7 +143,7 @@ boşken tekrar denenmeli.
    icat değil — davranış gerekliydi).
 
 ## Sonraki oturum için not
-M7 branch'i bağımsız verify'a hazır (PR: https://github.com/aliozen0/otp-incident-investigation-agent/pull/1).
+M7 branch'i bağımsız verify'a hazır (PR #1).
 M8'de: Quickstart/Swagger örnekleri/seed/curl örnekleri/mimari diyagram/demo script/temiz log/failure
 demo/opsiyonel minimal UI; ayrıca `docker compose up --build`'ı port çakışması olmayan bir ortamda
 tekrar doğrula, ve final review'ın parked minor'ını (dar exception tipi ile IllegalArgumentException

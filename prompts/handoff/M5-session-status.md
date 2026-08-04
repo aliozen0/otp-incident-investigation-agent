@@ -4,14 +4,13 @@ Bu dosya, M5 "Agent orchestration" milestone'ının subagent-driven-development 
 
 ## Ortam
 
-- Çalışma dizini: worktree — `C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration`
+- Çalışma dizini: `.claude/worktrees/milestone+M5-agent-orchestration`
 - Branch: `milestone/M5-agent-orchestration` (bu dal AYNI ANDA ana repo klasöründe checkout edilemez — git kısıtı. Ana repo klasörü `main`'de kalmalı, tüm M5 işi bu worktree klasöründen yürütülmeli. VS Code'da görmek için bu worktree klasörünü ayrı aç.)
-- `mvn`/`docker` komutları yalnız WSL2 üzerinden çalışıyor (proje kısıtı). Bu oturumda WSL Ubuntu-20.04'e SDKMAN ile **Java 21-tem + Maven 3.9.16** kuruldu (daha önce yoktu). Docker WSL içinde zaten kurulu ve çalışıyor (Docker Desktop yok, doğrudan WSL docker).
-- Çalışan mvn komut kalıbı:
+- Maven komut kalıbı:
   ```bash
-  wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration")" && source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -B test -Dtest=XyzTest 2>&1 | tail -100'
+  mvn -B test -Dtest=XyzTest
   ```
-- `.env` (ana repo kökünde, worktree dışında) gerçek `NVIDIA_API_KEY` içeriyor — kullanıcı onayıyla Task 1'in live spike testinde kullanıldı. Asla commit'lenmedi/loglanmadı.
+- Live spike credential'ı yalnız environment üzerinden sağlanmalı; commit veya log içine yazılmamalıdır.
 
 ## Süreç
 

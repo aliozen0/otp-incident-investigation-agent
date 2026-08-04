@@ -85,22 +85,21 @@ Ana koddan önce şu küçük spike çalışmalıdır:
 
 Spike başarısızsa sürüm kombinasyonu ana geliştirme başlamadan değiştirilir.
 
-## Yerel çalıştırma ortamı
+## Geliştirme ortamı
 
-Bu makinede Windows tarafında yerel JDK21/Maven/Docker kurulu değil. Tüm `mvn`, `docker`, `docker compose` komutları **WSL2 içindeki Docker Engine** üzerinden çalıştırılır, Windows Docker Desktop üzerinden değil.
+Proje platformdan bağımsız komutlarla, repository kökünden çalıştırılır:
 
-```powershell
-wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && mvn -B verify"
-wsl.exe -d Ubuntu-20.04 bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && docker compose up --build -d"
+```bash
+mvn -B verify
+docker compose up --build -d
 ```
 
 Kurallar:
 
-- Maven build/test: WSL2 içindeki Java 21 + Maven ile doğrudan; Maven yoksa
-  `maven:3.9-eclipse-temurin-21` image'ı güvenli fallback'tir.
-- Compose/health doğrulama: `wsl -e bash -lc "cd /mnt/c/... && docker compose ..."`.
-- Windows tarafında doğrudan `mvn`/`docker` komutu çalıştırmaya çalışma — kurulu değil, başarısız olur.
-- Port çakışması olursa (`POSTGRES_PORT` gibi) `.env`/ortam değişkeniyle çöz, sabit port'a güvenme.
+- Build ve test için Java 21 ile Maven 3.9+ kullanılmalıdır.
+- Integration testleri için Testcontainers'ın erişebildiği bir Docker Engine bulunmalıdır.
+- Maven bulunmayan ortamlarda `maven:3.9-eclipse-temurin-21` image'ı kullanılabilir.
+- Port çakışmaları (`POSTGRES_PORT` gibi) ortam değişkenleriyle çözülmeli, sabit host portuna güvenilmemelidir.
 
 ## Profil önerisi
 

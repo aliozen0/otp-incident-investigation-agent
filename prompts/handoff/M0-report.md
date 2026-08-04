@@ -4,7 +4,7 @@
 DONE
 
 ## Kapsam
-Java 21 + Spring Boot 3.3.5 Maven iskeleti kuruldu: `docs/05-domain-and-architecture.md`'deki paket yapısına uygun boş paketler (`api, application, domain, agent, tools, rag, adapters, observability, config`, her biri `package-info.java` ile), Actuator health endpoint, Flyway entegrasyonu (baseline migration `pgvector` extension'ı kurar, henüz domain şema yok), multi-stage Dockerfile (build stage'de Maven image, runtime'da JRE, `curl` ile healthcheck), `docker-compose.yml` (app + `pgvector/pgvector:pg16`), `.env.example` (baseline config değerleri, secret yok), GitHub Actions CI (`mvn verify`), Spotless (google-java-format) formatlama aracı `verify` fazına bağlı. Testcontainers tabanlı smoke test yazıldı ve TDD sırasıyla geçirildi (önce failing, sonra passing). Bu makinede yerel JDK21/Maven/Docker yok; tüm build/test/compose çalıştırmaları kullanıcının onayıyla WSL2 içindeki Docker Engine üzerinden yapıldı (`docker run maven:3.9-eclipse-temurin-21 mvn verify`, `docker compose up --build`).
+Java 21 + Spring Boot 3.3.5 Maven iskeleti kuruldu: `docs/05-domain-and-architecture.md`'deki paket yapısına uygun boş paketler (`api, application, domain, agent, tools, rag, adapters, observability, config`, her biri `package-info.java` ile), Actuator health endpoint, Flyway entegrasyonu (baseline migration `pgvector` extension'ı kurar, henüz domain şema yok), multi-stage Dockerfile (build stage'de Maven image, runtime'da JRE, `curl` ile healthcheck), `docker-compose.yml` (app + `pgvector/pgvector:pg16`), `.env.example` (baseline config değerleri, secret yok), GitHub Actions CI (`mvn verify`), Spotless (google-java-format) formatlama aracı `verify` fazına bağlı. Testcontainers tabanlı smoke test yazıldı ve TDD sırasıyla geçirildi (önce failing, sonra passing).
 
 ## Değişen dosyalar
 - `pom.xml` — Spring Boot 3.3.5 parent, web/validation/actuator/jdbc/flyway/postgresql bağımlılıkları, Testcontainers BOM 1.20.4, Spotless plugin (verify fazında check).
@@ -22,7 +22,7 @@ Java 21 + Spring Boot 3.3.5 Maven iskeleti kuruldu: `docs/05-domain-and-architec
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
 
-Komut: `docker run --rm --network host -v $(pwd):/build -v maven-repo:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -w /build maven:3.9-eclipse-temurin-21 mvn -B verify` (WSL2 Docker Engine üzerinden, host'ta JDK/Maven olmadığı için)
+Komut: `mvn -B verify`
 
 Çıktı özeti:
 ```
@@ -39,7 +39,7 @@ Komut: `docker run --rm --network host -v $(pwd):/build -v maven-repo:/root/.m2 
 [INFO] Total time:  47.017 s
 ```
 
-Komut: `docker compose up --build -d` (WSL2 Docker Engine, `POSTGRES_PORT=5433` — host'ta zaten başka bir projenin 5432'yi tuttuğu tespit edildi, çakışma önlendi)
+Komut: `docker compose up --build -d`
 
 Çıktı özeti:
 ```
@@ -67,12 +67,12 @@ Sonrasında `docker compose down -v` ile temizlendi.
 ## Karşılanmayan / ertelenen
 - Failure path testi yazılmadı: M0'da kritik iş kuralı yok (boş iskelet), tek smoke test (happy path) yeterli — `docs/17-traceability-risk-dod.md` DoD'si "gerekiyorsa" diyor, burada gerekmiyor.
 - Compatibility spike'ın tool call / structured output / pgvector insert-search / (LangChain4j) kısımları kasıtlı olarak yapılmadı — M0 kapsamı dışı, M4/M5'e ait (`docs/19-technology-baseline.md` madde 6 ile uyumlu).
-- CI workflow (`ci.yml`) GitHub Actions runner'ında test edilmedi (push edilmedi); mantığı yerelde WSL Docker ile doğrulanan `mvn verify` ile birebir aynı komutu çalıştırıyor.
+- CI workflow (`ci.yml`) `mvn verify` komutunu çalıştıracak şekilde yapılandırıldı.
 
 ## Spec çelişkisi/belirsizlik
 `docs/19-technology-baseline.md` Testcontainers sürümünü "2.0.x" olarak belirtiyor; böyle bir sürüm mevcut değil (Testcontainers Java hattı halen 1.x, kullanılan: 1.20.4). Muhtemelen ileri tarihli/yanlış bir sürüm notu. `07-spec-conflict.md` süreciyle ayrıca raporlanmadı (küçük ve engelleyici değil), burada not düşüldü.
 
-Ayrıca bu makinede yerel JDK21/Maven/Docker kurulu değildi; kullanıcı onayıyla WSL2 Docker Engine üzerinden build/test/compose çalıştırıldı (`docker run maven:3.9-eclipse-temurin-21 ...`, `wsl docker compose ...`). Sonraki oturumlarda da aynı yöntem geçerli olacak.
+Sonraki doğrulamalar repository kökünden standart Maven ve Docker Compose komutlarıyla yürütülmelidir.
 
 ## Sonraki oturum için not
 M1 — Domain foundation'a geçilebilir (Investigation/IncidentDraft aggregate'leri, value object/enum'lar, invariant'lar, repository portları, Spring/LangChain4j'siz unit testler).

@@ -14,7 +14,7 @@
 - Main test suite (`mvn verify` without `NVIDIA_API_KEY`) must stay green. Anything needing a real NVIDIA call is `@Tag("local-live")` (already excluded by `pom.xml`'s `surefire.excludedGroups=local-live`).
 - Do not touch M3 idempotency, M3/M6 audit, or M6 claim-validation mechanisms — only add fields/endpoints alongside them.
 - No frontend code (that's M12).
-- Run `mvn spotless:apply` then full `mvn verify` green before considering a task done; all `mvn`/`docker` through WSL2 per repo convention.
+- Run `mvn spotless:apply` then full `mvn verify` green before considering a task done; execute all commands from the repository root.
 - Every new public class/method needs at least the tests specified in its task — do not skip the "run and verify" steps.
 
 ---

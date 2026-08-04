@@ -32,9 +32,7 @@ constraint violation and replays, it never pre-checks.
 - DTOs in `api` package never expose domain types (`Investigation`, `IncidentDraft`, `Evidence`, ...)
   directly — always map to/from dedicated request/response records.
 - No new Spring `@Profile`s; keep using the existing `AI_MODE` env-var switch pattern from `AgentConfig`.
-- All `mvn`/`docker` commands run through WSL2: prefix with
-  `wsl.exe -e bash -lc 'cd otp-incident-agent && source sdkman-init.sh && <cmd>'` (see
-  `prompts/handoff/M6-report.md` for the exact working command).
+- Run all `mvn` and `docker` commands from the repository root.
 - `mvn -B spotless:apply` then `mvn -B verify -Dsurefire.excludedGroups=local-live` must be green before
   the final commit.
 
@@ -188,7 +186,7 @@ Add the needed imports (`AuditEvent`, `AuditEventRepository`, `AuditEventType`, 
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run (WSL2): `mvn -B test -Dtest=EvidenceCollectorTest`
+Run: `mvn -B test -Dtest=EvidenceCollectorTest`
 Expected: compile error (`EvidenceCollector(Investigation, AuditEventRepository, String)` does not exist).
 
 - [ ] **Step 3: Implement**

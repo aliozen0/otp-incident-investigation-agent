@@ -30,7 +30,7 @@ M12'nin (frontend sohbet arayüzü) dayanacağı backend desteği eklendi: `Inve
 - `docs/superpowers/plans/2026-08-02-m11-agent-console-backend.md` — implementasyon planı
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
-Komut: `mvn -o verify` (WSL2, NVIDIA_API_KEY olmadan)
+Komut: `mvn -o verify` (`NVIDIA_API_KEY` olmadan)
 Çıktı özeti:
 ```
 [INFO] Results:

@@ -59,9 +59,9 @@
 
 > MVP'de transactional data ve vector search'ü tek DB'de tutarak operasyonel karmaşıklığı azalttım. Ölçek ihtiyacı kanıtlanırsa ayrı store düşünülür.
 
-### “Bu NETGSM'in gerçek sistemi mi?”
+### “Bu gerçek bir kurum sistemi mi?”
 
-> Hayır. İç mimariye erişimim yok. İlandaki agentic AI ve Java yönelimine uygun, mock verili bir proof of concept.
+> Hayır. Herhangi bir kurumun iç mimarisini temsil etmiyor. Agentic AI ve Java yaklaşımını göstermek için sentetik verilerle hazırlanmış bir proof of concept.
 
 ### “PHP nerede?”
 

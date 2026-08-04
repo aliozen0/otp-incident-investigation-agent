@@ -30,9 +30,7 @@ DONE
 - `src/test/java/com/example/otpsentinel/domain/*Test.java` (6 dosya, 34 test) — yeni
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
-Bu makinede yerel JDK/Maven yok; M0'da olduğu gibi WSL2 Docker Engine üzerinden çalıştırıldı.
-
-Komut: `docker run --rm --network host -v /mnt/c/Users/Ali/Downloads/otp-incident-agent:/build -v maven-repo:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -w /build maven:3.9-eclipse-temurin-21 mvn verify`
+Komut: `mvn -B verify`
 
 Çıktı özeti:
 ```

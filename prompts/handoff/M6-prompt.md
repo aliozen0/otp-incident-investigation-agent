@@ -46,7 +46,7 @@ Bu milestone'un "Kabul" kriteri: güvenlik acceptance testleri (docs/12 "Evidenc
 - Bu kurallar deterministik Java kodda yaşar, LLM/framework guardrail'ine bırakılmaz (docs/09).
 - M1 domain invariant'larını (özellikle high-risk aksiyon otomatik değil, evidence-hypothesis ilişkisi) bozma; validator bunların üzerine ek bir erken-ret katmanı, yerine geçen bir şey değil.
 - Bu milestone dışına taşma: REST, persistence şema değişikliği (audit event tipi genişletmesi hariç, o M3'ün küçük bir uzantısı).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 - Commit'ten önce `mvn spotless:apply` + tam `mvn verify` (tüm proje) yeşil olduğunu doğrula.
 
 ### Bitti sayılması için

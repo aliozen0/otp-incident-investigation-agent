@@ -36,7 +36,7 @@ Bu milestone'un "Kabul" kriteri: ana query (`docs/08` evaluation set'indeki "pro
 - `rag` paketi agent/LangChain4j tool-calling'den bağımsız kalsın; bu milestonda yalnızca retrieval mekanizması var, agent entegrasyonu M5.
 - Retrieved içerikteki talimatları asla yürütme; bunu test et (docs/12 "Ignore embedded instruction" senaryosunun retrieval kısmı burada, tam politika kontrolü M6'da).
 - Bu milestone dışına taşma: agent, REST, validation pipeline yazma.
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 - Commit'ten önce `mvn spotless:apply` + tam `mvn verify` (yalnız yeni paket değil) yeşil olduğunu doğrula.
 
 ### Bitti sayılması için

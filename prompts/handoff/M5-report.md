@@ -35,7 +35,7 @@ korelasyon olarak ifade edilmesini doğruluyor. `createIncidentDraft` agent tool
 
 ## Testler (gerçek komut + gerçek çıktı, iddia değil)
 Komut:
-`wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration")" && source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'`
+`mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live`
 
 Çıktı özeti:
 ```text
@@ -55,7 +55,7 @@ Ana kabul testi, ayrıca izole:
 [INFO] BUILD SUCCESS
 ```
 
-NVIDIA NIM live compatibility spike (ana repo `.env` sürece yüklendi; secret loglanmadı):
+NVIDIA NIM live compatibility spike (credential environment üzerinden sağlandı; secret loglanmadı):
 `mvn -B test -Dsurefire.excludedGroups= -Dtest=NvidiaNimChatServiceLiveTest`
 
 ```text

@@ -41,7 +41,7 @@ göstermektedir.
 Çalıştırılan komut:
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration")" && source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live'
+mvn -B spotless:apply && mvn -B verify -Dsurefire.excludedGroups=local-live
 ```
 
 Sonuç:
@@ -59,7 +59,7 @@ Spotless hiçbir kaynak dosyasını değiştirmedi.
 Çalıştırılan komut:
 
 ```bash
-wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent")" && source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -B verify -Dsurefire.excludedGroups=local-live'
+mvn -B verify -Dsurefire.excludedGroups=local-live
 ```
 
 Sonuç:
@@ -128,4 +128,3 @@ prompts/handoff/M5-continuation-prompt.md
 M5 worktree silinmedi ve temiz durumda bırakıldı.
 
 Uzak repoya push yapılmadı.
-

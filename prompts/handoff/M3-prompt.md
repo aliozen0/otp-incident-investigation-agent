@@ -35,7 +35,7 @@ Bu milestone'un "Kabul" kriteri: restart sonrası GET aynı sonucu döner, dupli
 - Idempotency DB constraint ile garanti edilmeli, yalnızca application-kodu kontrolüne güvenme (yarış durumu riski).
 - Audit event'lerde secret/OTP/telefon/PII olamaz (`docs/09-security-governance.md`).
 - Bu milestone dışına taşma: RAG, agent, REST kodu yazma.
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden (`docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı").
+- Tüm `mvn`/`docker` komutları repository kökünden (`docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı").
 - Commit etmeden önce `mvn spotless:apply` çalıştır, `mvn verify`'ın tamamını (yalnız yeni testleri değil) yeşil gördüğünü doğrula — M2'de "preexisting sorun" diye BUILD FAILURE'ı görmezden gelme hatası tekrarlanmasın.
 
 ### Bitti sayılması için

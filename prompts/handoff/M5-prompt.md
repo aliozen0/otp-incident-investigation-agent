@@ -41,7 +41,7 @@ Bu milestone'un "Kabul" kriteri: ana fixture beklenen tool'ları kullanır ve ma
 - Kalıcı chat memory ekleme (ADR-012) — her investigation izole.
 - `domain`/`tools`/`rag` paketlerine agent-özel kod sızdırma; `agent` paketi kendi sınırında kalsın.
 - Bu milestone dışına taşma: tam validation pipeline (M6), REST (M7).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 - Commit'ten önce `mvn spotless:apply` + tam `mvn verify` (yalnız yeni paket değil) yeşil olduğunu doğrula.
 
 ### Bitti sayılması için

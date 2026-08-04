@@ -34,14 +34,14 @@ Bu milestone'un "Kabul" kriteri: temiz bilgisayarda tek komut, 5-7 dakikalık de
 
 1. `docs/17-traceability-risk-dod.md` MVP release checklist'ini oku, her maddeyi sırayla ele al.
 2. Değişecek dosyaları listele (README.md, varsa `scripts/demo.sh` veya benzeri, Swagger config).
-3. Her adım için: yap, gerçekten çalıştırıp doğrula (özellikle "temiz ortamda `docker compose up --build`" — WSL2 üzerinden, host'ta 5432 boşken test et).
+3. Her adım için: yap, gerçekten çalıştırıp doğrula (özellikle temiz ortamda `docker compose up --build`).
 4. Refactor/temizlik.
 
 ### Kısıtlar
 
 - Kod davranışını değiştirme (bug düzeltmesi hariç, gerçek bir şey bulursan `05-bugfix.md` şablonundaki gibi kök nedene git, ayrı raporla).
 - Yeni bağımlılık eklemeden önce gerekçelendir (`docs/00-project-charter.md` "Kapsam değişikliği filtresi": ana senaryoyu güçlendiriyor mu, ölçülebiliyor mu, demo güvenilirliğini bozmuyor mu, gereksiz altyapı eklemiyor mu, teknik görüşmede açıklanabilir mi).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 - Commit'ten önce `mvn spotless:apply` + tam `mvn verify` yeşil olduğunu doğrula.
 - Şirket içi mimari varmış gibi anlatma; her yerde "bu bir mock/PoC" açık kalsın (docs/18).
 

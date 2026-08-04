@@ -34,7 +34,7 @@ Henüz **yazma**: frontend kodu (M10), yeni domain/business kuralı.
 - Ana test suite (`mvn verify`, CI) hâlâ `NVIDIA_API_KEY` olmadan yeşil kalmalı (NFR-004) — canlı doğrulama ayrı, otomatik olmayan bir adım.
 - LLM'e hâlâ write yetkisi yok (`createIncidentDraft` tool set'inde değil).
 - Yeni altyapı/container ekleme (CORS için Spring config yeterli, ayrı bir API gateway vb. gerekmez).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden.
+- Tüm `mvn`/`docker` komutları repository kökünden.
 
 ### Bitti sayılması için
 

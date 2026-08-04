@@ -5,14 +5,14 @@ Bu, önceki bir oturumun context limiti nedeniyle yarım bıraktığı işin dev
 ### Ortam — dikkatli oku
 
 - Bu iş **ayrı bir git worktree'de** yürütülüyor, ana repo klasöründe değil:
-  `C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration`
+  `.claude/worktrees/milestone+M5-agent-orchestration`
   Branch: `milestone/M5-agent-orchestration`.
-- **Bu worktree klasöründen çalış.** Ana repo klasörü (`C:\Users\Ali\Downloads\otp-incident-agent`) `main` branch'inde kalmalı — aynı branch iki yerde checkout edilemez (git kısıtı), ana klasöre dokunma.
-- `mvn`/`docker` komutları yalnızca WSL2 üzerinden çalışıyor (host'ta yerel JDK/Maven yok). Bu worktree'de SDKMAN ile Java 21 + Maven 3.9.16 zaten kurulu. Komut kalıbı:
+- **Bu worktree klasöründen çalış.** Repository kökü `main` branch'inde kalmalı — aynı branch iki yerde checkout edilemez (git kısıtı), ana klasöre dokunma.
+- Komutları worktree kökünden çalıştır. Komut kalıbı:
   ```bash
-  wsl.exe -e bash -lc 'cd "$(wslpath "C:\Users\Ali\Downloads\otp-incident-agent\.claude\worktrees\milestone+M5-agent-orchestration")" && source "$HOME/.sdkman/bin/sdkman-init.sh" && mvn -B verify -Dsurefire.excludedGroups=local-live 2>&1 | tail -100'
+  mvn -B verify -Dsurefire.excludedGroups=local-live
   ```
-- Gerçek `NVIDIA_API_KEY` yalnızca ana repo kökündeki `.env`'de var (bu worktree'de yok, gitignore'lu). Task 7-10'da canlı model key'ine ihtiyaç **yok** — ana kabul testi (Task 9) deterministik `StubChatModel` kullanıyor.
+- Task 7-10'da canlı model credential'ına ihtiyaç **yok** — ana kabul testi (Task 9) deterministik `StubChatModel` kullanıyor.
 
 ### Önce oku (sırayla)
 

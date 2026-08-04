@@ -51,4 +51,4 @@ Bu milestone'un "Kabul" kriteri: her tool component testli ve fixture toplamlar�
 
 ### Oturum sonu
 
-`prompts/08-session-report.md` kuralına göre `prompts/handoff/M2-report.md` dosyasını yaz ve `SESSION_LOG.md`'ye satır ekle. Branch adı `milestone/M2-fixture-tools`, commit convention `docs/20-git-workflow.md`. Tüm `mvn`/`docker` komutları WSL2 üzerinden (`docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı").
+`prompts/08-session-report.md` kuralına göre `prompts/handoff/M2-report.md` dosyasını yaz ve `SESSION_LOG.md`'ye satır ekle. Branch adı `milestone/M2-fixture-tools`, commit convention `docs/20-git-workflow.md`. Tüm `mvn`/`docker` komutları repository kökünden (`docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı").

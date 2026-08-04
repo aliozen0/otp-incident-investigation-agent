@@ -10,7 +10,7 @@ Her şablon zaten şunu varsayar (tekrar yazma):
 - ilgili `docs/NN-*.md` dosyası source of truth,
 - `Specification -> Failing Test -> Minimal Implementation -> Refactor` sırası,
 - tek scoped task, ilgisiz iyileştirme yok,
-- **tüm `mvn`/`docker`/`docker compose` komutları WSL2 üzerinden çalıştırılır** (bkz. `docs/19-technology-baseline.md` → "Yerel çalıştırma ortamı"), Windows'ta doğrudan değil.
+- **tüm `mvn`/`docker`/`docker compose` komutları repository kökünden çalıştırılır** (bkz. `docs/19-technology-baseline.md` → "Geliştirme ortamı").
 
 ## Şablonlar
 

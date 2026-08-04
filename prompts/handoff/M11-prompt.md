@@ -36,7 +36,7 @@ Bu proje temelde bir LLM agent + RAG projesi ve arayüz (M12'de yapılacak) bunu
 - Ana test suite `NVIDIA_API_KEY` olmadan yeşil kalmalı — model spike ve gerçek NVIDIA çağrısı gerektiren her şey `@Tag("local-live")` ile ayrılır.
 - Mevcut idempotency (M3), audit (M3/M6), validation (M6) mekanizmaları bozulmaz — yalnızca ek alanlar/endpoint'ler.
 - Bu milestone dışına taşma: frontend kodu yazma (M12'nin işi).
-- Tüm `mvn`/`docker` komutları WSL2 üzerinden. Commit'ten önce `mvn spotless:apply` + tam `mvn verify` yeşil olduğunu doğrula.
+- Tüm `mvn`/`docker` komutları repository kökünden. Commit'ten önce `mvn spotless:apply` + tam `mvn verify` yeşil olduğunu doğrula.
 
 ### Bitti sayılması için
 

@@ -25,7 +25,7 @@ doğrulayacak.
 ## Testler (gerçek komut + gerçek çıktı)
 
 ### Adım 1 — Full clean build
-Komut: `wsl -e bash -lc "cd /mnt/c/Users/Ali/Downloads/otp-incident-agent && source ~/.sdkman/bin/sdkman-init.sh && mvn -B spotless:apply verify"`
+Komut: `mvn -B spotless:apply verify`
 
 Çıktı özeti:
 ```
@@ -46,7 +46,7 @@ regression'ından 3 test + `secondInvestigationOnTheSameOrchestratorInstanceStil
 stub-script-exhaustion bugfix testinden 1 test — `prompts/handoff/M8-bugfix-stub-script-exhaustion.md`).
 
 ### Adım 2 — Clean-environment compose up
-Komut: `docker compose down -v` (WSL2) — çıktı: `Volume otp-incident-agent_pgdata Removed`.
+Komut: `docker compose down -v` — çıktı: `Volume otp-incident-agent_pgdata Removed`.
 
 Komut: `docker compose up --build -d` — image cache'ten build edildi, `db` ve `app` container'ları
 oluşturuldu ve başlatıldı; `db` sağlık kontrolünden `Healthy` geçti, `app` `Started`.
